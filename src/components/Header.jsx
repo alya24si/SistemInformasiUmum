@@ -17,7 +17,7 @@ function Header({ user, onLogout }) {
         <div className="header-avatar">{user.nama.charAt(0)}</div>
         <div className="header-user">
           <h5>{user.nama}</h5>
-          <p>{user.role === 'admin' ? '🛡️ Admin' : '👁️ Guest (view only)'}</p>
+          <p>{user.role === 'admin' ? '🛡️ Admin • Semua Bidang' : `👁️ Guest • Bidang ${user.bidang}`}</p>
         </div>
         <button className="btn-logout" onClick={onLogout}>Keluar</button>
       </div>

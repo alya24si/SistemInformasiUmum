@@ -5,8 +5,6 @@ import Header from './components/Header'
 import Login from './pages/Login'
 import ProgramKerja from './pages/ProgramKerja'
 import Anggaran from './pages/Anggaran'
-
-// Import halaman punya Delita
 import DataRuangan from './RumahTangga/DataRuangan'
 import BookingRuangan from './RumahTangga/BookingRuangan'
 import KalenderRuangan from './RumahTangga/KalenderRuangan'
@@ -39,12 +37,8 @@ function App() {
         <main className="main-content">
           <Routes>
             <Route path="/" element={<Navigate to="/program-kerja" />} />
-            
-            {/* Halaman punya Alya */}
-            <Route path="/program-kerja" element={<ProgramKerja role={user.role} />} />
-            <Route path="/anggaran" element={<Anggaran role={user.role} />} />
-            
-            {/* Halaman punya Delita */}
+            <Route path="/program-kerja" element={<ProgramKerja user={user} />} />
+            <Route path="/anggaran" element={<Anggaran user={user} />} />
             <Route path="/data-ruangan" element={<DataRuangan />} />
             <Route path="/booking-ruangan" element={<BookingRuangan />} />
             <Route path="/kalender-ruangan" element={<KalenderRuangan />} />
