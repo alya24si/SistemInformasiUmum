@@ -1,30 +1,48 @@
 import { useState } from "react";
 
 function PerbaikanRuangan() {
-  const [perbaikan, setPerbaikan] = useState([
+  // Data kerusakan yang nantinya berasal dari halaman KerusakanRuangan
+  // Untuk sementara masih menggunakan data lokal.
+  const [kerusakan, setKerusakan] = useState([
     {
       id: 1,
       ruangan: "Ruang Rapat 2",
       kerusakan: "AC tidak dingin",
-      jenisPerbaikan: "Service AC",
-      penanggungJawab: "Teknisi AC",
-      tanggalMulai: "2026-08-10",
-      status: "Diproses",
+      tanggalLapor: "2026-08-10",
+      status: "Menunggu",
     },
     {
       id: 2,
       ruangan: "Aula",
       kerusakan: "Lampu mati",
-      jenisPerbaikan: "Ganti lampu",
+      tanggalLapor: "2026-08-09",
+      status: "Menunggu",
+    },
+    {
+      id: 3,
+      ruangan: "Ruang Arsip",
+      kerusakan: "Pintu sulit ditutup",
+      tanggalLapor: "2026-08-08",
+      status: "Selesai",
+    },
+  ]);
+
+  // Data perbaikan
+  const [perbaikan, setPerbaikan] = useState([
+    {
+      id: 1,
+      kerusakanId: 3,
+      ruangan: "Ruang Arsip",
+      kerusakan: "Pintu sulit ditutup",
+      jenisPerbaikan: "Perbaikan engsel pintu",
       penanggungJawab: "Bagian Rumah Tangga",
-      tanggalMulai: "2026-08-09",
+      tanggalMulai: "2026-08-08",
       status: "Selesai",
     },
   ]);
 
   const [formData, setFormData] = useState({
-    ruangan: "",
-    kerusakan: "",
+    kerusakanId: "",
     jenisPerbaikan: "",
     penanggungJawab: "",
     tanggalMulai: "",
@@ -34,13 +52,38 @@ function PerbaikanRuangan() {
   const [showForm, setShowForm] = useState(false);
 
   // =========================
+  // DATA KERUSAKAN YANG BELUM DIPERBAIKI
+  // =========================
+
+  const kerusakanBelumDiperbaiki = kerusakan.filter((item) => {
+    const sudahAda = perbaikan.some(
+      (perbaikanItem) => perbaikanItem.kerusakanId === item.id
+    );
+
+    return !sudahAda && item.status !== "Selesai";
+  });
+
+  // =========================
   // HANDLE INPUT
   // =========================
 
   const handleChange = (e) => {
+    const { name, value } = e.target;
+
     setFormData({
       ...formData,
-      [e.target.name]: e.target.value,
+      [name]: value,
+    });
+  };
+
+  // =========================
+  // PILIH KERUSAKAN
+  // =========================
+
+  const handleKerusakanChange = (e) => {
+    setFormData({
+      ...formData,
+      kerusakanId: e.target.value,
     });
   };
 
@@ -51,23 +94,57 @@ function PerbaikanRuangan() {
   const handleSubmit = (e) => {
     e.preventDefault();
 
+    const dataKerusakan = kerusakan.find(
+      (item) => item.id === Number(formData.kerusakanId)
+    );
+
+    if (!dataKerusakan) {
+      alert("Silakan pilih data kerusakan terlebih dahulu.");
+      return;
+    }
+
     const dataBaru = {
       id: Date.now(),
-      ...formData,
+      kerusakanId: dataKerusakan.id,
+      ruangan: dataKerusakan.ruangan,
+      kerusakan: dataKerusakan.kerusakan,
+      jenisPerbaikan: formData.jenisPerbaikan,
+      penanggungJawab: formData.penanggungJawab,
+      tanggalMulai: formData.tanggalMulai,
+      status: formData.status,
     };
 
     setPerbaikan([...perbaikan, dataBaru]);
 
+    // Setelah dibuat sebagai perbaikan,
+    // status kerusakan berubah menjadi Diproses.
+    setKerusakan(
+      kerusakan.map((item) =>
+        item.id === dataKerusakan.id
+          ? {
+              ...item,
+              status: "Diproses",
+            }
+          : item
+      )
+    );
+
+    resetForm();
+    setShowForm(false);
+  };
+
+  // =========================
+  // RESET FORM
+  // =========================
+
+  const resetForm = () => {
     setFormData({
-      ruangan: "",
-      kerusakan: "",
+      kerusakanId: "",
       jenisPerbaikan: "",
       penanggungJawab: "",
       tanggalMulai: "",
       status: "Diproses",
     });
-
-    setShowForm(false);
   };
 
   // =========================
@@ -81,8 +158,65 @@ function PerbaikanRuangan() {
 
     if (!konfirmasi) return;
 
+    const dataPerbaikan = perbaikan.find((item) => item.id === id);
+
     setPerbaikan(
       perbaikan.filter((item) => item.id !== id)
+    );
+
+    // Jika data perbaikan dihapus dan sebelumnya berstatus Diproses,
+    // laporan kerusakan dikembalikan menjadi Menunggu.
+    if (dataPerbaikan && dataPerbaikan.status === "Diproses") {
+      setKerusakan(
+        kerusakan.map((item) =>
+          item.id === dataPerbaikan.kerusakanId
+            ? {
+                ...item,
+                status: "Menunggu",
+              }
+            : item
+        )
+      );
+    }
+  };
+
+  // =========================
+  // SELESAIKAN PERBAIKAN
+  // =========================
+
+  const handleSelesai = (id) => {
+    const dataPerbaikan = perbaikan.find(
+      (item) => item.id === id
+    );
+
+    if (!dataPerbaikan) return;
+
+    const konfirmasi = window.confirm(
+      "Apakah perbaikan ini sudah selesai dilakukan?"
+    );
+
+    if (!konfirmasi) return;
+
+    setPerbaikan(
+      perbaikan.map((item) =>
+        item.id === id
+          ? {
+              ...item,
+              status: "Selesai",
+            }
+          : item
+      )
+    );
+
+    setKerusakan(
+      kerusakan.map((item) =>
+        item.id === dataPerbaikan.kerusakanId
+          ? {
+              ...item,
+              status: "Selesai",
+            }
+          : item
+      )
     );
   };
 
@@ -146,24 +280,33 @@ function PerbaikanRuangan() {
               fontSize: "15px",
             }}
           >
-            Kelola tindak lanjut dan proses perbaikan
-            fasilitas ruangan.
+            Kelola tindak lanjut perbaikan fasilitas
+            ruangan.
           </p>
         </div>
 
         <button
           onClick={() => setShowForm(true)}
+          disabled={kerusakanBelumDiperbaiki.length === 0}
           style={{
             border: "none",
-            backgroundColor: "#0b72e7",
+            backgroundColor:
+              kerusakanBelumDiperbaiki.length === 0
+                ? "#cbd5e1"
+                : "#0b72e7",
             color: "#ffffff",
             padding: "11px 18px",
             borderRadius: "8px",
             fontSize: "13px",
             fontWeight: 600,
-            cursor: "pointer",
+            cursor:
+              kerusakanBelumDiperbaiki.length === 0
+                ? "not-allowed"
+                : "pointer",
             boxShadow:
-              "0 3px 8px rgba(11, 114, 231, 0.18)",
+              kerusakanBelumDiperbaiki.length === 0
+                ? "none"
+                : "0 3px 8px rgba(11, 114, 231, 0.18)",
           }}
         >
           + Tambah Perbaikan
@@ -219,8 +362,9 @@ function PerbaikanRuangan() {
             lineHeight: 1.6,
           }}
         >
-          Pantau proses penanganan kerusakan
-          fasilitas ruangan sampai selesai.
+          Data perbaikan dibuat berdasarkan laporan
+          kerusakan yang masuk dan dipantau sampai
+          proses perbaikan selesai.
         </p>
       </div>
 
@@ -273,15 +417,17 @@ function PerbaikanRuangan() {
           style={{
             position: "fixed",
             inset: 0,
-            backgroundColor:
-              "rgba(15, 23, 42, 0.45)",
+            backgroundColor: "rgba(15, 23, 42, 0.45)",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
             padding: "20px",
             zIndex: 1000,
           }}
-          onClick={() => setShowForm(false)}
+          onClick={() => {
+            resetForm();
+            setShowForm(false);
+          }}
         >
           <div
             style={{
@@ -304,8 +450,7 @@ function PerbaikanRuangan() {
                 justifyContent: "space-between",
                 alignItems: "center",
                 padding: "20px 22px",
-                borderBottom:
-                  "1px solid #e2e8f0",
+                borderBottom: "1px solid #e2e8f0",
               }}
             >
               <div>
@@ -327,14 +472,17 @@ function PerbaikanRuangan() {
                     color: "#94a3b8",
                   }}
                 >
-                  Isi informasi tindak lanjut
-                  perbaikan ruangan.
+                  Pilih laporan kerusakan yang akan
+                  ditindaklanjuti.
                 </p>
               </div>
 
               <button
                 type="button"
-                onClick={() => setShowForm(false)}
+                onClick={() => {
+                  resetForm();
+                  setShowForm(false);
+                }}
                 style={{
                   width: "34px",
                   height: "34px",
@@ -358,63 +506,104 @@ function PerbaikanRuangan() {
                 padding: "22px",
               }}
             >
-              {/* RUANGAN */}
-
-              <div style={{ marginBottom: "17px" }}>
-                <label style={labelStyle}>
-                  Ruangan
-                </label>
-
-                <select
-                  name="ruangan"
-                  value={formData.ruangan}
-                  onChange={handleChange}
-                  required
-                  style={inputStyle}
-                >
-                  <option value="">
-                    Pilih Ruangan
-                  </option>
-
-                  <option value="Ruang Rapat Utama">
-                    Ruang Rapat Utama
-                  </option>
-
-                  <option value="Ruang Rapat 1">
-                    Ruang Rapat 1
-                  </option>
-
-                  <option value="Ruang Rapat 2">
-                    Ruang Rapat 2
-                  </option>
-
-                  <option value="Aula">
-                    Aula
-                  </option>
-
-                  <option value="Ruang Arsip">
-                    Ruang Arsip
-                  </option>
-                </select>
-              </div>
-
               {/* KERUSAKAN */}
 
               <div style={{ marginBottom: "17px" }}>
                 <label style={labelStyle}>
-                  Kerusakan
+                  Laporan Kerusakan
                 </label>
 
-                <input
-                  type="text"
-                  name="kerusakan"
-                  value={formData.kerusakan}
-                  onChange={handleChange}
-                  placeholder="Contoh: AC tidak dingin"
+                <select
+                  name="kerusakanId"
+                  value={formData.kerusakanId}
+                  onChange={handleKerusakanChange}
                   required
                   style={inputStyle}
-                />
+                >
+                  <option value="">
+                    Pilih Laporan Kerusakan
+                  </option>
+
+                  {kerusakanBelumDiperbaiki.map((item) => (
+                    <option
+                      key={item.id}
+                      value={item.id}
+                    >
+                      {item.ruangan} - {item.kerusakan}
+                    </option>
+                  ))}
+                </select>
               </div>
+
+              {/* DETAIL KERUSAKAN */}
+
+              {formData.kerusakanId && (
+                <div
+                  style={{
+                    marginBottom: "17px",
+                    padding: "12px 14px",
+                    backgroundColor: "#f8fafc",
+                    border: "1px solid #e2e8f0",
+                    borderRadius: "8px",
+                  }}
+                >
+                  {(() => {
+                    const dataKerusakan =
+                      kerusakan.find(
+                        (item) =>
+                          item.id ===
+                          Number(formData.kerusakanId)
+                      );
+
+                    if (!dataKerusakan) return null;
+
+                    return (
+                      <>
+                        <div
+                          style={{
+                            color: "#64748b",
+                            fontSize: "12px",
+                            marginBottom: "4px",
+                          }}
+                        >
+                          Ruangan
+                        </div>
+
+                        <div
+                          style={{
+                            color: "#334155",
+                            fontSize: "13px",
+                            fontWeight: 600,
+                            marginBottom: "10px",
+                          }}
+                        >
+                          {dataKerusakan.ruangan}
+                        </div>
+
+                        <div
+                          style={{
+                            color: "#64748b",
+                            fontSize: "12px",
+                            marginBottom: "4px",
+                          }}
+                        >
+                          Kerusakan
+                        </div>
+
+                        <div
+                          style={{
+                            color: "#334155",
+                            fontSize: "13px",
+                            fontWeight: 600,
+                          }}
+                        >
+                          {dataKerusakan.kerusakan}
+                        </div>
+                      </>
+                    );
+                  })()}
+                </div>
+              )}
 
               {/* JENIS PERBAIKAN */}
 
@@ -500,16 +689,17 @@ function PerbaikanRuangan() {
                   justifyContent: "flex-end",
                   gap: "10px",
                   paddingTop: "18px",
-                  borderTop:
-                    "1px solid #e2e8f0",
+                  borderTop: "1px solid #e2e8f0",
                 }}
               >
                 <button
                   type="button"
-                  onClick={() => setShowForm(false)}
+                  onClick={() => {
+                    resetForm();
+                    setShowForm(false);
+                  }}
                   style={{
-                    border:
-                      "1px solid #cbd5e1",
+                    border: "1px solid #cbd5e1",
                     backgroundColor: "#ffffff",
                     color: "#475569",
                     padding: "10px 17px",
@@ -560,8 +750,7 @@ function PerbaikanRuangan() {
         <div
           style={{
             padding: "20px 22px",
-            borderBottom:
-              "1px solid #e2e8f0",
+            borderBottom: "1px solid #e2e8f0",
           }}
         >
           <h2
@@ -605,13 +794,9 @@ function PerbaikanRuangan() {
                   backgroundColor: "#f8fafc",
                 }}
               >
-                <th style={thStyle}>
-                  Ruangan
-                </th>
+                <th style={thStyle}>Ruangan</th>
 
-                <th style={thStyle}>
-                  Kerusakan
-                </th>
+                <th style={thStyle}>Kerusakan</th>
 
                 <th style={thStyle}>
                   Jenis Perbaikan
@@ -625,9 +810,7 @@ function PerbaikanRuangan() {
                   Tanggal Mulai
                 </th>
 
-                <th style={thStyle}>
-                  Status
-                </th>
+                <th style={thStyle}>Status</th>
 
                 <th
                   style={{
@@ -727,25 +910,54 @@ function PerbaikanRuangan() {
                         textAlign: "center",
                       }}
                     >
-                      <button
-                        onClick={() =>
-                          handleDelete(item.id)
-                        }
+                      <div
                         style={{
-                          padding: "6px 10px",
-                          borderRadius: "6px",
-                          fontSize: "11px",
-                          fontWeight: 600,
-                          cursor: "pointer",
-                          backgroundColor:
-                            "#fef2f2",
-                          color: "#dc2626",
-                          border:
-                            "1px solid #fecaca",
+                          display: "flex",
+                          justifyContent: "center",
+                          gap: "6px",
                         }}
                       >
-                        Hapus
-                      </button>
+                        {item.status === "Diproses" && (
+                          <button
+                            onClick={() =>
+                              handleSelesai(item.id)
+                            }
+                            style={{
+                              padding: "6px 10px",
+                              borderRadius: "6px",
+                              fontSize: "11px",
+                              fontWeight: 600,
+                              cursor: "pointer",
+                              backgroundColor:
+                                "#f0fdf4",
+                              color: "#15803d",
+                              border:
+                                "1px solid #bbf7d0",
+                            }}
+                          >
+                            Selesai
+                          </button>
+                        )}
+
+                        <button
+                          onClick={() =>
+                            handleDelete(item.id)
+                          }
+                          style={{
+                            padding: "6px 10px",
+                            borderRadius: "6px",
+                            fontSize: "11px",
+                            fontWeight: 600,
+                            cursor: "pointer",
+                            backgroundColor: "#fef2f2",
+                            color: "#dc2626",
+                            border:
+                              "1px solid #fecaca",
+                          }}
+                        >
+                          Hapus
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))
@@ -762,15 +974,12 @@ function PerbaikanRuangan() {
                       style={{
                         width: "55px",
                         height: "55px",
-                        margin:
-                          "0 auto 12px",
+                        margin: "0 auto 12px",
                         borderRadius: "50%",
-                        backgroundColor:
-                          "#f1f5f9",
+                        backgroundColor: "#f1f5f9",
                         display: "flex",
                         alignItems: "center",
-                        justifyContent:
-                          "center",
+                        justifyContent: "center",
                         fontSize: "24px",
                       }}
                     >
@@ -784,8 +993,7 @@ function PerbaikanRuangan() {
                         fontSize: "15px",
                       }}
                     >
-                      Belum ada data
-                      perbaikan
+                      Belum ada data perbaikan
                     </div>
 
                     <p
@@ -795,8 +1003,8 @@ function PerbaikanRuangan() {
                         fontSize: "13px",
                       }}
                     >
-                      Belum ada data perbaikan
-                      yang tersedia.
+                      Belum ada tindak lanjut
+                      perbaikan yang tersedia.
                     </p>
                   </td>
                 </tr>
@@ -862,11 +1070,7 @@ function PerbaikanRuangan() {
 // SUMMARY CARD
 // =========================
 
-function SummaryCard({
-  title,
-  value,
-  icon,
-}) {
+function SummaryCard({ title, value, icon }) {
   return (
     <div
       style={{
@@ -926,11 +1130,7 @@ function SummaryCard({
 // INFO CARD
 // =========================
 
-function InfoCard({
-  title,
-  text,
-  status,
-}) {
+function InfoCard({ title, text, status }) {
   const statusStyle =
     status === "Diproses"
       ? {
@@ -999,18 +1199,13 @@ function InfoCard({
 function formatTanggal(tanggal) {
   if (!tanggal) return "-";
 
-  const date = new Date(
-    `${tanggal}T00:00:00`
-  );
+  const date = new Date(`${tanggal}T00:00:00`);
 
-  return date.toLocaleDateString(
-    "id-ID",
-    {
-      day: "2-digit",
-      month: "short",
-      year: "numeric",
-    }
-  );
+  return date.toLocaleDateString("id-ID", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+  });
 }
 
 // =========================
