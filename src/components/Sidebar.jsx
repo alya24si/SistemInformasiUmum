@@ -17,6 +17,15 @@ function Sidebar() {
         <NavLink to="/anggaran" className="menu-item">💰 Penyerapan Anggaran</NavLink>
       </nav>
 
+      <div className="nav-label">Rumah Tangga</div>
+      <nav>
+        <NavLink to="/data-ruangan" className="menu-item">🏢 Data Ruangan</NavLink>
+        <NavLink to="/booking-ruangan" className="menu-item">📅 Booking Ruangan</NavLink>
+        <NavLink to="/kalender-ruangan" className="menu-item">🗓️ Kalender Ruangan</NavLink>
+        <NavLink to="/kerusakan-ruangan" className="menu-item">🛠️ Kerusakan Ruangan</NavLink>
+        <NavLink to="/perbaikan-ruangan" className="menu-item">🔧 Perbaikan Ruangan</NavLink>
+      </nav>
+
       <div className="user-card">
         <div className="user-avatar">AD</div>
         <div>

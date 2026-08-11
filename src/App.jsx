@@ -3,6 +3,11 @@ import Sidebar from './components/Sidebar'
 import Header from './components/Header'
 import ProgramKerja from './pages/ProgramKerja'
 import Anggaran from './pages/Anggaran'
+import DataRuangan from './RumahTangga/DataRuangan'
+import BookingRuangan from './RumahTangga/BookingRuangan'
+import KalenderRuangan from './RumahTangga/KalenderRuangan'
+import KerusakanRuangan from './RumahTangga/KerusakanRuangan'
+import PerbaikanRuangan from './RumahTangga/PerbaikanRuangan'
 
 function App() {
   return (
@@ -15,6 +20,11 @@ function App() {
             <Route path="/" element={<Navigate to="/program-kerja" />} />
             <Route path="/program-kerja" element={<ProgramKerja />} />
             <Route path="/anggaran" element={<Anggaran />} />
+            <Route path="/data-ruangan" element={<DataRuangan />} />
+            <Route path="/booking-ruangan" element={<BookingRuangan />} />
+            <Route path="/kalender-ruangan" element={<KalenderRuangan />} />
+            <Route path="/kerusakan-ruangan" element={<KerusakanRuangan />} />
+            <Route path="/perbaikan-ruangan" element={<PerbaikanRuangan />} />
           </Routes>
         </main>
       </div>
