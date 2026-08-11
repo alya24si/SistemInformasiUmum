@@ -12,6 +12,7 @@ const dataAwal = [
   { id: 2, tahun: 2026, bidang: 'Umum', tipe: 'detail', kodeAkun: '521211', deskripsi: 'KDM - Snack [52 ORANG x 2 KALI x 2 FR]', unit: 208, satuan: 'OK', hargaSatuan: 22116, pagu: 4600000, realisasi: 4563400 },
   { id: 3, tahun: 2026, bidang: 'Umum', tipe: 'detail', kodeAkun: '524111', deskripsi: 'Uang Harian [4 FR x 4 ORANG x 3 HARI]', unit: 48, satuan: 'OH', hargaSatuan: 36084, pagu: 1732000, realisasi: 1732000 },
   { id: 4, tahun: 2026, bidang: 'KI', tipe: 'utama', kodeAkun: '4787.BIG.001', deskripsi: 'Pemeriksaan Kepabeanan dan Cukai', unit: 5, satuan: 'Laporan', hargaSatuan: 6619800, pagu: 33099000, realisasi: 30748274 },
+  { id: 5, tahun: 2026, bidang: 'Fasilitas', tipe: 'utama', kodeAkun: '4787.CDE.002', deskripsi: 'Pemeliharaan Gedung dan Bangunan', unit: 12, satuan: 'Kegiatan', hargaSatuan: 1500000, pagu: 18000000, realisasi: 7200000 },
 ]
 
 const statusAnggaran = (persen) => {
@@ -20,21 +21,24 @@ const statusAnggaran = (persen) => {
   return { label: 'Kritis', cls: 'red' }
 }
 
-function Anggaran({ role }) {
+function Anggaran({ user }) {
+  const isAdmin = user.role === 'admin'
   const [data, setData] = useState(dataAwal)
   const [form, setForm] = useState({ tahun: tahunIni, bidang: daftarBidang[0], tipe: 'utama', kodeAkun: '', deskripsi: '', unit: '', satuan: '', hargaSatuan: '' })
   const [formRealisasi, setFormRealisasi] = useState({ id: '', bulan: daftarBulan[0], jumlah: '' })
   const [filterTahun, setFilterTahun] = useState('semua')
   const [filterBidang, setFilterBidang] = useState('semua')
 
-  const dataFiltered = data.filter((d) => {
+  const milikUser = isAdmin ? data : data.filter((d) => d.bidang === user.bidang)
+
+  const dataFiltered = milikUser.filter((d) => {
     const cocokTahun = filterTahun === 'semua' || d.tahun === Number(filterTahun)
-    const cocokBidang = filterBidang === 'semua' || d.bidang === filterBidang
+    const cocokBidang = isAdmin ? (filterBidang === 'semua' || d.bidang === filterBidang) : true
     return cocokTahun && cocokBidang
   })
 
-  const totalPagu = data.reduce((a, b) => a + b.pagu, 0)
-  const totalRealisasi = data.reduce((a, b) => a + b.realisasi, 0)
+  const totalPagu = milikUser.reduce((a, b) => a + b.pagu, 0)
+  const totalRealisasi = milikUser.reduce((a, b) => a + b.realisasi, 0)
   const persenTotal = totalPagu > 0 ? Math.round((totalRealisasi / totalPagu) * 100) : 0
   const previewPagu = Number(form.unit || 0) * Number(form.hargaSatuan || 0)
 
@@ -63,13 +67,15 @@ function Anggaran({ role }) {
         <p>Data dari bagian keuangan. Pagu diupload per tahun, realisasi diperbarui per bulan.</p>
       </div>
 
+      {!isAdmin && <div className="guest-note">👁️ Mode tamu: Anda hanya melihat data bidang <b>{user.bidang}</b>.</div>}
+
       <div className="stats-grid">
-        <div className="stat-card"><div className="stat-icon">🏦</div><div className="stat-info"><h4>Total Pagu</h4><div className="stat-value" style={{ fontSize: '16px' }}>{formatRupiah(totalPagu)}</div><div className="stat-desc">Seluruh bidang</div></div></div>
+        <div className="stat-card"><div className="stat-icon">🏦</div><div className="stat-info"><h4>Total Pagu</h4><div className="stat-value" style={{ fontSize: '16px' }}>{formatRupiah(totalPagu)}</div><div className="stat-desc">{isAdmin ? 'Seluruh bidang' : `Bidang ${user.bidang}`}</div></div></div>
         <div className="stat-card gold"><div className="stat-icon">💵</div><div className="stat-info"><h4>Total Realisasi</h4><div className="stat-value" style={{ fontSize: '16px' }}>{formatRupiah(totalRealisasi)}</div><div className="stat-desc">Sudah terserap</div></div></div>
         <div className="stat-card green"><div className="stat-icon">📊</div><div className="stat-info"><h4>Penyerapan</h4><div className="stat-value">{persenTotal}%</div><div className="stat-desc">Dari total pagu</div></div></div>
       </div>
 
-      {role === 'admin' && (<>
+      {isAdmin && (<>
         <div className="card">
           <h3>➕ Upload Pagu Tahunan (unit × harga satuan)</h3>
           <form onSubmit={tambahData} className="form-row">
@@ -103,10 +109,18 @@ function Anggaran({ role }) {
       <div className="card">
         <h3>💰 Rekapitulasi Penyerapan Anggaran</h3>
         <div className="filter-row">
-          <select value={filterTahun} onChange={(e) => setFilterTahun(e.target.value)}><option value="semua">Semua Tahun</option>{daftarTahun.map((t) => <option key={t} value={t}>Tahun {t}</option>)}</select>
-          <select value={filterBidang} onChange={(e) => setFilterBidang(e.target.value)}><option value="semua">Semua Bidang</option>{daftarBidang.map((b) => <option key={b} value={b}>{b}</option>)}</select>
+          <select value={filterTahun} onChange={(e) => setFilterTahun(e.target.value)}>
+            <option value="semua">Semua Tahun</option>
+            {daftarTahun.map((t) => <option key={t} value={t}>Tahun {t}</option>)}
+          </select>
+          {isAdmin && (
+            <select value={filterBidang} onChange={(e) => setFilterBidang(e.target.value)}>
+              <option value="semua">Semua Bidang</option>
+              {daftarBidang.map((b) => <option key={b} value={b}>{b}</option>)}
+            </select>
+          )}
         </div>
-        <div className="filter-info">Menampilkan {dataFiltered.length} dari {data.length} baris</div>
+        <div className="filter-info">Menampilkan {dataFiltered.length} dari {milikUser.length} baris</div>
 
         <div className="table-wrap">
           <table className="table">
@@ -126,7 +140,7 @@ function Anggaran({ role }) {
                     <td>{d.unit} {d.satuan}</td>
                     <td className="num">{formatRupiah(d.hargaSatuan)}</td>
                     <td className="num">
-                      {role === 'admin' ? (
+                      {isAdmin ? (
                         <input type="number" className="pagu-input" value={d.pagu} onChange={(e) => updatePagu(d.id, e.target.value)} />
                       ) : (
                         formatRupiah(d.pagu)
@@ -139,7 +153,7 @@ function Anggaran({ role }) {
                       <small>{persen}%</small>
                     </td>
                     <td><span className={`badge ${st.cls}`}>{st.label}</span></td>
-                    <td>{role === 'admin' && <button className="btn-danger" onClick={() => hapusData(d.id)}>🗑</button>}</td>
+                    <td>{isAdmin && <button className="btn-danger" onClick={() => hapusData(d.id)}>🗑</button>}</td>
                   </tr>
                 )
               })}
