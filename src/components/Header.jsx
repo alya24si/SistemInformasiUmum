@@ -1,4 +1,4 @@
-function Header() {
+function Header({ user, onLogout }) {
   const today = new Date().toLocaleDateString('id-ID', {
     weekday: 'long',
     day: 'numeric',
@@ -14,7 +14,12 @@ function Header() {
       </div>
       <div className="header-right">
         <div className="header-date">📅 {today}</div>
-        <div className="header-avatar">AD</div>
+        <div className="header-avatar">{user.nama.charAt(0)}</div>
+        <div className="header-user">
+          <h5>{user.nama}</h5>
+          <p>{user.role === 'admin' ? '🛡️ Admin' : '👁️ Guest (view only)'}</p>
+        </div>
+        <button className="btn-logout" onClick={onLogout}>Keluar</button>
       </div>
     </header>
   )
