@@ -11,7 +11,7 @@ function Sidebar() {
         </div>
       </div>
 
-      <div className="nav-label">Menu Utama</div>
+      <div className="nav-label">Keuangan</div>
       <nav>
         <NavLink to="/program-kerja" className="menu-item">📋 Program Kerja</NavLink>
         <NavLink to="/anggaran" className="menu-item">💰 Penyerapan Anggaran</NavLink>
