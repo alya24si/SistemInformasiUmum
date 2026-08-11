@@ -1,7 +1,13 @@
 import { useState } from "react";
 
 function KerusakanRuangan() {
+  // SEMENTARA UNTUK TESTING
+  // Nanti role berasal dari Supabase Auth
   const [role] = useState("admin");
+
+  // =========================
+  // DATA DUMMY
+  // =========================
 
   const [laporan, setLaporan] = useState([
     {
@@ -72,7 +78,6 @@ function KerusakanRuangan() {
       id: Date.now(),
       ruangan: formData.ruangan,
 
-      // Nanti berasal dari akun Supabase
       pelapor:
         role === "admin"
           ? "Admin Rumah Tangga"
@@ -91,8 +96,6 @@ function KerusakanRuangan() {
 
       deskripsi: formData.deskripsi,
 
-      // User → menunggu
-      // Admin → langsung diproses
       status:
         role === "admin"
           ? "Diproses"
@@ -142,7 +145,7 @@ function KerusakanRuangan() {
   };
 
   // =========================
-  // SELESAIKAN
+  // SELESAIKAN LAPORAN
   // =========================
 
   const handleSelesai = (id) => {
@@ -159,7 +162,7 @@ function KerusakanRuangan() {
   };
 
   // =========================
-  // HAPUS
+  // HAPUS LAPORAN
   // =========================
 
   const handleHapus = (id) => {
@@ -170,7 +173,9 @@ function KerusakanRuangan() {
     if (!konfirmasi) return;
 
     setLaporan(
-      laporan.filter((item) => item.id !== id)
+      laporan.filter(
+        (item) => item.id !== id
+      )
     );
   };
 
@@ -187,349 +192,1218 @@ function KerusakanRuangan() {
             "Delita Br Tinambunan"
         );
 
-  return (
-    <div>
+  // =========================
+  // STATUS BADGE
+  // =========================
 
+  const getStatusStyle = (status) => {
+    if (status === "Menunggu") {
+      return {
+        backgroundColor: "#fef3c7",
+        color: "#92400e",
+      };
+    }
+
+    if (status === "Diproses") {
+      return {
+        backgroundColor: "#dbeafe",
+        color: "#1d4ed8",
+      };
+    }
+
+    return {
+      backgroundColor: "#dcfce7",
+      color: "#166534",
+    };
+  };
+
+  return (
+    <div
+      style={{
+        padding: "32px",
+        minHeight: "100%",
+        backgroundColor: "#f5f8fc",
+        fontFamily:
+          "Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
+      }}
+    >
       {/* =========================
           HEADER
       ========================= */}
 
-      <div>
-
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "flex-start",
+          gap: "20px",
+          marginBottom: "24px",
+        }}
+      >
         <div>
+          <h1
+            style={{
+              margin: 0,
+              fontSize: "30px",
+              fontWeight: 700,
+              color: "#102a43",
+            }}
+          >
+            Kerusakan Ruangan
+          </h1>
 
-          <h1>Kerusakan Ruangan</h1>
-
-          <p>
+          <p
+            style={{
+              margin: "7px 0 0",
+              color: "#64748b",
+              fontSize: "15px",
+            }}
+          >
             Mencatat dan memantau kerusakan
             fasilitas ruangan.
           </p>
-
         </div>
-
-        {/* USER DAN ADMIN SAMA-SAMA BISA TAMBAH */}
 
         <button
           onClick={() => setShowForm(true)}
+          style={{
+            border: "none",
+            backgroundColor: "#0b72e7",
+            color: "#ffffff",
+            padding: "11px 18px",
+            borderRadius: "8px",
+            fontSize: "13px",
+            fontWeight: 600,
+            cursor: "pointer",
+            boxShadow:
+              "0 3px 8px rgba(11, 114, 231, 0.18)",
+          }}
         >
           + Tambah Kerusakan
         </button>
-
       </div>
-
 
       {/* =========================
           INFORMASI ROLE
       ========================= */}
 
-      <div>
+      <div
+        style={{
+          backgroundColor: "#ffffff",
+          border: "1px solid #e2e8f0",
+          borderRadius: "12px",
+          padding: "18px 20px",
+          marginBottom: "22px",
+          boxShadow:
+            "0 2px 8px rgba(15, 23, 42, 0.04)",
+        }}
+      >
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: "10px",
+          }}
+        >
+          <div
+            style={{
+              width: "9px",
+              height: "9px",
+              borderRadius: "50%",
+              backgroundColor:
+                role === "admin"
+                  ? "#0b72e7"
+                  : "#16a34a",
+            }}
+          />
 
-        <strong>
-          {role === "admin"
-            ? "Mode Admin Rumah Tangga"
-            : "Mode Pegawai"}
-        </strong>
+          <strong
+            style={{
+              color: "#1e293b",
+              fontSize: "15px",
+            }}
+          >
+            {role === "admin"
+              ? "Mode Admin Rumah Tangga"
+              : "Mode Pegawai"}
+          </strong>
+        </div>
 
-        <p>
+        <p
+          style={{
+            margin:
+              "8px 0 0 19px",
+            color: "#64748b",
+            fontSize: "14px",
+            lineHeight: 1.6,
+          }}
+        >
           {role === "admin"
             ? "Anda dapat menambahkan, memproses, dan mengelola seluruh data kerusakan."
             : "Anda dapat melaporkan kerusakan fasilitas dan melihat laporan Anda."}
         </p>
-
       </div>
 
+      {/* =========================
+          RINGKASAN
+      ========================= */}
+
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns:
+            "repeat(auto-fit, minmax(180px, 1fr))",
+          gap: "15px",
+          marginBottom: "22px",
+        }}
+      >
+        <SummaryCard
+          title="Total Laporan"
+          value={laporanDitampilkan.length}
+          icon="📋"
+        />
+
+        <SummaryCard
+          title="Menunggu"
+          value={
+            laporanDitampilkan.filter(
+              (item) =>
+                item.status === "Menunggu"
+            ).length
+          }
+          icon="⏳"
+        />
+
+        <SummaryCard
+          title="Diproses"
+          value={
+            laporanDitampilkan.filter(
+              (item) =>
+                item.status === "Diproses"
+            ).length
+          }
+          icon="🔧"
+        />
+
+        <SummaryCard
+          title="Selesai"
+          value={
+            laporanDitampilkan.filter(
+              (item) =>
+                item.status === "Selesai"
+            ).length
+          }
+          icon="✓"
+        />
+      </div>
 
       {/* =========================
-          FORM
+          FORM MODAL
       ========================= */}
 
       {showForm && (
+        <div
+          style={{
+            position: "fixed",
+            inset: 0,
+            backgroundColor:
+              "rgba(15, 23, 42, 0.45)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            padding: "20px",
+            zIndex: 1000,
+          }}
+          onClick={() =>
+            setShowForm(false)
+          }
+        >
+          <div
+            style={{
+              width: "100%",
+              maxWidth: "560px",
+              maxHeight: "90vh",
+              overflowY: "auto",
+              backgroundColor: "#ffffff",
+              borderRadius: "14px",
+              boxShadow:
+                "0 20px 50px rgba(15, 23, 42, 0.18)",
+            }}
+            onClick={(e) =>
+              e.stopPropagation()
+            }
+          >
+            {/* MODAL HEADER */}
 
-        <div>
-
-          <div>
-
-            <h2>
-              {role === "admin"
-                ? "Tambah Data Kerusakan"
-                : "Laporkan Kerusakan"}
-            </h2>
-
-            <button
-              onClick={() => setShowForm(false)}
+            <div
+              style={{
+                display: "flex",
+                justifyContent:
+                  "space-between",
+                alignItems: "center",
+                padding: "20px 22px",
+                borderBottom:
+                  "1px solid #e2e8f0",
+              }}
             >
-              ✕
-            </button>
+              <div>
+                <h2
+                  style={{
+                    margin: 0,
+                    fontSize: "19px",
+                    fontWeight: 650,
+                    color: "#172b4d",
+                  }}
+                >
+                  {role === "admin"
+                    ? "Tambah Data Kerusakan"
+                    : "Laporkan Kerusakan"}
+                </h2>
 
-          </div>
-
-
-          <form onSubmit={handleSubmit}>
-
-            {/* RUANGAN */}
-
-            <div>
-
-              <label>
-                Ruangan
-              </label>
-
-              <select
-                name="ruangan"
-                value={formData.ruangan}
-                onChange={handleChange}
-                required
-              >
-
-                <option value="">
-                  Pilih Ruangan
-                </option>
-
-                <option value="Ruang Rapat Utama">
-                  Ruang Rapat Utama
-                </option>
-
-                <option value="Ruang Rapat 1">
-                  Ruang Rapat 1
-                </option>
-
-                <option value="Ruang Rapat 2">
-                  Ruang Rapat 2
-                </option>
-
-                <option value="Aula">
-                  Aula
-                </option>
-
-              </select>
-
-            </div>
-
-
-            {/* JENIS KERUSAKAN */}
-
-            <div>
-
-              <label>
-                Jenis Kerusakan
-              </label>
-
-              <input
-                type="text"
-                name="kerusakan"
-                value={formData.kerusakan}
-                onChange={handleChange}
-                placeholder="Contoh: AC tidak dingin"
-                required
-              />
-
-            </div>
-
-
-            {/* DESKRIPSI */}
-
-            <div>
-
-              <label>
-                Deskripsi Kerusakan
-              </label>
-
-              <textarea
-                name="deskripsi"
-                value={formData.deskripsi}
-                onChange={handleChange}
-                placeholder="Jelaskan kondisi kerusakan..."
-                rows="5"
-                required
-              />
-
-            </div>
-
-
-            {/* BUTTON */}
-
-            <div>
+                <p
+                  style={{
+                    margin:
+                      "5px 0 0",
+                    fontSize: "13px",
+                    color: "#94a3b8",
+                  }}
+                >
+                  Isi informasi kerusakan
+                  fasilitas ruangan.
+                </p>
+              </div>
 
               <button
                 type="button"
-                onClick={() => setShowForm(false)}
+                onClick={() =>
+                  setShowForm(false)
+                }
+                style={{
+                  width: "34px",
+                  height: "34px",
+                  border: "none",
+                  borderRadius: "8px",
+                  backgroundColor:
+                    "#f1f5f9",
+                  color: "#64748b",
+                  fontSize: "18px",
+                  cursor: "pointer",
+                }}
               >
-                Batal
+                ×
               </button>
-
-              <button type="submit">
-                Simpan
-              </button>
-
             </div>
 
-          </form>
+            {/* FORM */}
 
+            <form
+              onSubmit={handleSubmit}
+              style={{
+                padding: "22px",
+              }}
+            >
+              {/* RUANGAN */}
+
+              <div
+                style={{
+                  marginBottom: "17px",
+                }}
+              >
+                <label
+                  style={labelStyle}
+                >
+                  Ruangan
+                </label>
+
+                <select
+                  name="ruangan"
+                  value={formData.ruangan}
+                  onChange={handleChange}
+                  required
+                  style={inputStyle}
+                >
+                  <option value="">
+                    Pilih Ruangan
+                  </option>
+
+                  <option value="Ruang Rapat Utama">
+                    Ruang Rapat Utama
+                  </option>
+
+                  <option value="Ruang Rapat 1">
+                    Ruang Rapat 1
+                  </option>
+
+                  <option value="Ruang Rapat 2">
+                    Ruang Rapat 2
+                  </option>
+
+                  <option value="Aula">
+                    Aula
+                  </option>
+                </select>
+              </div>
+
+              {/* JENIS KERUSAKAN */}
+
+              <div
+                style={{
+                  marginBottom: "17px",
+                }}
+              >
+                <label
+                  style={labelStyle}
+                >
+                  Jenis Kerusakan
+                </label>
+
+                <input
+                  type="text"
+                  name="kerusakan"
+                  value={formData.kerusakan}
+                  onChange={handleChange}
+                  placeholder="Contoh: AC tidak dingin"
+                  required
+                  style={inputStyle}
+                />
+              </div>
+
+              {/* DESKRIPSI */}
+
+              <div
+                style={{
+                  marginBottom: "22px",
+                }}
+              >
+                <label
+                  style={labelStyle}
+                >
+                  Deskripsi Kerusakan
+                </label>
+
+                <textarea
+                  name="deskripsi"
+                  value={formData.deskripsi}
+                  onChange={handleChange}
+                  placeholder="Jelaskan kondisi kerusakan..."
+                  rows="5"
+                  required
+                  style={{
+                    ...inputStyle,
+                    resize: "vertical",
+                    minHeight: "110px",
+                  }}
+                />
+              </div>
+
+              {/* BUTTON */}
+
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent:
+                    "flex-end",
+                  gap: "10px",
+                  paddingTop: "18px",
+                  borderTop:
+                    "1px solid #e2e8f0",
+                }}
+              >
+                <button
+                  type="button"
+                  onClick={() =>
+                    setShowForm(false)
+                  }
+                  style={{
+                    border:
+                      "1px solid #cbd5e1",
+                    backgroundColor:
+                      "#ffffff",
+                    color: "#475569",
+                    padding:
+                      "10px 17px",
+                    borderRadius: "8px",
+                    fontSize: "13px",
+                    fontWeight: 600,
+                    cursor: "pointer",
+                  }}
+                >
+                  Batal
+                </button>
+
+                <button
+                  type="submit"
+                  style={{
+                    border: "none",
+                    backgroundColor:
+                      "#0b72e7",
+                    color: "#ffffff",
+                    padding:
+                      "10px 17px",
+                    borderRadius: "8px",
+                    fontSize: "13px",
+                    fontWeight: 600,
+                    cursor: "pointer",
+                  }}
+                >
+                  Simpan
+                </button>
+              </div>
+            </form>
+          </div>
         </div>
       )}
-
 
       {/* =========================
           DAFTAR DATA
       ========================= */}
 
-      <div>
+      <div
+        style={{
+          backgroundColor: "#ffffff",
+          border: "1px solid #e2e8f0",
+          borderRadius: "12px",
+          boxShadow:
+            "0 2px 8px rgba(15, 23, 42, 0.04)",
+          overflow: "hidden",
+        }}
+      >
+        {/* TABLE HEADER */}
 
-        <h2>
-          {role === "admin"
-            ? "Seluruh Data Kerusakan"
-            : "Laporan Saya"}
-        </h2>
+        <div
+          style={{
+            padding: "20px 22px",
+            borderBottom:
+              "1px solid #e2e8f0",
+          }}
+        >
+          <h2
+            style={{
+              margin: 0,
+              fontSize: "18px",
+              fontWeight: 650,
+              color: "#172b4d",
+            }}
+          >
+            {role === "admin"
+              ? "Seluruh Data Kerusakan"
+              : "Laporan Saya"}
+          </h2>
 
+          <p
+            style={{
+              margin: "5px 0 0",
+              color: "#94a3b8",
+              fontSize: "13px",
+            }}
+          >
+            {role === "admin"
+              ? "Kelola seluruh laporan kerusakan fasilitas ruangan."
+              : "Daftar laporan kerusakan yang Anda kirim."}
+          </p>
+        </div>
 
-        <table>
+        {/* TABLE */}
 
-          <thead>
+        <div
+          style={{
+            overflowX: "auto",
+          }}
+        >
+          <table
+            style={{
+              width: "100%",
+              borderCollapse:
+                "collapse",
+              minWidth:
+                role === "admin"
+                  ? "1100px"
+                  : "950px",
+            }}
+          >
+            <thead>
+              <tr
+                style={{
+                  backgroundColor:
+                    "#f8fafc",
+                }}
+              >
+                <th
+                  style={thStyle}
+                >
+                  Ruangan
+                </th>
 
-            <tr>
+                <th
+                  style={thStyle}
+                >
+                  Pelapor
+                </th>
 
-              <th>Ruangan</th>
+                <th
+                  style={thStyle}
+                >
+                  Bagian
+                </th>
 
-              <th>Pelapor</th>
+                <th
+                  style={thStyle}
+                >
+                  Tanggal
+                </th>
 
-              <th>Bagian</th>
+                <th
+                  style={thStyle}
+                >
+                  Kerusakan
+                </th>
 
-              <th>Tanggal</th>
+                <th
+                  style={{
+                    ...thStyle,
+                    minWidth: "220px",
+                  }}
+                >
+                  Deskripsi
+                </th>
 
-              <th>Kerusakan</th>
+                <th
+                  style={thStyle}
+                >
+                  Sumber
+                </th>
 
-              <th>Deskripsi</th>
+                <th
+                  style={thStyle}
+                >
+                  Status
+                </th>
 
-              <th>Sumber</th>
+                {role === "admin" && (
+                  <th
+                    style={{
+                      ...thStyle,
+                      textAlign:
+                        "center",
+                    }}
+                  >
+                    Aksi
+                  </th>
+                )}
+              </tr>
+            </thead>
 
-              <th>Status</th>
+            <tbody>
+              {laporanDitampilkan.length >
+              0 ? (
+                laporanDitampilkan.map(
+                  (item) => (
+                    <tr
+                      key={item.id}
+                      style={{
+                        borderBottom:
+                          "1px solid #edf2f7",
+                      }}
+                    >
+                      {/* RUANGAN */}
 
-              {role === "admin" && (
-                <th>Aksi</th>
-              )}
-
-            </tr>
-
-          </thead>
-
-
-          <tbody>
-
-            {laporanDitampilkan.length > 0 ? (
-
-              laporanDitampilkan.map((item) => (
-
-                <tr key={item.id}>
-
-                  <td>
-                    {item.ruangan}
-                  </td>
-
-                  <td>
-                    {item.pelapor}
-                  </td>
-
-                  <td>
-                    {item.bagian}
-                  </td>
-
-                  <td>
-                    {item.tanggal}
-                  </td>
-
-                  <td>
-                    {item.kerusakan}
-                  </td>
-
-                  <td>
-                    {item.deskripsi}
-                  </td>
-
-                  <td>
-                    {item.sumber}
-                  </td>
-
-                  <td>
-                    {item.status}
-                  </td>
-
-
-                  {/* =========================
-                      AKSI ADMIN
-                  ========================= */}
-
-                  {role === "admin" && (
-
-                    <td>
-
-                      {item.status === "Menunggu" && (
-
-                        <button
-                          onClick={() =>
-                            handleProses(item.id)
-                          }
-                        >
-                          Proses
-                        </button>
-
-                      )}
-
-
-                      {item.status === "Diproses" && (
-
-                        <button
-                          onClick={() =>
-                            handleSelesai(item.id)
-                          }
-                        >
-                          Selesai
-                        </button>
-
-                      )}
-
-
-                      <button
-                        onClick={() =>
-                          handleHapus(item.id)
+                      <td
+                        style={
+                          tdStyle
                         }
                       >
-                        Hapus
-                      </button>
+                        <div
+                          style={{
+                            fontWeight:
+                              600,
+                            color:
+                              "#334155",
+                          }}
+                        >
+                          {item.ruangan}
+                        </div>
+                      </td>
 
-                    </td>
+                      {/* PELAPOR */}
 
-                  )}
+                      <td
+                        style={
+                          tdStyle
+                        }
+                      >
+                        <div
+                          style={{
+                            fontWeight:
+                              500,
+                            color:
+                              "#475569",
+                          }}
+                        >
+                          {item.pelapor}
+                        </div>
+                      </td>
 
+                      {/* BAGIAN */}
+
+                      <td
+                        style={
+                          tdStyle
+                        }
+                      >
+                        {item.bagian}
+                      </td>
+
+                      {/* TANGGAL */}
+
+                      <td
+                        style={{
+                          ...tdStyle,
+                          whiteSpace:
+                            "nowrap",
+                        }}
+                      >
+                        {formatTanggal(
+                          item.tanggal
+                        )}
+                      </td>
+
+                      {/* KERUSAKAN */}
+
+                      <td
+                        style={
+                          tdStyle
+                        }
+                      >
+                        <div
+                          style={{
+                            fontWeight:
+                              600,
+                            color:
+                              "#334155",
+                          }}
+                        >
+                          {item.kerusakan}
+                        </div>
+                      </td>
+
+                      {/* DESKRIPSI */}
+
+                      <td
+                        style={{
+                          ...tdStyle,
+                          maxWidth:
+                            "260px",
+                        }}
+                      >
+                        <div
+                          style={{
+                            color:
+                              "#64748b",
+                            lineHeight:
+                              1.5,
+                          }}
+                        >
+                          {item.deskripsi}
+                        </div>
+                      </td>
+
+                      {/* SUMBER */}
+
+                      <td
+                        style={
+                          tdStyle
+                        }
+                      >
+                        <span
+                          style={{
+                            backgroundColor:
+                              "#f1f5f9",
+                            color:
+                              "#475569",
+                            padding:
+                              "5px 9px",
+                            borderRadius:
+                              "6px",
+                            fontSize:
+                              "11px",
+                            fontWeight:
+                              600,
+                            whiteSpace:
+                              "nowrap",
+                          }}
+                        >
+                          {item.sumber}
+                        </span>
+                      </td>
+
+                      {/* STATUS */}
+
+                      <td
+                        style={
+                          tdStyle
+                        }
+                      >
+                        <span
+                          style={{
+                            ...getStatusStyle(
+                              item.status
+                            ),
+                            display:
+                              "inline-flex",
+                            alignItems:
+                              "center",
+                            padding:
+                              "6px 10px",
+                            borderRadius:
+                              "20px",
+                            fontSize:
+                              "11px",
+                            fontWeight:
+                              700,
+                            whiteSpace:
+                              "nowrap",
+                          }}
+                        >
+                          <span
+                            style={{
+                              width:
+                                "6px",
+                              height:
+                                "6px",
+                              borderRadius:
+                                "50%",
+                              backgroundColor:
+                                "currentColor",
+                              marginRight:
+                                "6px",
+                            }}
+                          />
+
+                          {item.status}
+                        </span>
+                      </td>
+
+                      {/* AKSI */}
+
+                      {role ===
+                        "admin" && (
+                        <td
+                          style={{
+                            ...tdStyle,
+                            textAlign:
+                              "center",
+                          }}
+                        >
+                          <div
+                            style={{
+                              display:
+                                "flex",
+                              justifyContent:
+                                "center",
+                              alignItems:
+                                "center",
+                              gap: "6px",
+                            }}
+                          >
+                            {item.status ===
+                              "Menunggu" && (
+                              <button
+                                onClick={() =>
+                                  handleProses(
+                                    item.id
+                                  )
+                                }
+                                style={{
+                                  ...actionButtonStyle,
+                                  backgroundColor:
+                                    "#eff6ff",
+                                  color:
+                                    "#1d4ed8",
+                                  border:
+                                    "1px solid #bfdbfe",
+                                }}
+                              >
+                                Proses
+                              </button>
+                            )}
+
+                            {item.status ===
+                              "Diproses" && (
+                              <button
+                                onClick={() =>
+                                  handleSelesai(
+                                    item.id
+                                  )
+                                }
+                                style={{
+                                  ...actionButtonStyle,
+                                  backgroundColor:
+                                    "#f0fdf4",
+                                  color:
+                                    "#15803d",
+                                  border:
+                                    "1px solid #bbf7d0",
+                                }}
+                              >
+                                Selesai
+                              </button>
+                            )}
+
+                            <button
+                              onClick={() =>
+                                handleHapus(
+                                  item.id
+                                )
+                              }
+                              style={{
+                                ...actionButtonStyle,
+                                backgroundColor:
+                                  "#fef2f2",
+                                color:
+                                  "#dc2626",
+                                border:
+                                  "1px solid #fecaca",
+                              }}
+                            >
+                              Hapus
+                            </button>
+                          </div>
+                        </td>
+                      )}
+                    </tr>
+                  )
+                )
+              ) : (
+                <tr>
+                  <td
+                    colSpan={
+                      role ===
+                      "admin"
+                        ? 9
+                        : 8
+                    }
+                    style={{
+                      padding:
+                        "55px 20px",
+                      textAlign:
+                        "center",
+                    }}
+                  >
+                    <div
+                      style={{
+                        width:
+                          "55px",
+                        height:
+                          "55px",
+                        margin:
+                          "0 auto 12px",
+                        borderRadius:
+                          "50%",
+                        backgroundColor:
+                          "#f1f5f9",
+                        display:
+                          "flex",
+                        alignItems:
+                          "center",
+                        justifyContent:
+                          "center",
+                        fontSize:
+                          "24px",
+                      }}
+                    >
+                      🔧
+                    </div>
+
+                    <div
+                      style={{
+                        fontWeight:
+                          650,
+                        color:
+                          "#334155",
+                        fontSize:
+                          "15px",
+                      }}
+                    >
+                      Belum ada data
+                      kerusakan
+                    </div>
+
+                    <p
+                      style={{
+                        margin:
+                          "5px 0 0",
+                        color:
+                          "#94a3b8",
+                        fontSize:
+                          "13px",
+                      }}
+                    >
+                      Belum ada laporan
+                      kerusakan yang
+                      tersedia.
+                    </p>
+                  </td>
                 </tr>
-
-              ))
-
-            ) : (
-
-              <tr>
-
-                <td
-                  colSpan={
-                    role === "admin"
-                      ? 9
-                      : 8
-                  }
-                >
-                  Belum ada data kerusakan.
-                </td>
-
-              </tr>
-
-            )}
-
-          </tbody>
-
-        </table>
-
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
 
+      {/* =========================
+          KETERANGAN
+      ========================= */}
+
+      <div
+        style={{
+          backgroundColor: "#ffffff",
+          border: "1px solid #e2e8f0",
+          borderRadius: "12px",
+          padding: "20px 22px",
+          marginTop: "22px",
+          boxShadow:
+            "0 2px 8px rgba(15, 23, 42, 0.04)",
+        }}
+      >
+        <h2
+          style={{
+            margin: 0,
+            fontSize: "17px",
+            fontWeight: 650,
+            color: "#172b4d",
+          }}
+        >
+          Alur Penanganan
+        </h2>
+
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns:
+              "repeat(auto-fit, minmax(200px, 1fr))",
+            gap: "12px",
+            marginTop: "14px",
+          }}
+        >
+          <InfoStep
+            number="1"
+            title="Menunggu"
+            text="Laporan baru menunggu pemeriksaan Admin Rumah Tangga."
+          />
+
+          <InfoStep
+            number="2"
+            title="Diproses"
+            text="Kerusakan sedang dalam proses penanganan."
+          />
+
+          <InfoStep
+            number="3"
+            title="Selesai"
+            text="Kerusakan telah selesai ditangani."
+          />
+        </div>
+      </div>
     </div>
   );
 }
+
+// =========================
+// KOMPONEN RINGKASAN
+// =========================
+
+function SummaryCard({
+  title,
+  value,
+  icon,
+}) {
+  return (
+    <div
+      style={{
+        backgroundColor: "#ffffff",
+        border: "1px solid #e2e8f0",
+        borderRadius: "12px",
+        padding: "17px",
+        display: "flex",
+        alignItems: "center",
+        gap: "13px",
+        boxShadow:
+          "0 2px 8px rgba(15, 23, 42, 0.04)",
+      }}
+    >
+      <div
+        style={{
+          width: "42px",
+          height: "42px",
+          borderRadius: "9px",
+          backgroundColor: "#eff6ff",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          fontSize: "19px",
+        }}
+      >
+        {icon}
+      </div>
+
+      <div>
+        <div
+          style={{
+            color: "#94a3b8",
+            fontSize: "12px",
+            fontWeight: 600,
+          }}
+        >
+          {title}
+        </div>
+
+        <div
+          style={{
+            marginTop: "2px",
+            color: "#172b4d",
+            fontSize: "23px",
+            fontWeight: 700,
+          }}
+        >
+          {value}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// =========================
+// KOMPONEN ALUR
+// =========================
+
+function InfoStep({
+  number,
+  title,
+  text,
+}) {
+  return (
+    <div
+      style={{
+        display: "flex",
+        gap: "11px",
+        padding: "12px",
+        backgroundColor: "#f8fafc",
+        borderRadius: "9px",
+      }}
+    >
+      <div
+        style={{
+          flexShrink: 0,
+          width: "28px",
+          height: "28px",
+          borderRadius: "50%",
+          backgroundColor: "#dbeafe",
+          color: "#1d4ed8",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          fontSize: "12px",
+          fontWeight: 700,
+        }}
+      >
+        {number}
+      </div>
+
+      <div>
+        <div
+          style={{
+            color: "#334155",
+            fontSize: "13px",
+            fontWeight: 650,
+          }}
+        >
+          {title}
+        </div>
+
+        <div
+          style={{
+            marginTop: "3px",
+            color: "#64748b",
+            fontSize: "12px",
+            lineHeight: 1.5,
+          }}
+        >
+          {text}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// =========================
+// HELPER FORMAT TANGGAL
+// =========================
+
+function formatTanggal(tanggal) {
+  const date = new Date(
+    `${tanggal}T00:00:00`
+  );
+
+  return date.toLocaleDateString(
+    "id-ID",
+    {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+    }
+  );
+}
+
+// =========================
+// STYLE
+// =========================
+
+const labelStyle = {
+  display: "block",
+  marginBottom: "7px",
+  color: "#334155",
+  fontSize: "13px",
+  fontWeight: 600,
+};
+
+const inputStyle = {
+  width: "100%",
+  boxSizing: "border-box",
+  padding: "10px 12px",
+  border: "1px solid #cbd5e1",
+  borderRadius: "8px",
+  outline: "none",
+  backgroundColor: "#ffffff",
+  color: "#334155",
+  fontSize: "13px",
+  fontFamily: "inherit",
+};
+
+const thStyle = {
+  padding: "13px 15px",
+  textAlign: "left",
+  color: "#64748b",
+  fontSize: "11px",
+  fontWeight: 700,
+  textTransform: "uppercase",
+  letterSpacing: "0.03em",
+  whiteSpace: "nowrap",
+};
+
+const tdStyle = {
+  padding: "15px",
+  color: "#64748b",
+  fontSize: "12px",
+  verticalAlign: "top",
+};
+
+const actionButtonStyle = {
+  padding: "6px 9px",
+  borderRadius: "6px",
+  fontSize: "11px",
+  fontWeight: 600,
+  cursor: "pointer",
+  whiteSpace: "nowrap",
+};
 
 export default KerusakanRuangan;
