@@ -658,3 +658,47 @@ body {
   border-radius: 10px;
   margin-bottom: 16px;
 }
+/* ===== POPUP WARNING 24 JAM ===== */
+.warning-overlay {
+  position: fixed; inset: 0;
+  background: rgba(127, 29, 29, 0.78);
+  backdrop-filter: blur(5px);
+  display: flex; align-items: center; justify-content: center;
+  z-index: 999;
+  animation: fadeIn 0.4s ease;
+}
+
+.warning-card {
+  width: 440px; max-width: 90%;
+  background: linear-gradient(160deg, #7f1d1d, #b91c1c 60%, #dc2626);
+  color: #fff;
+  border-radius: 18px;
+  padding: 36px 28px;
+  text-align: center;
+  animation: shakeIn 0.6s cubic-bezier(0.36, 0.07, 0.19, 0.97), pulseGlow 1.6s infinite 0.6s;
+}
+
+.warning-icon { font-size: 64px; animation: blink 1s infinite; }
+.warning-title { font-size: 32px; font-weight: 900; letter-spacing: 3px; margin: 10px 0 6px; text-shadow: 0 2px 8px rgba(0,0,0,0.4); }
+.warning-hours { margin: 16px 0; font-size: 38px; font-weight: 900; background: rgba(255,255,255,0.12); border: 2px dashed rgba(255,255,255,0.5); border-radius: 12px; padding: 10px; }
+.warning-text { font-size: 14.5px; line-height: 1.7; font-weight: 600; }
+.warning-btn { margin-top: 14px; background: #fff; color: #b91c1c; border: none; border-radius: 10px; padding: 12px 28px; font-size: 14px; font-weight: 800; cursor: pointer; transition: transform 0.2s; }
+.warning-btn:hover { transform: scale(1.07); }
+
+@keyframes shakeIn { 0% { transform: scale(0.5); opacity: 0; } 40% { transform: scale(1.06) rotate(-2deg); } 55% { transform: rotate(2deg); } 70% { transform: rotate(-1deg); } 100% { transform: scale(1) rotate(0); opacity: 1; } }
+@keyframes pulseGlow { 0%,100% { box-shadow: 0 0 0 4px rgba(255,255,255,0.15), 0 25px 60px rgba(0,0,0,0.5), 0 0 30px rgba(220,38,38,0.7); } 50% { box-shadow: 0 0 0 8px rgba(255,255,255,0.08), 0 25px 60px rgba(0,0,0,0.5), 0 0 60px rgba(220,38,38,1); } }
+@keyframes blink { 0%,100% { opacity: 1; } 50% { opacity: 0.35; } }
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+/* ===== WARNING 2 (LEVEL SERIUS) ===== */
+.warning-card-2 {
+  background: linear-gradient(160deg, #1c0a0a, #450a0a 50%, #7f1d1d);
+  border: 2px solid #dc2626;
+  animation: shakeIn 0.7s cubic-bezier(0.36, 0.07, 0.19, 0.97), pulseGlow2 1s infinite 0.7s;
+}
+
+.warning-card-2 .warning-icon { animation: blink 0.4s infinite; }
+
+@keyframes pulseGlow2 {
+  0%, 100% { box-shadow: 0 0 0 4px rgba(220,38,38,0.4), 0 25px 60px rgba(0,0,0,0.6), 0 0 40px rgba(220,38,38,0.9); }
+  50% { box-shadow: 0 0 0 10px rgba(220,38,38,0.15), 0 25px 60px rgba(0,0,0,0.6), 0 0 80px rgba(220,38,38,1); }
+}
