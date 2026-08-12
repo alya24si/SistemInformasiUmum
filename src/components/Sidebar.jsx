@@ -1,5 +1,6 @@
 import { NavLink } from 'react-router-dom'
 
+
 function Sidebar() {
   return (
     <aside className="sidebar">
@@ -11,11 +12,13 @@ function Sidebar() {
         </div>
       </div>
 
+
       <div className="nav-label">Keuangan</div>
       <nav>
         <NavLink to="/program-kerja" className="menu-item">📋 Program Kerja</NavLink>
         <NavLink to="/anggaran" className="menu-item">💰 Penyerapan Anggaran</NavLink>
       </nav>
+
 
       <div className="nav-label">Rumah Tangga</div>
       <nav>
@@ -26,6 +29,15 @@ function Sidebar() {
         <NavLink to="/perbaikan-ruangan" className="menu-item">🔧 Perbaikan</NavLink>
       </nav>
 
+
+      <div className="nav-label">Kepegawaian</div>
+      <nav>
+        <NavLink to="/data-absensi" className="menu-item">📋 Data Absensi</NavLink>
+        <NavLink to="/pelanggaran" className="menu-item">⚠️ Pelanggaran</NavLink>
+        <NavLink to="/rekap-absensi" className="menu-item">📊 Rekap Absensi</NavLink>
+      </nav>
+
+
       <div className="user-card">
         <div className="user-avatar">AD</div>
         <div>
@@ -34,9 +46,11 @@ function Sidebar() {
         </div>
       </div>
 
+
       <div className="sidebar-footer">© 2026 Kanwil DJBC Riau</div>
     </aside>
   )
 }
+
 
 export default Sidebar

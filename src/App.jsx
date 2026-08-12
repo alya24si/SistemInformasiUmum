@@ -10,6 +10,10 @@ import BookingRuangan from './RumahTangga/BookingRuangan'
 import KalenderRuangan from './RumahTangga/KalenderRuangan'
 import KerusakanRuangan from './RumahTangga/KerusakanRuangan'
 import PerbaikanRuangan from './RumahTangga/PerbaikanRuangan'
+import DataAbsensi from './Kepegawaian/DataAbsensi'
+import Pelanggaran from './Kepegawaian/Pelanggaran'
+import RekapAbsensi from './Kepegawaian/RekapAbsensi'
+
 
 function App() {
   const [user, setUser] = useState(() => {
@@ -17,17 +21,21 @@ function App() {
     return saved ? JSON.parse(saved) : null
   })
 
+
   const handleLogin = (u) => {
     localStorage.setItem('user', JSON.stringify(u))
     setUser(u)
   }
+
 
   const handleLogout = () => {
     localStorage.removeItem('user')
     setUser(null)
   }
 
+
   if (!user) return <Login onLogin={handleLogin} />
+
 
   return (
     <div className="layout">
@@ -44,11 +52,16 @@ function App() {
             <Route path="/kalender-ruangan" element={<KalenderRuangan />} />
             <Route path="/kerusakan-ruangan" element={<KerusakanRuangan />} />
             <Route path="/perbaikan-ruangan" element={<PerbaikanRuangan />} />
+
+            <Route path="/data-absensi" element={<DataAbsensi />} />
+            <Route path="/pelanggaran" element={<Pelanggaran />} />
+            <Route path="/rekap-absensi" element={<RekapAbsensi />} />
           </Routes>
         </main>
       </div>
     </div>
   )
 }
+
 
 export default App
