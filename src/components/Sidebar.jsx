@@ -19,11 +19,11 @@ function Sidebar() {
 
       <div className="nav-label">Rumah Tangga</div>
       <nav>
-        <NavLink to="/data-ruangan" className="menu-item">🏢 Data Ruangan</NavLink>
+        <NavLink to="/data-ruangan" className="menu-item">🏢 Fasilitas</NavLink>
         <NavLink to="/booking-ruangan" className="menu-item">📅 Booking Ruangan</NavLink>
         <NavLink to="/kalender-ruangan" className="menu-item">🗓️ Kalender Ruangan</NavLink>
-        <NavLink to="/kerusakan-ruangan" className="menu-item">🛠️ Kerusakan Ruangan</NavLink>
-        <NavLink to="/perbaikan-ruangan" className="menu-item">🔧 Perbaikan Ruangan</NavLink>
+        <NavLink to="/kerusakan-ruangan" className="menu-item">🛠️ Kerusakan</NavLink>
+        <NavLink to="/perbaikan-ruangan" className="menu-item">🔧 Perbaikan</NavLink>
       </nav>
 
       <div className="user-card">

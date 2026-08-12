@@ -69,7 +69,6 @@ function DataRuangan() {
 
     return (
       item.nama.toLowerCase().includes(keyword) ||
-      item.kode.toLowerCase().includes(keyword) ||
       item.lokasi.toLowerCase().includes(keyword)
     );
   });
