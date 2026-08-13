@@ -11,7 +11,7 @@ const BATAS_JAM = 24
 const BATAS_WARNING2 = 40
 
 function Pelanggaran({ user }) {
-  const isAdmin = user.role === 'admin'
+  const isAdmin = user.role === 'admin_kepegawaian' || user.role === 'superadmin'
   const [dataPelanggaran, setDataPelanggaran] = useState([
     // ===== BUDI SANTOSO - 40 JAM (🚨 WARNING 2 - Ancaman PHK) =====
     { 
