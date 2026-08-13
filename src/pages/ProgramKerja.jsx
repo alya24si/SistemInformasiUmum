@@ -18,7 +18,7 @@ const statusProgram = (p) => {
 }
 
 function ProgramKerja({ user }) {
-  const isAdmin = user.role === 'admin'
+  const isAdmin = user.role === 'admin_keuangan' || user.role === 'superadmin'
   const [programs, setPrograms] = useState(dataAwal)
   const [formProgram, setFormProgram] = useState({ tahun: tahunIni, bidang: daftarBidang[0], program: '', target: '' })
   const [formRealisasi, setFormRealisasi] = useState({ id: '', triwulan: 'TW1', status: '100' })

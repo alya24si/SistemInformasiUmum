@@ -32,7 +32,6 @@ function App() {
 
   if (!user) return <Login onLogin={handleLogin} />
 
-  // ===== 🔐 LOGIKA ROLE (RBAC) =====
   const isSuperAdmin = user.role === 'superadmin'
   const isPegawaiBiasa = user.role === 'pegawai'
   const isGuest = user.role === 'guest'
@@ -57,18 +56,16 @@ function App() {
           <Routes>
             <Route path="/" element={<Navigate to={halamanAwal()} />} />
 
-            {/* 💰 KEUANGAN */}
             <Route path="/program-kerja" element={isAdminKeuangan || isGuest ? <ProgramKerja user={user} /> : <Navigate to="/" />} />
             <Route path="/anggaran" element={isAdminKeuangan || isGuest ? <Anggaran user={user} /> : <Navigate to="/" />} />
 
-            {/* 🏠 RUMAH TANGGA */}
-            <Route path="/data-ruangan" element={<DataRuangan />} />
-            <Route path="/booking-ruangan" element={<BookingRuangan />} />
-            <Route path="/kalender-ruangan" element={<KalenderRuangan />} />
-            <Route path="/kerusakan-ruangan" element={<KerusakanRuangan />} />
-            <Route path="/perbaikan-ruangan" element={<PerbaikanRuangan />} />
+            {/* 🏠 RUMAH TANGGA — semua bisa masuk, hak kelola diatur di dalam halaman */}
+            <Route path="/data-ruangan" element={<DataRuangan user={user} />} />
+            <Route path="/booking-ruangan" element={<BookingRuangan user={user} />} />
+            <Route path="/kalender-ruangan" element={<KalenderRuangan user={user} />} />
+            <Route path="/kerusakan-ruangan" element={<KerusakanRuangan user={user} />} />
+            <Route path="/perbaikan-ruangan" element={<PerbaikanRuangan user={user} />} />
 
-            {/* 👔 KEPEGAWAIAN (RBAC Alya + Data Pegawai dari Delita) */}
             <Route path="/data-pegawai" element={isAdminKepegawaian ? <DataPegawai user={user} /> : <Navigate to="/" />} />
             <Route path="/data-absensi" element={isAdminKepegawaian ? <DataAbsensi /> : <Navigate to="/" />} />
             <Route path="/pelanggaran" element={isAdminKepegawaian || isPegawaiBiasa ? <Pelanggaran user={user} /> : <Navigate to="/" />} />

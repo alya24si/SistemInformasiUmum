@@ -22,7 +22,7 @@ const statusAnggaran = (persen) => {
 }
 
 function Anggaran({ user }) {
-  const isAdmin = user.role === 'admin'
+  const isAdmin = user.role === 'admin_keuangan' || user.role === 'superadmin'
   const [data, setData] = useState(dataAwal)
   const [form, setForm] = useState({ tahun: tahunIni, bidang: daftarBidang[0], tipe: 'utama', kodeAkun: '', deskripsi: '', unit: '', satuan: '', hargaSatuan: '' })
   const [formRealisasi, setFormRealisasi] = useState({ id: '', bulan: daftarBulan[0], jumlah: '' })
