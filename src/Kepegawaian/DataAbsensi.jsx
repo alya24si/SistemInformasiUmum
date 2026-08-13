@@ -1,651 +1,737 @@
-import { useState } from "react";
+import { useState } from 'react'
+
+const daftarBulan = [
+  'Januari',
+  'Februari',
+  'Maret',
+  'April',
+  'Mei',
+  'Juni',
+  'Juli',
+  'Agustus',
+  'September',
+  'Oktober',
+  'November',
+  'Desember',
+]
+
+const tahunIni = new Date().getFullYear()
+
+const daftarTahun = Array.from(
+  { length: 6 },
+  (_, i) => tahunIni - 1 + i
+)
+
+const dataAwal = [
+  {
+    id: 1,
+    nama: 'Delita Br Tinambunan',
+    tanggal: '2026-08-01',
+    jamMasuk: '07:45',
+    jamPulang: '16:00',
+    status: 'Hadir',
+  },
+  {
+    id: 2,
+    nama: 'Delita Br Tinambunan',
+    tanggal: '2026-08-02',
+    jamMasuk: '07:50',
+    jamPulang: '16:05',
+    status: 'Hadir',
+  },
+  {
+    id: 3,
+    nama: 'Delita Br Tinambunan',
+    tanggal: '2026-08-03',
+    jamMasuk: '-',
+    jamPulang: '-',
+    status: 'Alpa',
+  },
+  {
+    id: 4,
+    nama: 'Delita Br Tinambunan',
+    tanggal: '2026-08-04',
+    jamMasuk: '-',
+    jamPulang: '-',
+    status: 'Alpa',
+  },
+  {
+    id: 5,
+    nama: 'Delita Br Tinambunan',
+    tanggal: '2026-08-05',
+    jamMasuk: '-',
+    jamPulang: '-',
+    status: 'Alpa',
+  },
+  {
+    id: 6,
+    nama: 'Alya Deka Danisha',
+    tanggal: '2026-08-01',
+    jamMasuk: '-',
+    jamPulang: '-',
+    status: 'Izin',
+  },
+  {
+    id: 7,
+    nama: 'Alya Deka Danisha',
+    tanggal: '2026-08-02',
+    jamMasuk: '-',
+    jamPulang: '-',
+    status: 'Alpa',
+  },
+  {
+    id: 8,
+    nama: 'Alya Deka Danisha',
+    tanggal: '2026-08-03',
+    jamMasuk: '-',
+    jamPulang: '-',
+    status: 'Sakit',
+  },
+  {
+    id: 9,
+    nama: 'Budi Santoso',
+    tanggal: '2026-08-01',
+    jamMasuk: '-',
+    jamPulang: '-',
+    status: 'Alpa',
+  },
+  {
+    id: 10,
+    nama: 'Budi Santoso',
+    tanggal: '2026-08-02',
+    jamMasuk: '-',
+    jamPulang: '-',
+    status: 'Izin',
+  },
+  {
+    id: 11,
+    nama: 'Budi Santoso',
+    tanggal: '2026-08-03',
+    jamMasuk: '08:10',
+    jamPulang: '16:15',
+    status: 'Hadir',
+  },
+  {
+    id: 12,
+    nama: 'Budi Santoso',
+    tanggal: '2026-08-04',
+    jamMasuk: '-',
+    jamPulang: '-',
+    status: 'Alpa',
+  },
+]
+
+const statusAbsensi = (status) => {
+  if (status === 'Hadir') {
+    return {
+      label: 'Hadir',
+      cls: 'green',
+    }
+  }
+
+  if (status === 'Izin') {
+    return {
+      label: 'Izin',
+      cls: 'yellow',
+    }
+  }
+
+  if (status === 'Sakit') {
+    return {
+      label: 'Sakit',
+      cls: 'blue',
+    }
+  }
+
+  return {
+    label: 'Alpa',
+    cls: 'red',
+  }
+}
+
+const formatTanggal = (tanggal) => {
+  return new Date(`${tanggal}T00:00:00`).toLocaleDateString(
+    'id-ID',
+    {
+      day: '2-digit',
+      month: 'short',
+      year: 'numeric',
+    }
+  )
+}
 
 function DataAbsensi() {
-  const [showForm, setShowForm] = useState(false);
+  const [data, setData] = useState(dataAwal)
 
-  const [filterBulan, setFilterBulan] = useState("");
-  const [filterTahun, setFilterTahun] = useState("2026");
-  const [search, setSearch] = useState("");
+  const [form, setForm] = useState({
+    nama: '',
+    tanggal: '',
+    jamMasuk: '',
+    jamPulang: '',
+    status: 'Hadir',
+  })
 
-  const [absensi, setAbsensi] = useState([
+  const [filterTahun, setFilterTahun] = useState(
+    String(tahunIni)
+  )
+
+  const [filterBulan, setFilterBulan] = useState('semua')
+
+  const [search, setSearch] = useState('')
+
+  const pegawaiProfiles = [
     {
-      id: 1,
-      nama: "Delita Br Tinambunan",
-      tanggal: "2026-08-01",
-      jamMasuk: "07:45",
-      jamPulang: "16:00",
-      status: "Hadir",
+      nama: 'Delita Br Tinambunan',
+      noHp: '081234567890',
     },
     {
-      id: 2,
-      nama: "Alya Deka Danisha",
-      tanggal: "2026-08-01",
-      jamMasuk: "-",
-      jamPulang: "-",
-      status: "Izin",
+      nama: 'Alya Deka Danisha',
+      noHp: '081298765432',
     },
     {
-      id: 3,
-      nama: "Budi Santoso",
-      tanggal: "2026-08-02",
-      jamMasuk: "-",
-      jamPulang: "-",
-      status: "Alpa",
+      nama: 'Budi Santoso',
+      noHp: '082112345678',
     },
-    {
-      id: 4,
-      nama: "Delita Br Tinambunan",
-      tanggal: "2026-08-02",
-      jamMasuk: "07:50",
-      jamPulang: "16:05",
-      status: "Hadir",
-    },
-  ]);
+  ]
 
-  const [formData, setFormData] = useState({
-    nama: "",
-    tanggal: "",
-    jamMasuk: "",
-    jamPulang: "",
-    status: "Hadir",
-  });
+  const handleUploadAbsensi = () => {
+    alert(
+    )
+  }
 
-  const handleChange = (e) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value,
-    });
-  };
-
-  const handleSubmit = (e) => {
-    e.preventDefault();
-
-    const dataBaru = {
-      id: Date.now(),
-      ...formData,
-      jamMasuk: formData.jamMasuk || "-",
-      jamPulang: formData.jamPulang || "-",
-    };
-
-    setAbsensi([...absensi, dataBaru]);
-
-    setFormData({
-      nama: "",
-      tanggal: "",
-      jamMasuk: "",
-      jamPulang: "",
-      status: "Hadir",
-    });
-
-    setShowForm(false);
-  };
-
-  const getStatusStyle = (status) => {
-    if (status === "Hadir") {
-      return {
-        backgroundColor: "#dcfce7",
-        color: "#166534",
-      };
+  const chatWhatsApp = (noHp, nama) => {
+    if (!noHp) {
+      alert('Nomor WhatsApp tidak tersedia untuk pegawai ini.')
+      return
     }
 
-    if (status === "Izin") {
-      return {
-        backgroundColor: "#fef3c7",
-        color: "#92400e",
-      };
+    const onlyNumbers = noHp
+      .toString()
+      .replace(/[^\d+]/g, '')
+      .replace(/^0/, '62')
+
+    const message = `Halo ${nama},\nKami ingin mengingatkan bahwa Anda sudah tidak hadir selama lebih dari 3 hari.`
+    const url = `https://wa.me/${onlyNumbers}?text=${encodeURIComponent(message)}`
+
+    window.open(url, '_blank')
+  }
+
+  const absenceSummary = data.reduce((summary, record) => {
+    if (record.status !== 'Hadir') {
+      summary[record.nama] = (summary[record.nama] || 0) + 1
     }
+    return summary
+  }, {})
 
-    if (status === "Sakit") {
+  const absentEmployees = Object.entries(absenceSummary)
+    .map(([nama, count]) => {
+      const profile = pegawaiProfiles.find((pegawai) => pegawai.nama === nama)
       return {
-        backgroundColor: "#dbeafe",
-        color: "#1d4ed8",
-      };
-    }
+        nama,
+        count,
+        noHp: profile?.noHp || '-',
+      }
+    })
+    .filter((item) => item.count >= 3)
 
-    return {
-      backgroundColor: "#fee2e2",
-      color: "#991b1b",
-    };
-  };
+  const dataFiltered = data.filter((d) => {
+    const tanggal = new Date(`${d.tanggal}T00:00:00`)
 
-  const dataDitampilkan = absensi.filter((item) => {
-    const date = new Date(`${item.tanggal}T00:00:00`);
+    const tahun = String(tanggal.getFullYear())
 
-    const bulan = String(date.getMonth() + 1).padStart(2, "0");
-    const tahun = String(date.getFullYear());
-
-    const cocokBulan =
-      filterBulan === "" || bulan === filterBulan;
+    const bulan = String(
+      tanggal.getMonth() + 1
+    ).padStart(2, '0')
 
     const cocokTahun =
-      filterTahun === "" || tahun === filterTahun;
+      filterTahun === 'semua' ||
+      tahun === filterTahun
 
-    const cocokNama = item.nama
-      .toLowerCase()
-      .includes(search.toLowerCase());
+    const cocokBulan =
+      filterBulan === 'semua' ||
+      bulan === filterBulan
 
-    return cocokBulan && cocokTahun && cocokNama;
-  });
+    const cocokNama =
+      d.nama
+        .toLowerCase()
+        .includes(search.toLowerCase())
 
-  const formatTanggal = (tanggal) => {
-    return new Date(
-      `${tanggal}T00:00:00`
-    ).toLocaleDateString("id-ID", {
-      day: "2-digit",
-      month: "short",
-      year: "numeric",
-    });
-  };
+    return (
+      cocokTahun &&
+      cocokBulan &&
+      cocokNama
+    )
+  })
+
+  const totalHadir = dataFiltered.filter(
+    (d) => d.status === 'Hadir'
+  ).length
+
+  const totalIzin = dataFiltered.filter(
+    (d) => d.status === 'Izin'
+  ).length
+
+  const totalSakit = dataFiltered.filter(
+    (d) => d.status === 'Sakit'
+  ).length
+
+  const totalAlpa = dataFiltered.filter(
+    (d) => d.status === 'Alpa'
+  ).length
+
+  const tambahData = (e) => {
+    e.preventDefault()
+
+    const baru = {
+      id: Date.now(),
+      nama: form.nama,
+      tanggal: form.tanggal,
+      jamMasuk: form.jamMasuk || '-',
+      jamPulang: form.jamPulang || '-',
+      status: form.status,
+    }
+
+    setData([...data, baru])
+
+    setForm({
+      nama: '',
+      tanggal: '',
+      jamMasuk: '',
+      jamPulang: '',
+      status: 'Hadir',
+    })
+  }
+
+  const hapusData = (id) => {
+    if (
+      window.confirm(
+        'Yakin ingin menghapus data absensi ini?'
+      )
+    ) {
+      setData(
+        data.filter((d) => d.id !== id)
+      )
+    }
+  }
 
   return (
-    <div style={pageStyle}>
-      {/* HEADER */}
-      <div style={headerStyle}>
-        <div>
-          <h1 style={titleStyle}>Data Absensi</h1>
+    <div className="page">
 
-          <p style={subtitleStyle}>
-            Mengelola dan memantau data kehadiran pegawai.
+      {/* HEADER */}
+      <div className="page-title">
+        <h1>📋 Data Absensi</h1>
+
+        <p>
+          Mengelola dan memantau data kehadiran pegawai.
+          Data absensi dapat digunakan untuk membuat rekap
+          kehadiran pegawai.
+        </p>
+      </div>
+
+      {/* STATISTIK */}
+      <div className="stats-grid">
+
+        <div className="stat-card">
+          <div className="stat-icon">👥</div>
+
+          <div className="stat-info">
+            <h4>Total Data</h4>
+
+            <div className="stat-value">
+              {dataFiltered.length}
+            </div>
+
+            <div className="stat-desc">
+              Data absensi
+            </div>
+          </div>
+        </div>
+
+        <div className="stat-card green">
+          <div className="stat-icon">✅</div>
+
+          <div className="stat-info">
+            <h4>Hadir</h4>
+
+            <div className="stat-value">
+              {totalHadir}
+            </div>
+
+            <div className="stat-desc">
+              Pegawai hadir
+            </div>
+          </div>
+        </div>
+
+        <div className="stat-card gold">
+          <div className="stat-icon">📝</div>
+
+          <div className="stat-info">
+            <h4>Izin / Sakit</h4>
+
+            <div className="stat-value">
+              {totalIzin + totalSakit}
+            </div>
+
+            <div className="stat-desc">
+              Tidak hadir dengan keterangan
+            </div>
+          </div>
+        </div>
+
+        <div className="stat-card">
+          <div className="stat-icon">⚠️</div>
+
+          <div className="stat-info">
+            <h4>Alpa</h4>
+
+            <div className="stat-value">
+              {totalAlpa}
+            </div>
+
+            <div className="stat-desc">
+              Tidak hadir tanpa keterangan
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      {/* IMPORT EXCEL */}
+      <div className="card">
+
+        <h3>📥 Import Data Absensi</h3>
+
+        <p>
+          Upload file Excel absensi ke backend. Backend akan
+          memproses dan menyimpan data ke MySQL.
+        </p>
+
+        <div className="form-row">
+
+          <input
+            type="file"
+            accept=".xlsx,.xls"
+            onChange={handleUploadAbsensi}
+          />
+
+        </div>
+
+      </div>
+
+      {absentEmployees.length > 0 ? (
+        <div className="card">
+          <h3>📱 Pegawai Perlu Dihubungi</h3>
+
+          <p>
+            Daftar pegawai yang tercatat tidak hadir/absen 3 hari atau lebih.
+            Nomor WA diambil dari data pegawai.
+          </p>
+
+          <div className="table-wrap">
+            <table className="table">
+              <thead>
+                <tr>
+                  <th>No</th>
+                  <th>Nama Pegawai</th>
+                  <th>Jumlah Tidak Hadir</th>
+                  <th>No. WA</th>
+                  <th>Aksi</th>
+                </tr>
+              </thead>
+              <tbody>
+                {absentEmployees.map((item, index) => (
+                  <tr key={item.nama}>
+                    <td>{index + 1}</td>
+                    <td>{item.nama}</td>
+                    <td>{item.count} hari</td>
+                    <td>{item.noHp}</td>
+                    <td>
+                      <button
+                        type="button"
+                        className="btn"
+                        onClick={() => chatWhatsApp(item.noHp, item.nama)}
+                      >
+                        📱 Chat WA
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      ) : (
+        <div className="card">
+          <p className="text-sm text-slate-500">
+            Belum ada pegawai yang tercatat absen 3 hari atau lebih.
+            Jika ingin menguji fitur ini, tambahkan data absensi absen/izin/sakit pada pegawai yang sama sebanyak 3 hari.
           </p>
         </div>
+      )}
 
-        <div style={{ display: "flex", gap: "10px" }}>
-          <button
-            style={secondaryButton}
-            onClick={() =>
-              alert("Fitur import Excel akan dihubungkan nanti.")
+      {/* TAMBAH DATA */}
+      <div className="card">
+
+        <h3>➕ Tambah Data Absensi</h3>
+
+        <form
+          onSubmit={tambahData}
+          className="form-row"
+        >
+
+          <input
+            type="text"
+            placeholder="Nama Pegawai"
+            required
+            value={form.nama}
+            onChange={(e) =>
+              setForm({
+                ...form,
+                nama: e.target.value,
+              })
+            }
+          />
+
+          <input
+            type="date"
+            required
+            value={form.tanggal}
+            onChange={(e) =>
+              setForm({
+                ...form,
+                tanggal: e.target.value,
+              })
+            }
+          />
+
+          <input
+            type="time"
+            value={form.jamMasuk}
+            onChange={(e) =>
+              setForm({
+                ...form,
+                jamMasuk: e.target.value,
+              })
+            }
+          />
+
+          <input
+            type="time"
+            value={form.jamPulang}
+            onChange={(e) =>
+              setForm({
+                ...form,
+                jamPulang: e.target.value,
+              })
+            }
+          />
+
+          <select
+            value={form.status}
+            onChange={(e) =>
+              setForm({
+                ...form,
+                status: e.target.value,
+              })
             }
           >
-            ↑ Import Excel
-          </button>
+            <option value="Hadir">
+              Hadir
+            </option>
+
+            <option value="Izin">
+              Izin
+            </option>
+
+            <option value="Sakit">
+              Sakit
+            </option>
+
+            <option value="Alpa">
+              Alpa
+            </option>
+          </select>
 
           <button
-            style={primaryButton}
-            onClick={() => setShowForm(true)}
+            type="submit"
+            className="btn"
           >
-            + Tambah Absensi
+            Simpan
           </button>
-        </div>
+
+        </form>
+
       </div>
 
-      {/* FILTER */}
-      <div style={cardStyle}>
-        <div style={filterGrid}>
-          <div>
-            <label style={labelStyle}>Cari Pegawai</label>
+      {/* DAFTAR ABSENSI */}
+      <div className="card">
 
-            <input
-              type="text"
-              placeholder="Cari nama pegawai..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              style={inputStyle}
-            />
-          </div>
+        <h3>🔎 Daftar Absensi</h3>
 
-          <div>
-            <label style={labelStyle}>Bulan</label>
+        <div className="filter-row">
 
-            <select
-              value={filterBulan}
-              onChange={(e) =>
-                setFilterBulan(e.target.value)
-              }
-              style={inputStyle}
-            >
-              <option value="">Semua Bulan</option>
-              <option value="01">Januari</option>
-              <option value="02">Februari</option>
-              <option value="03">Maret</option>
-              <option value="04">April</option>
-              <option value="05">Mei</option>
-              <option value="06">Juni</option>
-              <option value="07">Juli</option>
-              <option value="08">Agustus</option>
-              <option value="09">September</option>
-              <option value="10">Oktober</option>
-              <option value="11">November</option>
-              <option value="12">Desember</option>
-            </select>
-          </div>
+          <input
+            type="text"
+            placeholder="Cari nama pegawai..."
+            value={search}
+            onChange={(e) =>
+              setSearch(e.target.value)
+            }
+          />
 
-          <div>
-            <label style={labelStyle}>Tahun</label>
+          <select
+            value={filterTahun}
+            onChange={(e) =>
+              setFilterTahun(e.target.value)
+            }
+          >
+            <option value="semua">
+              Semua Tahun
+            </option>
 
-            <select
-              value={filterTahun}
-              onChange={(e) =>
-                setFilterTahun(e.target.value)
-              }
-              style={inputStyle}
-            >
-              <option value="">Semua Tahun</option>
-              <option value="2026">2026</option>
-              <option value="2027">2027</option>
-              <option value="2028">2028</option>
-            </select>
-          </div>
-        </div>
-      </div>
+            {daftarTahun.map((t) => (
+              <option
+                key={t}
+                value={t}
+              >
+                Tahun {t}
+              </option>
+            ))}
+          </select>
 
-      {/* TABLE */}
-      <div style={cardStyle}>
-        <div style={sectionHeaderStyle}>
-          <div>
-            <h2 style={sectionTitle}>
-              Daftar Absensi
-            </h2>
+          <select
+            value={filterBulan}
+            onChange={(e) =>
+              setFilterBulan(e.target.value)
+            }
+          >
+            <option value="semua">
+              Semua Bulan
+            </option>
 
-            <p style={sectionSubtitle}>
-              Data absensi yang telah dimasukkan oleh admin.
-            </p>
-          </div>
+            {daftarBulan.map((b, index) => (
+              <option
+                key={b}
+                value={String(index + 1).padStart(
+                  2,
+                  '0'
+                )}
+              >
+                {b}
+              </option>
+            ))}
+          </select>
 
-          <span style={countBadge}>
-            {dataDitampilkan.length} Data
-          </span>
         </div>
 
-        <div style={{ overflowX: "auto" }}>
-          <table style={tableStyle}>
+        <div className="filter-info">
+          Menampilkan {dataFiltered.length} dari{' '}
+          {data.length} data
+        </div>
+
+        <div className="table-wrap">
+
+          <table className="table">
+
             <thead>
               <tr>
-                <th style={thStyle}>No</th>
-                <th style={thStyle}>Nama Pegawai</th>
-                <th style={thStyle}>Tanggal</th>
-                <th style={thStyle}>Jam Masuk</th>
-                <th style={thStyle}>Jam Pulang</th>
-                <th style={thStyle}>Status</th>
+                <th>No</th>
+                <th>Nama Pegawai</th>
+                <th>Tanggal</th>
+                <th>Jam Masuk</th>
+                <th>Jam Pulang</th>
+                <th>Status</th>
+                <th>Aksi</th>
               </tr>
             </thead>
 
             <tbody>
-              {dataDitampilkan.length > 0 ? (
-                dataDitampilkan.map((item, index) => (
-                  <tr key={item.id}>
-                    <td style={tdStyle}>{index + 1}</td>
 
-                    <td style={tdStyle}>
-                      <strong>{item.nama}</strong>
-                    </td>
+              {dataFiltered.length > 0 ? (
 
-                    <td style={tdStyle}>
-                      {formatTanggal(item.tanggal)}
-                    </td>
+                dataFiltered.map((d, index) => {
 
-                    <td style={tdStyle}>
-                      {item.jamMasuk}
-                    </td>
+                  const st =
+                    statusAbsensi(d.status)
 
-                    <td style={tdStyle}>
-                      {item.jamPulang}
-                    </td>
+                  return (
+                    <tr key={d.id}>
 
-                    <td style={tdStyle}>
-                      <span
-                        style={{
-                          ...statusStyle,
-                          ...getStatusStyle(item.status),
-                        }}
-                      >
-                        {item.status}
-                      </span>
-                    </td>
-                  </tr>
-                ))
+                      <td>
+                        {index + 1}
+                      </td>
+
+                      <td>
+                        <div className="cell-main">
+                          {d.nama}
+                        </div>
+                      </td>
+
+                      <td>
+                        {formatTanggal(
+                          d.tanggal
+                        )}
+                      </td>
+
+                      <td>
+                        {d.jamMasuk}
+                      </td>
+
+                      <td>
+                        {d.jamPulang}
+                      </td>
+
+                      <td>
+                        <span
+                          className={`badge ${st.cls}`}
+                        >
+                          {st.label}
+                        </span>
+                      </td>
+
+                      <td>
+                        <button
+                          type="button"
+                          className="btn-danger"
+                          onClick={() =>
+                            hapusData(d.id)
+                          }
+                        >
+                          🗑
+                        </button>
+                      </td>
+
+                    </tr>
+                  )
+                })
+
               ) : (
+
                 <tr>
-                  <td colSpan="6" style={emptyStyle}>
+                  <td
+                    colSpan={7}
+                    style={{
+                      textAlign: 'center',
+                      padding: '30px',
+                    }}
+                  >
                     Tidak ada data absensi.
                   </td>
                 </tr>
+
               )}
+
             </tbody>
+
           </table>
+
         </div>
+
       </div>
 
-      {/* MODAL */}
-      {showForm && (
-        <div style={overlayStyle}>
-          <div style={modalStyle}>
-            <div style={modalHeaderStyle}>
-              <div>
-                <h2 style={sectionTitle}>
-                  Tambah Data Absensi
-                </h2>
-
-                <p style={sectionSubtitle}>
-                  Masukkan data absensi pegawai.
-                </p>
-              </div>
-
-              <button
-                style={closeButton}
-                onClick={() => setShowForm(false)}
-              >
-                ×
-              </button>
-            </div>
-
-            <form onSubmit={handleSubmit}>
-              <div style={formGroup}>
-                <label style={labelStyle}>
-                  Nama Pegawai
-                </label>
-
-                <input
-                  name="nama"
-                  value={formData.nama}
-                  onChange={handleChange}
-                  required
-                  placeholder="Nama pegawai"
-                  style={inputStyle}
-                />
-              </div>
-
-              <div style={formGroup}>
-                <label style={labelStyle}>
-                  Tanggal
-                </label>
-
-                <input
-                  type="date"
-                  name="tanggal"
-                  value={formData.tanggal}
-                  onChange={handleChange}
-                  required
-                  style={inputStyle}
-                />
-              </div>
-
-              <div style={twoColumn}>
-                <div>
-                  <label style={labelStyle}>
-                    Jam Masuk
-                  </label>
-
-                  <input
-                    type="time"
-                    name="jamMasuk"
-                    value={formData.jamMasuk}
-                    onChange={handleChange}
-                    style={inputStyle}
-                  />
-                </div>
-
-                <div>
-                  <label style={labelStyle}>
-                    Jam Pulang
-                  </label>
-
-                  <input
-                    type="time"
-                    name="jamPulang"
-                    value={formData.jamPulang}
-                    onChange={handleChange}
-                    style={inputStyle}
-                  />
-                </div>
-              </div>
-
-              <div style={formGroup}>
-                <label style={labelStyle}>
-                  Status
-                </label>
-
-                <select
-                  name="status"
-                  value={formData.status}
-                  onChange={handleChange}
-                  style={inputStyle}
-                >
-                  <option>Hadir</option>
-                  <option>Izin</option>
-                  <option>Sakit</option>
-                  <option>Alpa</option>
-                </select>
-              </div>
-
-              <div style={modalFooter}>
-                <button
-                  type="button"
-                  style={cancelButton}
-                  onClick={() => setShowForm(false)}
-                >
-                  Batal
-                </button>
-
-                <button
-                  type="submit"
-                  style={primaryButton}
-                >
-                  Simpan
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
     </div>
-  );
+  )
 }
 
-const pageStyle = {
-  padding: "32px",
-  minHeight: "100%",
-  backgroundColor: "#f5f8fc",
-  fontFamily:
-    "Inter, ui-sans-serif, system-ui, sans-serif",
-};
-
-const headerStyle = {
-  display: "flex",
-  justifyContent: "space-between",
-  alignItems: "flex-start",
-  marginBottom: "24px",
-  gap: "20px",
-};
-
-const titleStyle = {
-  margin: 0,
-  fontSize: "30px",
-  color: "#102a43",
-};
-
-const subtitleStyle = {
-  margin: "7px 0 0",
-  color: "#64748b",
-  fontSize: "15px",
-};
-
-const cardStyle = {
-  backgroundColor: "#fff",
-  border: "1px solid #e2e8f0",
-  borderRadius: "12px",
-  marginBottom: "22px",
-  boxShadow: "0 2px 8px rgba(15,23,42,.04)",
-  overflow: "hidden",
-};
-
-const filterGrid = {
-  display: "grid",
-  gridTemplateColumns:
-    "repeat(auto-fit, minmax(200px, 1fr))",
-  gap: "15px",
-  padding: "20px",
-};
-
-const labelStyle = {
-  display: "block",
-  marginBottom: "7px",
-  color: "#334155",
-  fontSize: "13px",
-  fontWeight: 600,
-};
-
-const inputStyle = {
-  width: "100%",
-  boxSizing: "border-box",
-  padding: "10px 12px",
-  border: "1px solid #cbd5e1",
-  borderRadius: "8px",
-  outline: "none",
-  backgroundColor: "#fff",
-  color: "#334155",
-  fontSize: "13px",
-};
-
-const primaryButton = {
-  border: "none",
-  backgroundColor: "#0b72e7",
-  color: "#fff",
-  padding: "11px 17px",
-  borderRadius: "8px",
-  fontSize: "13px",
-  fontWeight: 600,
-  cursor: "pointer",
-};
-
-const secondaryButton = {
-  border: "1px solid #cbd5e1",
-  backgroundColor: "#fff",
-  color: "#475569",
-  padding: "10px 16px",
-  borderRadius: "8px",
-  fontSize: "13px",
-  fontWeight: 600,
-  cursor: "pointer",
-};
-
-const sectionHeaderStyle = {
-  padding: "20px 22px",
-  borderBottom: "1px solid #e2e8f0",
-  display: "flex",
-  justifyContent: "space-between",
-  alignItems: "center",
-};
-
-const sectionTitle = {
-  margin: 0,
-  fontSize: "18px",
-  color: "#172b4d",
-};
-
-const sectionSubtitle = {
-  margin: "5px 0 0",
-  color: "#94a3b8",
-  fontSize: "13px",
-};
-
-const countBadge = {
-  padding: "6px 10px",
-  borderRadius: "20px",
-  backgroundColor: "#eff6ff",
-  color: "#1d4ed8",
-  fontSize: "12px",
-  fontWeight: 700,
-};
-
-const tableStyle = {
-  width: "100%",
-  borderCollapse: "collapse",
-  minWidth: "800px",
-};
-
-const thStyle = {
-  padding: "13px 15px",
-  textAlign: "left",
-  backgroundColor: "#f8fafc",
-  color: "#64748b",
-  fontSize: "11px",
-  textTransform: "uppercase",
-};
-
-const tdStyle = {
-  padding: "15px",
-  color: "#64748b",
-  fontSize: "13px",
-  borderBottom: "1px solid #edf2f7",
-};
-
-const statusStyle = {
-  display: "inline-flex",
-  padding: "6px 10px",
-  borderRadius: "20px",
-  fontSize: "11px",
-  fontWeight: 700,
-};
-
-const emptyStyle = {
-  padding: "50px",
-  textAlign: "center",
-  color: "#94a3b8",
-};
-
-const overlayStyle = {
-  position: "fixed",
-  inset: 0,
-  backgroundColor: "rgba(15,23,42,.45)",
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  padding: "20px",
-  zIndex: 1000,
-};
-
-const modalStyle = {
-  width: "100%",
-  maxWidth: "520px",
-  backgroundColor: "#fff",
-  borderRadius: "14px",
-  padding: "22px",
-  boxSizing: "border-box",
-};
-
-const modalHeaderStyle = {
-  display: "flex",
-  justifyContent: "space-between",
-  marginBottom: "22px",
-};
-
-const closeButton = {
-  width: "34px",
-  height: "34px",
-  border: "none",
-  borderRadius: "8px",
-  backgroundColor: "#f1f5f9",
-  fontSize: "20px",
-  cursor: "pointer",
-};
-
-const formGroup = {
-  marginBottom: "17px",
-};
-
-const twoColumn = {
-  display: "grid",
-  gridTemplateColumns: "1fr 1fr",
-  gap: "12px",
-  marginBottom: "17px",
-};
-
-const modalFooter = {
-  display: "flex",
-  justifyContent: "flex-end",
-  gap: "10px",
-  marginTop: "22px",
-  paddingTop: "18px",
-  borderTop: "1px solid #e2e8f0",
-};
-
-const cancelButton = {
-  border: "1px solid #cbd5e1",
-  backgroundColor: "#fff",
-  color: "#475569",
-  padding: "10px 17px",
-  borderRadius: "8px",
-  cursor: "pointer",
-};
-
-export default DataAbsensi;
+export default DataAbsensi
