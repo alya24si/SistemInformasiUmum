@@ -32,9 +32,9 @@ function Sidebar() {
 
       <div className="nav-label">Kepegawaian</div>
       <nav>
-        <NavLink to="/data-absensi" className="menu-item">📋 Data Absensi</NavLink>
+        <NavLink to="/data-pegawai" className="menu-item">📋 Data Pegawai</NavLink>
         <NavLink to="/pelanggaran" className="menu-item">⚠️ Pelanggaran</NavLink>
-        <NavLink to="/rekap-absensi" className="menu-item">📊 Rekap Absensi</NavLink>
+        <NavLink to="/data-absensi" className="menu-item">📊 Data Absensi</NavLink>
       </nav>
 
 
