@@ -6,6 +6,26 @@ function Header({ user, onLogout }) {
     year: 'numeric',
   })
 
+  // 🎯 Label role sesuai sistem RBAC
+  const getRoleLabel = () => {
+    switch (user.role) {
+      case 'superadmin':
+        return '👑 Super Admin • Semua Bidang'
+      case 'admin_keuangan':
+        return '💰 Admin Keuangan'
+      case 'admin_kepegawaian':
+        return '👔 Admin Kepegawaian'
+      case 'admin_rumahtangga':
+        return '🏠 Admin Rumah Tangga'
+      case 'guest':
+        return `👁️ Guest • Bidang ${user.bidang}`
+      case 'pegawai':
+        return `🙋 Pegawai • NIP ${user.nip}`
+      default:
+        return 'Pengguna'
+    }
+  }
+
   return (
     <header className="header">
       <div className="header-left">
@@ -17,7 +37,7 @@ function Header({ user, onLogout }) {
         <div className="header-avatar">{user.nama.charAt(0)}</div>
         <div className="header-user">
           <h5>{user.nama}</h5>
-          <p>{user.role === 'admin' ? '🛡️ Admin • Semua Bidang' : `👁️ Guest • Bidang ${user.bidang}`}</p>
+          <p>{getRoleLabel()}</p>
         </div>
         <button className="btn-logout" onClick={onLogout}>Keluar</button>
       </div>

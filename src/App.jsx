@@ -32,8 +32,23 @@ function App() {
 
   if (!user) return <Login onLogin={handleLogin} />
 
-    const isPegawai = user.role === 'pegawai'
-  const isAdmin = user.role === 'admin'
+  // ===== 🔐 LOGIKA ROLE =====
+  const isSuperAdmin = user.role === 'superadmin'
+  const isPegawaiBiasa = user.role === 'pegawai'
+  const isGuest = user.role === 'guest'
+
+  // Superadmin otomatis termasuk di semua admin modul
+  const isAdminKeuangan = user.role === 'admin_keuangan' || isSuperAdmin
+  const isAdminKepegawaian = user.role === 'admin_kepegawaian' || isSuperAdmin
+
+  // Halaman awal sesuai role
+  const halamanAwal = () => {
+    if (isAdminKepegawaian && !isSuperAdmin) return '/data-absensi'
+    if (user.role === 'admin_keuangan') return '/program-kerja'
+    if (user.role === 'admin_rumahtangga') return '/data-ruangan'
+    if (isPegawaiBiasa) return '/pelanggaran'
+    return '/program-kerja' // superadmin & guest
+  }
 
   return (
     <div className="layout">
@@ -42,20 +57,23 @@ function App() {
         <Header user={user} onLogout={handleLogout} />
         <main className="main-content">
           <Routes>
-            <Route path="/" element={<Navigate to={isPegawai ? '/pelanggaran' : '/program-kerja'} />} />
+            <Route path="/" element={<Navigate to={halamanAwal()} />} />
 
-            <Route path="/program-kerja" element={isPegawai ? <Navigate to="/pelanggaran" /> : <ProgramKerja user={user} />} />
-            <Route path="/anggaran" element={isPegawai ? <Navigate to="/pelanggaran" /> : <Anggaran user={user} />} />
+            {/* 💰 KEUANGAN: hanya admin_keuangan, superadmin, guest */}
+            <Route path="/program-kerja" element={isAdminKeuangan || isGuest ? <ProgramKerja user={user} /> : <Navigate to="/" />} />
+            <Route path="/anggaran" element={isAdminKeuangan || isGuest ? <Anggaran user={user} /> : <Navigate to="/" />} />
 
+            {/* 🏠 RUMAH TANGGA: semua yang login bisa akses (kebutuhan bersama) */}
             <Route path="/data-ruangan" element={<DataRuangan />} />
             <Route path="/booking-ruangan" element={<BookingRuangan />} />
             <Route path="/kalender-ruangan" element={<KalenderRuangan />} />
             <Route path="/kerusakan-ruangan" element={<KerusakanRuangan />} />
             <Route path="/perbaikan-ruangan" element={<PerbaikanRuangan />} />
 
-            <Route path="/data-absensi" element={isAdmin ? <DataAbsensi /> : <Navigate to="/" />} />
-            <Route path="/pelanggaran" element={isAdmin || isPegawai ? <Pelanggaran user={user} /> : <Navigate to="/" />} />
-            <Route path="/rekap-absensi" element={isAdmin ? <RekapAbsensi /> : <Navigate to="/" />} />
+            {/* 👔 KEPEGAWAIAN: hanya admin_kepegawaian, superadmin, dan pegawai (untuk pelanggaran pribadi) */}
+            <Route path="/data-absensi" element={isAdminKepegawaian ? <DataAbsensi /> : <Navigate to="/" />} />
+            <Route path="/pelanggaran" element={isAdminKepegawaian || isPegawaiBiasa ? <Pelanggaran user={user} /> : <Navigate to="/" />} />
+            <Route path="/rekap-absensi" element={isAdminKepegawaian ? <RekapAbsensi /> : <Navigate to="/" />} />
           </Routes>
         </main>
       </div>
