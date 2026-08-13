@@ -12,7 +12,7 @@ import KerusakanRuangan from './RumahTangga/KerusakanRuangan'
 import PerbaikanRuangan from './RumahTangga/PerbaikanRuangan'
 import DataAbsensi from './Kepegawaian/DataAbsensi'
 import Pelanggaran from './Kepegawaian/Pelanggaran'
-import RekapAbsensi from './Kepegawaian/RekapAbsensi'
+
 
 function App() {
   const [user, setUser] = useState(() => {
@@ -73,7 +73,7 @@ function App() {
             {/* 👔 KEPEGAWAIAN: hanya admin_kepegawaian, superadmin, dan pegawai (untuk pelanggaran pribadi) */}
             <Route path="/data-absensi" element={isAdminKepegawaian ? <DataAbsensi /> : <Navigate to="/" />} />
             <Route path="/pelanggaran" element={isAdminKepegawaian || isPegawaiBiasa ? <Pelanggaran user={user} /> : <Navigate to="/" />} />
-            <Route path="/rekap-absensi" element={isAdminKepegawaian ? <RekapAbsensi /> : <Navigate to="/" />} />
+           
           </Routes>
         </main>
       </div>
