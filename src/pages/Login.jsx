@@ -57,12 +57,6 @@ function Login({ onLogin }) {
         <input type="password" placeholder="Password" value={password} onChange={(e) => setPassword(e.target.value)} required />
         {error && <div className="login-error">{error}</div>}
         <button type="submit" className="btn">Masuk</button>
-        <div className="login-hint">
-          <b>Super:</b> superadmin/super123<br />
-          <b>Keuangan:</b> keuangan/keuangan123 • <b>Pegawai:</b> kepegawaian/pegawai123<br />
-          <b>Rumah Tangga:</b> rumahtangga/rumah123<br />
-          <b>Pegawai Biasa:</b> login pakai NIP (pass: 123456)
-        </div>
       </form>
     </div>
   )
