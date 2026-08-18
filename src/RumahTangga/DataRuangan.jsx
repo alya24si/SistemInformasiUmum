@@ -1,173 +1,759 @@
-import { useState } from "react";
+import { useState } from 'react'
+
+const dataAwal = [
+  {
+    id: 1,
+    nama: 'Ruang Rapat Utama',
+    kapasitas: 30,
+    lokasi: 'Lantai 1',
+    fasilitas: 'AC, Proyektor, Meja, Kursi',
+    status: 'Tersedia',
+  },
+  {
+    id: 2,
+    nama: 'Ruang Rapat 1',
+    kapasitas: 15,
+    lokasi: 'Lantai 1',
+    fasilitas: 'AC, TV, Meja, Kursi',
+    status: 'Tersedia',
+  },
+  {
+    id: 3,
+    nama: 'Ruang Rapat 2',
+    kapasitas: 15,
+    lokasi: 'Lantai 2',
+    fasilitas: 'AC, Proyektor, Meja, Kursi',
+    status: 'Digunakan',
+  },
+  {
+    id: 4,
+    nama: 'Aula',
+    kapasitas: 100,
+    lokasi: 'Lantai 1',
+    fasilitas: 'AC, Sound System, Proyektor',
+    status: 'Tersedia',
+  },
+  {
+    id: 5,
+    nama: 'Ruang Arsip',
+    kapasitas: 10,
+    lokasi: 'Lantai 2',
+    fasilitas: 'Rak Arsip, AC',
+    status: 'Maintenance',
+  },
+]
+
+const statusRuangan = (status) => {
+  if (status === 'Tersedia') {
+    return {
+      label: 'Tersedia',
+      cls: 'green',
+    }
+  }
+
+  if (status === 'Digunakan') {
+    return {
+      label: 'Digunakan',
+      cls: 'yellow',
+    }
+  }
+
+  return {
+    label: 'Maintenance',
+    cls: 'red',
+  }
+}
 
 function DataRuangan({ user }) {
-  const isAdminRT = user.role === 'admin_rumahtangga' || user.role === 'superadmin';
+  const isAdminRT =
+    user.role === 'admin_rumahtangga' ||
+    user.role === 'superadmin'
 
-  const [ruangan, setRuangan] = useState([
-    { id: 1, nama: "Ruang Rapat Utama", kode: "RR-01", kapasitas: 30, lokasi: "Lantai 1", fasilitas: "AC, Proyektor, Meja, Kursi", status: "Tersedia" },
-    { id: 2, nama: "Ruang Rapat 1", kode: "RR-02", kapasitas: 15, lokasi: "Lantai 1", fasilitas: "AC, TV, Meja, Kursi", status: "Tersedia" },
-    { id: 3, nama: "Ruang Rapat 2", kode: "RR-03", kapasitas: 15, lokasi: "Lantai 2", fasilitas: "AC, Proyektor, Meja, Kursi", status: "Digunakan" },
-    { id: 4, nama: "Aula", kode: "AU-01", kapasitas: 100, lokasi: "Lantai 1", fasilitas: "AC, Sound System, Proyektor", status: "Tersedia" },
-    { id: 5, nama: "Ruang Arsip", kode: "RA-01", kapasitas: 10, lokasi: "Lantai 2", fasilitas: "Rak Arsip, AC", status: "Maintenance" },
-  ]);
+  const [data, setData] = useState(dataAwal)
 
-  const [search, setSearch] = useState("");
-  const [showForm, setShowForm] = useState(false);
-  const [currentPage, setCurrentPage] = useState(0);
-  const [formData, setFormData] = useState({ nama: "", kode: "", kapasitas: "", lokasi: "", fasilitas: "", status: "Tersedia" });
+  const [form, setForm] = useState({
+    nama: '',
+    kapasitas: '',
+    lokasi: '',
+    fasilitas: '',
+    status: 'Tersedia',
+  })
 
-  const filteredRuangan = ruangan.filter((item) => {
-    const keyword = search.toLowerCase();
-    return item.nama.toLowerCase().includes(keyword) || item.lokasi.toLowerCase().includes(keyword);
-  });
+  const [searchNama, setSearchNama] = useState('')
+  const [filterLokasi, setFilterLokasi] = useState('semua')
 
-  const handleChange = (e) => setFormData({ ...formData, [e.target.name]: e.target.value });
+  const [currentPage, setCurrentPage] = useState(0)
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    setRuangan([...ruangan, { id: Date.now(), ...formData, kapasitas: Number(formData.kapasitas) }]);
-    setFormData({ nama: "", kode: "", kapasitas: "", lokasi: "", fasilitas: "", status: "Tersedia" });
-    setShowForm(false);
-  };
+  const [showForm, setShowForm] = useState(false)
+  const [editId, setEditId] = useState(null)
 
-  const handleDelete = (id) => {
-    if (!window.confirm("Hapus ruangan ini?")) return;
-    setRuangan(ruangan.filter((item) => item.id !== id));
-  };
+  const daftarLokasi = [
+    ...new Set(data.map((item) => item.lokasi)),
+  ]
 
-  const getStatusStyle = (status) => {
-    if (status === "Tersedia") return { backgroundColor: "#dcfce7", color: "#166534" };
-    if (status === "Digunakan") return { backgroundColor: "#fef3c7", color: "#92400e" };
-    return { backgroundColor: "#fee2e2", color: "#991b1b" };
-  };
+  const dataFiltered = data.filter((d) => {
+    const cocokNama = d.nama
+      .toLowerCase()
+      .includes(searchNama.toLowerCase())
+
+    const cocokLokasi =
+      filterLokasi === 'semua' ||
+      d.lokasi === filterLokasi
+
+    return cocokNama && cocokLokasi
+  })
+
+  const totalRuangan = dataFiltered.length
+
+  const totalTersedia = dataFiltered.filter(
+    (d) => d.status === 'Tersedia'
+  ).length
+
+  const totalDigunakan = dataFiltered.filter(
+    (d) => d.status === 'Digunakan'
+  ).length
+
+  const totalMaintenance = dataFiltered.filter(
+    (d) => d.status === 'Maintenance'
+  ).length
+
+  const handleChange = (e) => {
+    setForm({
+      ...form,
+      [e.target.name]: e.target.value,
+    })
+  }
+
+  const bukaTambah = () => {
+    setEditId(null)
+
+    setForm({
+      nama: '',
+      kapasitas: '',
+      lokasi: '',
+      fasilitas: '',
+      status: 'Tersedia',
+    })
+
+    setShowForm(true)
+  }
+
+  const bukaEdit = (item) => {
+    setEditId(item.id)
+
+    setForm({
+      nama: item.nama,
+      kapasitas: item.kapasitas,
+      lokasi: item.lokasi,
+      fasilitas: item.fasilitas,
+      status: item.status,
+    })
+
+    setShowForm(true)
+  }
+
+  const simpanData = (e) => {
+    e.preventDefault()
+
+    if (editId) {
+      setData(
+        data.map((item) =>
+          item.id === editId
+            ? {
+                ...item,
+                nama: form.nama,
+                kapasitas: Number(form.kapasitas),
+                lokasi: form.lokasi,
+                fasilitas: form.fasilitas,
+                status: form.status,
+              }
+            : item
+        )
+      )
+
+      alert('Data ruangan berhasil diperbarui.')
+    } else {
+      const baru = {
+        id: Date.now(),
+        nama: form.nama,
+        kapasitas: Number(form.kapasitas),
+        lokasi: form.lokasi,
+        fasilitas: form.fasilitas,
+        status: form.status,
+      }
+
+      setData([...data, baru])
+
+      alert('Data ruangan berhasil ditambahkan.')
+    }
+
+    setForm({
+      nama: '',
+      kapasitas: '',
+      lokasi: '',
+      fasilitas: '',
+      status: 'Tersedia',
+    })
+
+    setEditId(null)
+    setShowForm(false)
+  }
+
+  const hapusData = (id) => {
+    if (
+      window.confirm(
+        'Yakin ingin menghapus data ruangan ini?'
+      )
+    ) {
+      setData(
+        data.filter((item) => item.id !== id)
+      )
+    }
+  }
 
   return (
-    <div style={{ padding: "32px", minHeight: "100%", backgroundColor: "#f5f8fc", fontFamily: "Inter, ui-sans-serif, system-ui, sans-serif" }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "20px", marginBottom: "24px", flexWrap: "wrap" }}>
-        <div><h1 style={{ margin: 0, fontSize: "30px", fontWeight: 700, color: "#102a43" }}>Data Ruangan</h1><p style={{ margin: "7px 0 0", color: "#64748b", fontSize: "15px" }}>Informasi ruangan dan fasilitas yang tersedia.</p></div>
-        {isAdminRT && <button onClick={() => setShowForm(true)} style={{ border: "none", backgroundColor: "#0b72e7", color: "#fff", padding: "11px 18px", borderRadius: "8px", fontSize: "14px", fontWeight: 600, cursor: "pointer" }}>+ Tambah Ruangan</button>}
-      </div>
+    <div className="page">
 
-      <div style={{ backgroundColor: "#fff", border: "1px solid #e2e8f0", borderRadius: "12px", padding: "18px 20px", marginBottom: "20px", boxShadow: "0 2px 8px rgba(15,23,42,0.04)" }}>
-        <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-          <span style={{ width: "9px", height: "9px", backgroundColor: isAdminRT ? "#0b72e7" : "#16a34a", borderRadius: "50%" }} />
-          <strong style={{ color: "#1e293b", fontSize: "15px" }}>{isAdminRT ? "Mode Admin Rumah Tangga" : "Mode Pegawai"}</strong>
-        </div>
-        <p style={{ margin: "7px 0 0 19px", color: "#64748b", fontSize: "14px" }}>
-          {isAdminRT ? "Anda dapat mengelola data ruangan." : "Anda hanya dapat melihat data ruangan."}
+      {/* HEADER */}
+      <div className="page-title">
+        <h1>🏢 Data Ruangan</h1>
+
+        <p>
+          Mengelola dan memantau informasi ruangan,
+          kapasitas, fasilitas, serta kondisi ruangan.
         </p>
       </div>
 
-      <div style={{ backgroundColor: "#fff", border: "1px solid #e2e8f0", borderRadius: "12px", overflow: "hidden" }}>
-        <div style={{ padding: "20px 22px", borderBottom: "1px solid #e5e7eb", display: "flex", justifyContent: "space-between", alignItems: "center", gap: "15px", flexWrap: "wrap" }}>
-          <div><h2 style={{ margin: 0, fontSize: "18px", fontWeight: 650, color: "#172b4d" }}>Daftar Ruangan</h2><p style={{ margin: "4px 0 0", color: "#94a3b8", fontSize: "13px" }}>Total {filteredRuangan.length} ruangan</p></div>
-          <input type="text" placeholder="🔍 Cari nama atau lokasi..." value={search} onChange={(e) => setSearch(e.target.value)} style={{ width: "320px", maxWidth: "100%", padding: "11px 14px", border: "1px solid #dbe2ea", borderRadius: "8px", outline: "none", fontSize: "14px" }} />
+      {/* STATISTIK */}
+      <div className="stats-grid">
+
+        <div className="stat-card">
+          <div className="stat-icon">🏢</div>
+
+          <div className="stat-info">
+            <h4>Total Ruangan</h4>
+
+            <div className="stat-value">
+              {totalRuangan}
+            </div>
+
+            <div className="stat-desc">
+              Ruangan terdaftar
+            </div>
+          </div>
         </div>
-        <div style={{ overflowX: "auto" }}>
-          <table style={{ width: "100%", minWidth: "950px", borderCollapse: "collapse" }}>
+
+        <div className="stat-card green">
+          <div className="stat-icon">✅</div>
+
+          <div className="stat-info">
+            <h4>Tersedia</h4>
+
+            <div className="stat-value">
+              {totalTersedia}
+            </div>
+
+            <div className="stat-desc">
+              Siap digunakan
+            </div>
+          </div>
+        </div>
+
+        <div className="stat-card gold">
+          <div className="stat-icon">📅</div>
+
+          <div className="stat-info">
+            <h4>Digunakan</h4>
+
+            <div className="stat-value">
+              {totalDigunakan}
+            </div>
+
+            <div className="stat-desc">
+              Sedang digunakan
+            </div>
+          </div>
+        </div>
+
+        <div className="stat-card">
+          <div className="stat-icon">🔧</div>
+
+          <div className="stat-info">
+            <h4>Maintenance</h4>
+
+            <div className="stat-value">
+              {totalMaintenance}
+            </div>
+
+            <div className="stat-desc">
+              Sedang diperbaiki
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      {/* TAMBAH / EDIT RUANGAN */}
+      {isAdminRT && showForm && (
+        <div className="card">
+
+          <h3>
+            {editId
+              ? '✏️ Edit Data Ruangan'
+              : '➕ Tambah Data Ruangan'}
+          </h3>
+
+          <form
+            onSubmit={simpanData}
+            className="form-row"
+          >
+
+            <input
+              type="text"
+              placeholder="Nama Ruangan"
+              required
+              value={form.nama}
+              onChange={(e) =>
+                setForm({
+                  ...form,
+                  nama: e.target.value,
+                })
+              }
+            />
+
+            <input
+              type="number"
+              placeholder="Kapasitas"
+              min="1"
+              required
+              value={form.kapasitas}
+              onChange={(e) =>
+                setForm({
+                  ...form,
+                  kapasitas: e.target.value,
+                })
+              }
+            />
+
+            <input
+              type="text"
+              placeholder="Lokasi"
+              required
+              value={form.lokasi}
+              onChange={(e) =>
+                setForm({
+                  ...form,
+                  lokasi: e.target.value,
+                })
+              }
+            />
+
+            <input
+              type="text"
+              placeholder="Fasilitas"
+              required
+              value={form.fasilitas}
+              onChange={(e) =>
+                setForm({
+                  ...form,
+                  fasilitas: e.target.value,
+                })
+              }
+            />
+
+            <select
+              value={form.status}
+              onChange={(e) =>
+                setForm({
+                  ...form,
+                  status: e.target.value,
+                })
+              }
+            >
+              <option value="Tersedia">
+                Tersedia
+              </option>
+
+              <option value="Digunakan">
+                Digunakan
+              </option>
+
+              <option value="Maintenance">
+                Maintenance
+              </option>
+            </select>
+
+            <button
+              type="submit"
+              className="btn"
+            >
+              {editId ? 'Simpan Perubahan' : 'Simpan'}
+            </button>
+
+            <button
+              type="button"
+              className="btn-danger"
+              onClick={() => {
+                setShowForm(false)
+                setEditId(null)
+              }}
+            >
+              Batal
+            </button>
+
+          </form>
+
+        </div>
+      )}
+
+      {/* DAFTAR RUANGAN */}
+      <div className="card">
+
+        <div
+          style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            gap: '10px',
+            flexWrap: 'wrap',
+          }}
+        >
+
+          <div>
+            <h3>🏢 Daftar Ruangan</h3>
+
+            <p>
+              Menampilkan {dataFiltered.length} dari{' '}
+              {data.length} data ruangan.
+            </p>
+          </div>
+
+          {isAdminRT && !showForm && (
+            <button
+              type="button"
+              className="btn"
+              onClick={bukaTambah}
+            >
+              ➕ Tambah Ruangan
+            </button>
+          )}
+
+        </div>
+
+        {/* FILTER */}
+        <div className="filter-row">
+
+          <input
+            type="text"
+            placeholder="Cari nama ruangan..."
+            value={searchNama}
+            onChange={(e) => {
+              setSearchNama(e.target.value)
+              setCurrentPage(0)
+            }}
+          />
+
+          <select
+            value={filterLokasi}
+            onChange={(e) => {
+              setFilterLokasi(e.target.value)
+              setCurrentPage(0)
+            }}
+          >
+            <option value="semua">
+              Semua Lokasi
+            </option>
+
+            {daftarLokasi.map((lokasi) => (
+              <option
+                key={lokasi}
+                value={lokasi}
+              >
+                {lokasi}
+              </option>
+            ))}
+          </select>
+
+        </div>
+
+        <div className="filter-info">
+          Menampilkan {dataFiltered.length} dari{' '}
+          {data.length} data
+        </div>
+
+        <div className="table-wrap">
+
+          <table className="table">
+
             <thead>
-              <tr style={{ backgroundColor: "#f8fafc" }}>
-                <th style={thStyle}>No</th><th style={{ ...thStyle, textAlign: "left" }}>Nama Ruangan</th><th style={thStyle}>Kode</th><th style={thStyle}>Kapasitas</th><th style={thStyle}>Lokasi</th><th style={{ ...thStyle, textAlign: "left" }}>Fasilitas</th><th style={thStyle}>Status</th>
-                {isAdminRT && <th style={thStyle}>Aksi</th>}
+              <tr>
+                <th>No</th>
+                <th>Nama Ruangan</th>
+                <th>Kapasitas</th>
+                <th>Lokasi</th>
+                <th>Fasilitas</th>
+                <th>Status</th>
+
+                {isAdminRT && (
+                  <th>Aksi</th>
+                )}
               </tr>
             </thead>
+
             <tbody>
+
               {(() => {
                 const ITEMS_PER_PAGE = 10
-                const totalPages = Math.ceil(filteredRuangan.length / ITEMS_PER_PAGE)
-                const startIndex = currentPage * ITEMS_PER_PAGE
-                const endIndex = startIndex + ITEMS_PER_PAGE
-                const dataPaginated = filteredRuangan.slice(startIndex, endIndex)
+
+                const totalPages = Math.ceil(
+                  dataFiltered.length /
+                    ITEMS_PER_PAGE
+                )
+
+                const startIndex =
+                  currentPage * ITEMS_PER_PAGE
+
+                const endIndex =
+                  startIndex + ITEMS_PER_PAGE
+
+                const dataPaginated =
+                  dataFiltered.slice(
+                    startIndex,
+                    endIndex
+                  )
 
                 return (
                   <>
-                    {dataPaginated.length > 0 ? dataPaginated.map((item, index) => (
-                      <tr key={item.id} style={{ borderTop: "1px solid #edf2f7" }}>
-                        <td style={tdCenterStyle}>{startIndex + index + 1}</td>
-                        <td style={tdStyle}><div style={{ fontWeight: 600, color: "#1e293b" }}>{item.nama}</div></td>
-                        <td style={tdCenterStyle}><span style={{ backgroundColor: "#eff6ff", color: "#1d4ed8", padding: "5px 9px", borderRadius: "6px", fontSize: "12px", fontWeight: 600 }}>{item.kode}</span></td>
-                        <td style={tdCenterStyle}>{item.kapasitas} orang</td>
-                        <td style={tdCenterStyle}>{item.lokasi}</td>
-                        <td style={{ ...tdStyle, color: "#64748b", maxWidth: "260px" }}>{item.fasilitas}</td>
-                        <td style={tdCenterStyle}><span style={{ ...getStatusStyle(item.status), padding: "6px 11px", borderRadius: "20px", fontSize: "12px", fontWeight: 600 }}>{item.status}</span></td>
-                        {isAdminRT && (
-                          <td style={tdCenterStyle}><div style={{ display: "flex", justifyContent: "center", gap: "7px" }}>
-                            <button style={{ border: "1px solid #bfdbfe", backgroundColor: "#eff6ff", color: "#2563eb", padding: "7px 11px", borderRadius: "6px", fontSize: "12px", fontWeight: 600, cursor: "pointer" }}>Edit</button>
-                            <button onClick={() => handleDelete(item.id)} style={{ border: "1px solid #fecaca", backgroundColor: "#fef2f2", color: "#dc2626", padding: "7px 11px", borderRadius: "6px", fontSize: "12px", fontWeight: 600, cursor: "pointer" }}>Hapus</button>
-                          </div></td>
-                        )}
+                    {dataPaginated.length > 0 ? (
+
+                      dataPaginated.map(
+                        (d, index) => {
+
+                          const st =
+                            statusRuangan(
+                              d.status
+                            )
+
+                          return (
+                            <tr key={d.id}>
+
+                              <td>
+                                {startIndex +
+                                  index +
+                                  1}
+                              </td>
+
+                              <td>
+                                <div className="cell-main">
+                                  {d.nama}
+                                </div>
+                              </td>
+
+                              <td>
+                                {d.kapasitas} orang
+                              </td>
+
+                              <td>
+                                {d.lokasi}
+                              </td>
+
+                              <td>
+                                {d.fasilitas}
+                              </td>
+
+                              <td>
+                                <span
+                                  className={`badge ${st.cls}`}
+                                >
+                                  {st.label}
+                                </span>
+                              </td>
+
+                              {isAdminRT && (
+                                <td>
+
+                                  <div
+                                    style={{
+                                      display: 'flex',
+                                      gap: '5px',
+                                    }}
+                                  >
+
+                                    <button
+                                      type="button"
+                                      className="btn"
+                                      onClick={() =>
+                                        bukaEdit(d)
+                                      }
+                                    >
+                                      Edit
+                                    </button>
+
+                                    <button
+                                      type="button"
+                                      className="btn-danger"
+                                      onClick={() =>
+                                        hapusData(
+                                          d.id
+                                        )
+                                      }
+                                    >
+                                      🗑
+                                    </button>
+
+                                  </div>
+
+                                </td>
+                              )}
+
+                            </tr>
+                          )
+                        }
+                      )
+
+                    ) : (
+
+                      <tr>
+
+                        <td
+                          colSpan={
+                            isAdminRT ? 7 : 6
+                          }
+                          style={{
+                            textAlign: 'center',
+                            padding: '30px',
+                          }}
+                        >
+                          Tidak ada data ruangan.
+                        </td>
+
                       </tr>
-                    )) : <tr><td colSpan={isAdminRT ? 8 : 7} style={{ padding: "40px 20px", textAlign: "center", color: "#94a3b8" }}>Data ruangan tidak ditemukan.</td></tr>}
+
+                    )}
                   </>
                 )
               })()}
+
             </tbody>
+
           </table>
+
         </div>
 
+        {/* PAGINATION */}
         {(() => {
+
           const ITEMS_PER_PAGE = 10
-          const totalPages = Math.ceil(filteredRuangan.length / ITEMS_PER_PAGE)
+
+          const totalPages = Math.ceil(
+            dataFiltered.length /
+              ITEMS_PER_PAGE
+          )
+
           return (
-            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px', marginTop: '16px', alignItems: 'center', paddingBottom: '10px' }}>
+            <div
+              style={{
+                display: 'flex',
+                justifyContent: 'flex-end',
+                gap: '8px',
+                marginTop: '16px',
+                alignItems: 'center',
+              }}
+            >
+
               <button
-                onClick={() => setCurrentPage(prev => Math.max(0, prev - 1))}
-                disabled={currentPage === 0}
-                style={{ padding: '6px 10px', borderRadius: '6px', border: '1px solid #cbd5e1', backgroundColor: '#fff', cursor: currentPage === 0 ? 'not-allowed' : 'pointer', opacity: currentPage === 0 ? 0.5 : 1, fontSize: '11px', fontWeight: 600 }}
+                onClick={() =>
+                  setCurrentPage(
+                    (prev) =>
+                      Math.max(
+                        0,
+                        prev - 1
+                      )
+                  )
+                }
+                disabled={
+                  currentPage === 0
+                }
+                style={{
+                  padding: '6px 10px',
+                  borderRadius: '6px',
+                  border:
+                    '1px solid #cbd5e1',
+                  backgroundColor: '#fff',
+                  cursor:
+                    currentPage === 0
+                      ? 'not-allowed'
+                      : 'pointer',
+                  opacity:
+                    currentPage === 0
+                      ? 0.5
+                      : 1,
+                  fontSize: '11px',
+                  fontWeight: 600,
+                }}
               >
                 Back
               </button>
-              <span style={{ fontSize: '11px', fontWeight: '500', color: '#64748b' }}>
-                {currentPage + 1} / {Math.max(1, totalPages)}
+
+              <span
+                style={{
+                  fontSize: '11px',
+                  fontWeight: '500',
+                  color: '#64748b',
+                }}
+              >
+                {currentPage + 1} /{' '}
+                {Math.max(
+                  1,
+                  totalPages
+                )}
               </span>
+
               <button
-                onClick={() => setCurrentPage(prev => (prev + 1 < totalPages ? prev + 1 : prev))}
-                disabled={currentPage + 1 >= totalPages}
-                style={{ padding: '6px 10px', borderRadius: '6px', border: '1px solid #cbd5e1', backgroundColor: '#fff', cursor: currentPage + 1 >= totalPages ? 'not-allowed' : 'pointer', opacity: currentPage + 1 >= totalPages ? 0.5 : 1, fontSize: '11px', fontWeight: 600 }}
+                onClick={() =>
+                  setCurrentPage(
+                    (prev) =>
+                      prev + 1 <
+                      totalPages
+                        ? prev + 1
+                        : prev
+                  )
+                }
+                disabled={
+                  currentPage + 1 >=
+                  totalPages
+                }
+                style={{
+                  padding: '6px 10px',
+                  borderRadius: '6px',
+                  border:
+                    '1px solid #cbd5e1',
+                  backgroundColor: '#fff',
+                  cursor:
+                    currentPage + 1 >=
+                    totalPages
+                      ? 'not-allowed'
+                      : 'pointer',
+                  opacity:
+                    currentPage + 1 >=
+                    totalPages
+                      ? 0.5
+                      : 1,
+                  fontSize: '11px',
+                  fontWeight: 600,
+                }}
               >
                 Next
               </button>
+
             </div>
           )
         })()}
+
       </div>
 
-      {showForm && isAdminRT && (
-        <div style={{ position: "fixed", inset: 0, backgroundColor: "rgba(15,23,42,0.5)", display: "flex", alignItems: "center", justifyContent: "center", padding: "20px", zIndex: 1000 }}>
-          <div style={{ width: "100%", maxWidth: "650px", maxHeight: "90vh", overflowY: "auto", backgroundColor: "#fff", borderRadius: "14px", boxShadow: "0 20px 50px rgba(15,23,42,0.25)" }}>
-            <div style={{ padding: "20px 24px", borderBottom: "1px solid #e5e7eb", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-              <div><h2 style={{ margin: 0, color: "#172b4d", fontSize: "20px" }}>Tambah Ruangan</h2></div>
-              <button onClick={() => setShowForm(false)} style={{ border: "none", backgroundColor: "#f1f5f9", color: "#64748b", width: "34px", height: "34px", borderRadius: "50%", cursor: "pointer", fontSize: "18px" }}>×</button>
-            </div>
-            <form onSubmit={handleSubmit} style={{ padding: "24px", display: "grid", gridTemplateColumns: "1fr 1fr", gap: "18px" }}>
-              <FormField label="Nama Ruangan" name="nama" value={formData.nama} onChange={handleChange} required />
-              <FormField label="Kode Ruangan" name="kode" value={formData.kode} onChange={handleChange} required />
-              <FormField label="Kapasitas" name="kapasitas" type="number" value={formData.kapasitas} onChange={handleChange} min="1" required />
-              <FormField label="Lokasi" name="lokasi" value={formData.lokasi} onChange={handleChange} required />
-              <div style={{ gridColumn: "1 / -1" }}><FormField label="Fasilitas" name="fasilitas" value={formData.fasilitas} onChange={handleChange} required /></div>
-              <div><label style={labelStyle}>Status</label>
-                <select name="status" value={formData.status} onChange={handleChange} style={inputStyle}><option value="Tersedia">Tersedia</option><option value="Maintenance">Maintenance</option></select>
-              </div>
-              <div style={{ gridColumn: "1 / -1", display: "flex", justifyContent: "flex-end", gap: "10px", paddingTop: "18px", borderTop: "1px solid #e5e7eb" }}>
-                <button type="button" onClick={() => setShowForm(false)} style={{ padding: "10px 17px", border: "1px solid #cbd5e1", backgroundColor: "#fff", color: "#475569", borderRadius: "7px", fontWeight: 600, cursor: "pointer" }}>Batal</button>
-                <button type="submit" style={{ padding: "10px 18px", border: "none", backgroundColor: "#0b72e7", color: "#fff", borderRadius: "7px", fontWeight: 600, cursor: "pointer" }}>Simpan</button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
     </div>
-  );
+  )
 }
 
-const thStyle = { padding: "14px 16px", color: "#64748b", fontSize: "12px", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.03em", textAlign: "center", whiteSpace: "nowrap" };
-const tdStyle = { padding: "15px 16px", color: "#475569", fontSize: "13px", verticalAlign: "middle" };
-const tdCenterStyle = { ...tdStyle, textAlign: "center", whiteSpace: "nowrap" };
-const labelStyle = { display: "block", marginBottom: "7px", color: "#334155", fontSize: "13px", fontWeight: 600 };
-const inputStyle = { width: "100%", boxSizing: "border-box", padding: "10px 12px", border: "1px solid #cbd5e1", borderRadius: "7px", outline: "none", fontSize: "14px", color: "#334155", backgroundColor: "#fff" };
-
-function FormField({ label, name, type = "text", value, onChange, required, min }) {
-  return <div><label style={labelStyle}>{label}</label><input type={type} name={name} value={value} onChange={onChange} required={required} min={min} style={inputStyle} /></div>;
-}
-
-export default DataRuangan;
+export default DataRuangan

@@ -1,237 +1,1138 @@
-import { useState } from "react";
+import { useState } from 'react'
+
+const dataAwal = [
+  {
+    id: 1,
+    ruangan: 'Ruang Rapat Utama',
+    pemesan: 'Delita Br Tinambunan',
+    bagian: 'Bagian Keuangan',
+    kegiatan: 'Rapat Koordinasi',
+    deskripsi: 'Rapat koordinasi terkait kegiatan dan anggaran bagian.',
+    tanggal: '2026-08-12',
+    mulai: '08:00',
+    selesai: '10:00',
+    status: 'Disetujui',
+  },
+  {
+    id: 2,
+    ruangan: 'Aula',
+    pemesan: 'Alya Deka Danisha',
+    bagian: 'Bagian Kepegawaian',
+    kegiatan: 'Kegiatan Internal',
+    deskripsi: 'Kegiatan internal bersama pegawai.',
+    tanggal: '2026-08-12',
+    mulai: '13:00',
+    selesai: '16:00',
+    status: 'Menunggu',
+  },
+  {
+    id: 3,
+    ruangan: 'Ruang Rapat 1',
+    pemesan: 'Budi Santoso',
+    bagian: 'Bagian Umum',
+    kegiatan: 'Rapat Tim',
+    deskripsi: 'Rapat pembahasan pekerjaan tim.',
+    tanggal: '2026-08-13',
+    mulai: '09:00',
+    selesai: '11:00',
+    status: 'Ditolak',
+    alasanTolak: 'Jadwal ruangan tidak tersedia.',
+  },
+]
+
+const daftarRuangan = [
+  'Ruang Rapat Utama',
+  'Ruang Rapat 1',
+  'Ruang Rapat 2',
+  'Aula',
+]
+
+const formatTanggal = (tanggal) => {
+  if (!tanggal) return '-'
+
+  return new Date(`${tanggal}T00:00:00`).toLocaleDateString(
+    'id-ID',
+    {
+      day: '2-digit',
+      month: 'short',
+      year: 'numeric',
+    }
+  )
+}
+
+const statusBooking = (status) => {
+  if (status === 'Disetujui') {
+    return {
+      label: 'Disetujui',
+      cls: 'green',
+    }
+  }
+
+  if (status === 'Menunggu') {
+    return {
+      label: 'Menunggu',
+      cls: 'yellow',
+    }
+  }
+
+  return {
+    label: 'Ditolak',
+    cls: 'red',
+  }
+}
 
 function BookingRuangan({ user }) {
-  const isAdminRT = user.role === 'admin_rumahtangga' || user.role === 'superadmin';
+  const isAdminRT =
+    user.role === 'admin_rumahtangga' ||
+    user.role === 'superadmin'
 
-  const [booking, setBooking] = useState([
-    { id: 1, ruangan: "Ruang Rapat Utama", pemesan: "Delita Br Tinambunan", bagian: "Bagian Keuangan", kegiatan: "Rapat Koordinasi", tanggal: "2026-08-12", mulai: "08:00", selesai: "10:00", status: "Disetujui" },
-    { id: 2, ruangan: "Aula", pemesan: "Alya Deka Danisha", bagian: "Bagian Kepegawaian", kegiatan: "Kegiatan Internal", tanggal: "2026-08-12", mulai: "13:00", selesai: "16:00", status: "Menunggu" },
-    { id: 3, ruangan: "Ruang Rapat 1", pemesan: "Budi Santoso", bagian: "Bagian Umum", kegiatan: "Rapat Tim", tanggal: "2026-08-13", mulai: "09:00", selesai: "11:00", status: "Ditolak", alasanTolak: "Jadwal ruangan tidak tersedia." },
-  ]);
+  const [booking, setBooking] = useState(dataAwal)
 
-  const [showForm, setShowForm] = useState(false);
-  const [formData, setFormData] = useState({ ruangan: "", kegiatan: "", tanggal: "", mulai: "", selesai: "" });
-  const [currentPage, setCurrentPage] = useState(0);
+  const [form, setForm] = useState({
+    ruangan: '',
+    kegiatan: '',
+    deskripsi: '',
+    tanggal: '',
+    mulai: '',
+    selesai: '',
+  })
 
-  const handleChange = (e) => setFormData({ ...formData, [e.target.name]: e.target.value });
+  const [showForm, setShowForm] = useState(false)
+
+  const [currentPage, setCurrentPage] = useState(0)
+
+  const bookingDitampilkan = isAdminRT
+    ? booking
+    : booking.filter(
+        (item) => item.pemesan === user.nama
+      )
+
+  const handleChange = (e) => {
+    setForm({
+      ...form,
+      [e.target.name]: e.target.value,
+    })
+  }
 
   const cekBentrok = () => {
     return booking.some((item) => {
-      if (item.ruangan !== formData.ruangan || item.tanggal !== formData.tanggal) return false;
-      if (item.status === "Ditolak") return false;
-      return formData.mulai < item.selesai && formData.selesai > item.mulai;
-    });
-  };
+      if (
+        item.ruangan !== form.ruangan ||
+        item.tanggal !== form.tanggal
+      ) {
+        return false
+      }
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    if (formData.selesai <= formData.mulai) { alert("Jam selesai harus lebih besar dari jam mulai."); return; }
-    if (cekBentrok()) { alert("Ruangan sudah memiliki booking pada waktu tersebut."); return; }
+      if (item.status === 'Ditolak') {
+        return false
+      }
 
-    const bookingBaru = {
+      return (
+        form.mulai < item.selesai &&
+        form.selesai > item.mulai
+      )
+    })
+  }
+
+  const tambahBooking = (e) => {
+    e.preventDefault()
+
+    if (form.selesai <= form.mulai) {
+      alert(
+        'Jam selesai harus lebih besar dari jam mulai.'
+      )
+      return
+    }
+
+    if (cekBentrok()) {
+      alert(
+        'Ruangan sudah memiliki booking pada waktu tersebut.'
+      )
+      return
+    }
+
+    const baru = {
       id: Date.now(),
-      ruangan: formData.ruangan,
+      ruangan: form.ruangan,
       pemesan: user.nama,
       bagian: user.bidang,
-      kegiatan: formData.kegiatan,
-      tanggal: formData.tanggal,
-      mulai: formData.mulai,
-      selesai: formData.selesai,
-      status: "Menunggu",
-    };
-    setBooking([...booking, bookingBaru]);
-    setFormData({ ruangan: "", kegiatan: "", tanggal: "", mulai: "", selesai: "" });
-    setShowForm(false);
-    alert("Pengajuan booking berhasil dikirim.");
-  };
+      kegiatan: form.kegiatan,
+      deskripsi: form.deskripsi,
+      tanggal: form.tanggal,
+      mulai: form.mulai,
+      selesai: form.selesai,
+      status: 'Menunggu',
+    }
+
+    setBooking([...booking, baru])
+
+    setForm({
+      ruangan: '',
+      kegiatan: '',
+      deskripsi: '',
+      tanggal: '',
+      mulai: '',
+      selesai: '',
+    })
+
+    setShowForm(false)
+
+    alert(
+      'Pengajuan booking berhasil dikirim.'
+    )
+  }
 
   const handleSetujui = (id) => {
-    const bookingDipilih = booking.find((item) => item.id === id);
-    if (!bookingDipilih) return;
+    const bookingDipilih = booking.find(
+      (item) => item.id === id
+    )
+
+    if (!bookingDipilih) return
+
     const bentrok = booking.some((item) => {
-      if (item.id === id || item.ruangan !== bookingDipilih.ruangan || item.tanggal !== bookingDipilih.tanggal || item.status !== "Disetujui") return false;
-      return bookingDipilih.mulai < item.selesai && bookingDipilih.selesai > item.mulai;
-    });
-    if (bentrok) { alert("Booking tidak dapat disetujui karena jadwal bentrok."); return; }
-    setBooking(booking.map((item) => item.id === id ? { ...item, status: "Disetujui" } : item));
-  };
+      if (
+        item.id === id ||
+        item.ruangan !== bookingDipilih.ruangan ||
+        item.tanggal !== bookingDipilih.tanggal ||
+        item.status !== 'Disetujui'
+      ) {
+        return false
+      }
+
+      return (
+        bookingDipilih.mulai < item.selesai &&
+        bookingDipilih.selesai > item.mulai
+      )
+    })
+
+    if (bentrok) {
+      alert(
+        'Booking tidak dapat disetujui karena jadwal bentrok.'
+      )
+      return
+    }
+
+    setBooking(
+      booking.map((item) =>
+        item.id === id
+          ? {
+              ...item,
+              status: 'Disetujui',
+            }
+          : item
+      )
+    )
+  }
 
   const handleTolak = (id) => {
-    const alasan = window.prompt("Masukkan alasan penolakan:");
-    if (alasan === null) return;
-    setBooking(booking.map((item) => item.id === id ? { ...item, status: "Ditolak", alasanTolak: alasan } : item));
-  };
+    const alasan = window.prompt(
+      'Masukkan alasan penolakan:'
+    )
+
+    if (alasan === null) return
+
+    setBooking(
+      booking.map((item) =>
+        item.id === id
+          ? {
+              ...item,
+              status: 'Ditolak',
+              alasanTolak: alasan,
+            }
+          : item
+      )
+    )
+  }
 
   const handleBatal = (id) => {
-    if (!window.confirm("Batalkan booking ini?")) return;
-    setBooking(booking.filter((item) => item.id !== id));
-  };
+    if (
+      !window.confirm(
+        'Yakin ingin membatalkan booking ini?'
+      )
+    ) {
+      return
+    }
 
-  // Admin lihat semua, user lain hanya lihat booking miliknya sendiri
-  const bookingDitampilkan = isAdminRT ? booking : booking.filter((item) => item.pemesan === user.nama);
+    setBooking(
+      booking.filter((item) => item.id !== id)
+    )
+  }
 
-  const getStatusStyle = (status) => {
-    if (status === "Disetujui") return { backgroundColor: "#dcfce7", color: "#166534" };
-    if (status === "Menunggu") return { backgroundColor: "#fef3c7", color: "#92400e" };
-    return { backgroundColor: "#fee2e2", color: "#991b1b" };
-  };
+  const totalDisetujui =
+    bookingDitampilkan.filter(
+      (item) => item.status === 'Disetujui'
+    ).length
 
-  const formatTanggal = (tanggal) => {
-    if (!tanggal) return "-";
-    return new Date(`${tanggal}T00:00:00`).toLocaleDateString("id-ID", { day: "2-digit", month: "short", year: "numeric" });
-  };
+  const totalMenunggu =
+    bookingDitampilkan.filter(
+      (item) => item.status === 'Menunggu'
+    ).length
+
+  const totalDitolak =
+    bookingDitampilkan.filter(
+      (item) => item.status === 'Ditolak'
+    ).length
 
   return (
-    <div style={{ padding: "32px", minHeight: "100%", backgroundColor: "#f5f8fc", fontFamily: "Inter, ui-sans-serif, system-ui, sans-serif" }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "20px", marginBottom: "24px", flexWrap: "wrap" }}>
-        <div>
-          <h1 style={{ margin: 0, fontSize: "30px", fontWeight: 700, color: "#102a43" }}>Booking Ruangan</h1>
-          <p style={{ margin: "7px 0 0", color: "#64748b", fontSize: "15px" }}>Ajukan pemesanan ruangan. Admin Rumah Tangga akan menyetujui pengajuan Anda.</p>
-        </div>
-        <button onClick={() => setShowForm(true)} style={{ border: "none", backgroundColor: "#0b72e7", color: "#fff", padding: "11px 18px", borderRadius: "8px", fontSize: "14px", fontWeight: 600, cursor: "pointer", boxShadow: "0 3px 8px rgba(11,114,231,0.2)" }}>+ Ajukan Booking</button>
-      </div>
+    <div className="page">
 
-      <div style={{ backgroundColor: "#fff", border: "1px solid #e2e8f0", borderRadius: "12px", padding: "18px 20px", marginBottom: "20px", boxShadow: "0 2px 8px rgba(15,23,42,0.04)" }}>
-        <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-          <span style={{ width: "9px", height: "9px", backgroundColor: isAdminRT ? "#0b72e7" : "#16a34a", borderRadius: "50%", display: "inline-block" }} />
-          <strong style={{ color: "#1e293b", fontSize: "15px" }}>{isAdminRT ? "Mode Admin Rumah Tangga" : "Mode Pegawai"}</strong>
-        </div>
-        <p style={{ margin: "7px 0 0 19px", color: "#64748b", fontSize: "14px" }}>
-          {isAdminRT ? "Anda dapat melihat & memproses seluruh pengajuan booking." : "Anda dapat mengajukan booking dan melihat status pengajuan Anda."}
-        </p>
-      </div>
+      {/* HEADER */}
+      <div className="page-title">
 
-      <div style={{ backgroundColor: "#fff", border: "1px solid #e2e8f0", borderRadius: "12px", overflow: "hidden", boxShadow: "0 2px 10px rgba(15,23,42,0.05)" }}>
-        <div style={{ padding: "20px 22px", borderBottom: "1px solid #e5e7eb", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+        <div
+          style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'flex-start',
+            gap: '20px',
+            flexWrap: 'wrap',
+          }}
+        >
+
           <div>
-            <h2 style={{ margin: 0, fontSize: "18px", fontWeight: 650, color: "#172b4d" }}>{isAdminRT ? "Seluruh Booking" : "Booking Saya"}</h2>
-            <p style={{ margin: "4px 0 0", color: "#94a3b8", fontSize: "13px" }}>Total {bookingDitampilkan.length} booking</p>
+            <h1>🏢 Booking Ruangan</h1>
+
+            <p>
+              Mengelola pengajuan pemesanan ruangan
+              untuk kegiatan pegawai.
+            </p>
+          </div>
+
+          <button
+            type="button"
+            className="btn"
+            onClick={() => setShowForm(true)}
+          >
+            ➕ Ajukan Booking
+          </button>
+
+        </div>
+
+      </div>
+
+      {/* STATISTIK */}
+      <div className="stats-grid">
+
+        <div className="stat-card">
+          <div className="stat-icon">📋</div>
+
+          <div className="stat-info">
+            <h4>Total Booking</h4>
+
+            <div className="stat-value">
+              {bookingDitampilkan.length}
+            </div>
+
+            <div className="stat-desc">
+              Seluruh pengajuan
+            </div>
           </div>
         </div>
 
-        <div style={{ width: "100%", overflowX: "auto" }}>
-          <table style={{ width: "100%", minWidth: "1000px", borderCollapse: "collapse" }}>
+        <div className="stat-card green">
+          <div className="stat-icon">✅</div>
+
+          <div className="stat-info">
+            <h4>Disetujui</h4>
+
+            <div className="stat-value">
+              {totalDisetujui}
+            </div>
+
+            <div className="stat-desc">
+              Booking disetujui
+            </div>
+          </div>
+        </div>
+
+        <div className="stat-card gold">
+          <div className="stat-icon">⏳</div>
+
+          <div className="stat-info">
+            <h4>Menunggu</h4>
+
+            <div className="stat-value">
+              {totalMenunggu}
+            </div>
+
+            <div className="stat-desc">
+              Menunggu persetujuan
+            </div>
+          </div>
+        </div>
+
+        <div className="stat-card">
+          <div className="stat-icon">❌</div>
+
+          <div className="stat-info">
+            <h4>Ditolak</h4>
+
+            <div className="stat-value">
+              {totalDitolak}
+            </div>
+
+            <div className="stat-desc">
+              Booking ditolak
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      {/* INFO ROLE */}
+      <div className="card">
+
+        <h3>
+          {isAdminRT
+            ? '🔐 Mode Admin Rumah Tangga'
+            : '👤 Mode Pegawai'}
+        </h3>
+
+        <p>
+          {isAdminRT
+            ? 'Anda dapat melihat dan memproses seluruh pengajuan booking ruangan.'
+            : 'Anda dapat mengajukan booking dan melihat status pengajuan Anda.'}
+        </p>
+
+      </div>
+
+      {/* DAFTAR BOOKING */}
+      <div className="card">
+
+        <h3>
+          {isAdminRT
+            ? '📋 Seluruh Booking'
+            : '📋 Booking Saya'}
+        </h3>
+
+        <p>
+          Menampilkan {bookingDitampilkan.length} data
+          booking.
+        </p>
+
+        <div className="table-wrap">
+
+          <table className="table">
+
             <thead>
-              <tr style={{ backgroundColor: "#f8fafc" }}>
-                <th style={thStyle}>Ruangan</th>
-                <th style={thStyle}>Pemesan</th>
-                <th style={thStyle}>Bagian</th>
-                <th style={thStyle}>Kegiatan</th>
-                <th style={thStyle}>Tanggal</th>
-                <th style={thStyle}>Waktu</th>
-                <th style={thStyle}>Status</th>
-                <th style={thStyle}>Aksi</th>
+              <tr>
+                <th>No</th>
+                <th>Ruangan</th>
+                <th>Pemesan</th>
+                <th>Bagian</th>
+                <th>Kegiatan</th>
+                <th>Deskripsi</th>
+                <th>Tanggal</th>
+                <th>Waktu</th>
+                <th>Status</th>
+                <th>Aksi</th>
               </tr>
             </thead>
+
             <tbody>
+
               {(() => {
                 const ITEMS_PER_PAGE = 10
-                const totalPages = Math.ceil(bookingDitampilkan.length / ITEMS_PER_PAGE)
-                const startIndex = currentPage * ITEMS_PER_PAGE
-                const endIndex = startIndex + ITEMS_PER_PAGE
-                const dataPaginated = bookingDitampilkan.slice(startIndex, endIndex)
+
+                const totalPages = Math.ceil(
+                  bookingDitampilkan.length /
+                    ITEMS_PER_PAGE
+                )
+
+                const startIndex =
+                  currentPage * ITEMS_PER_PAGE
+
+                const endIndex =
+                  startIndex + ITEMS_PER_PAGE
+
+                const dataPaginated =
+                  bookingDitampilkan.slice(
+                    startIndex,
+                    endIndex
+                  )
 
                 return (
                   <>
-                    {dataPaginated.length > 0 ? dataPaginated.map((item) => (
-                      <tr key={item.id} style={{ borderTop: "1px solid #edf2f7" }}>
-                        <td style={tdStyle}><div style={{ fontWeight: 600, color: "#1e293b" }}>{item.ruangan}</div></td>
-                        <td style={tdStyle}>{item.pemesan}</td>
-                        <td style={tdStyle}>{item.bagian}</td>
-                        <td style={{ ...tdStyle, maxWidth: "220px" }}>{item.kegiatan}</td>
-                        <td style={{ ...tdStyle, whiteSpace: "nowrap" }}>{formatTanggal(item.tanggal)}</td>
-                        <td style={{ ...tdStyle, whiteSpace: "nowrap" }}><span style={{ backgroundColor: "#f1f5f9", color: "#475569", padding: "6px 9px", borderRadius: "6px", fontSize: "12px", fontWeight: 600 }}>{item.mulai} - {item.selesai}</span></td>
-                        <td style={{ ...tdStyle, textAlign: "center" }}>
-                          <span style={{ ...getStatusStyle(item.status), display: "inline-block", padding: "6px 11px", borderRadius: "20px", fontSize: "12px", fontWeight: 600 }}>{item.status}</span>
-                          {item.status === "Ditolak" && item.alasanTolak && <div style={{ marginTop: "6px", color: "#991b1b", fontSize: "11px", maxWidth: "180px" }}>{item.alasanTolak}</div>}
+                    {dataPaginated.length > 0 ? (
+
+                      dataPaginated.map(
+                        (item, index) => {
+
+                          const st =
+                            statusBooking(
+                              item.status
+                            )
+
+                          return (
+                            <tr key={item.id}>
+
+                              <td>
+                                {startIndex +
+                                  index +
+                                  1}
+                              </td>
+
+                              <td>
+                                <div className="cell-main">
+                                  {item.ruangan}
+                                </div>
+                              </td>
+
+                              <td>
+                                {item.pemesan}
+                              </td>
+
+                              <td>
+                                {item.bagian}
+                              </td>
+
+                              <td>
+                                {item.kegiatan}
+                              </td>
+
+                              <td
+                                style={{
+                                  maxWidth: '220px',
+                                }}
+                              >
+                                {item.deskripsi ||
+                                  '-'}
+                              </td>
+
+                              <td>
+                                {formatTanggal(
+                                  item.tanggal
+                                )}
+                              </td>
+
+                              <td>
+                                {item.mulai} -{' '}
+                                {item.selesai}
+                              </td>
+
+                              <td>
+
+                                <span
+                                  className={`badge ${st.cls}`}
+                                >
+                                  {st.label}
+                                </span>
+
+                                {item.status ===
+                                  'Ditolak' &&
+                                  item.alasanTolak && (
+                                    <div
+                                      style={{
+                                        marginTop:
+                                          '6px',
+                                        color:
+                                          '#991b1b',
+                                        fontSize:
+                                          '11px',
+                                        maxWidth:
+                                          '180px',
+                                      }}
+                                    >
+                                      {
+                                        item.alasanTolak
+                                      }
+                                    </div>
+                                  )}
+
+                              </td>
+
+                              <td>
+
+                                <div
+                                  style={{
+                                    display: 'flex',
+                                    gap: '5px',
+                                    justifyContent:
+                                      'center',
+                                  }}
+                                >
+
+                                  {isAdminRT &&
+                                    item.status ===
+                                      'Menunggu' && (
+                                      <>
+
+                                        <button
+                                          type="button"
+                                          className="btn"
+                                          title="Setujui booking"
+                                          onClick={() =>
+                                            handleSetujui(
+                                              item.id
+                                            )
+                                          }
+                                          style={{
+                                            padding:
+                                              '5px 8px',
+                                            fontSize:
+                                              '12px',
+                                          }}
+                                        >
+                                          ✓
+                                        </button>
+
+                                        <button
+                                          type="button"
+                                          className="btn-danger"
+                                          title="Tolak booking"
+                                          onClick={() =>
+                                            handleTolak(
+                                              item.id
+                                            )
+                                          }
+                                          style={{
+                                            padding:
+                                              '5px 8px',
+                                            fontSize:
+                                              '12px',
+                                          }}
+                                        >
+                                          ✕
+                                        </button>
+
+                                      </>
+                                    )}
+
+                                  {!isAdminRT &&
+                                    item.status ===
+                                      'Menunggu' &&
+                                    item.pemesan ===
+                                      user.nama && (
+
+                                      <button
+                                        type="button"
+                                        className="btn-danger"
+                                        title="Batalkan booking"
+                                        onClick={() =>
+                                          handleBatal(
+                                            item.id
+                                          )
+                                        }
+                                        style={{
+                                          padding:
+                                            '5px 8px',
+                                          fontSize:
+                                            '12px',
+                                        }}
+                                      >
+                                        ✕
+                                      </button>
+
+                                    )}
+
+                                </div>
+
+                              </td>
+
+                            </tr>
+                          )
+                        }
+                      )
+
+                    ) : (
+
+                      <tr>
+
+                        <td
+                          colSpan={10}
+                          style={{
+                            textAlign: 'center',
+                            padding: '30px',
+                          }}
+                        >
+                          Belum ada data booking.
                         </td>
-                        <td style={{ ...tdStyle, textAlign: "center" }}>
-                          <div style={{ display: "flex", justifyContent: "center", gap: "6px", flexWrap: "wrap" }}>
-                            {isAdminRT && item.status === "Menunggu" && (
-                              <>
-                                <button onClick={() => handleSetujui(item.id)} style={{ border: "1px solid #bbf7d0", backgroundColor: "#f0fdf4", color: "#15803d", padding: "6px 10px", borderRadius: "6px", fontSize: "12px", fontWeight: 600, cursor: "pointer" }}>Setujui</button>
-                                <button onClick={() => handleTolak(item.id)} style={{ border: "1px solid #fecaca", backgroundColor: "#fef2f2", color: "#dc2626", padding: "6px 10px", borderRadius: "6px", fontSize: "12px", fontWeight: 600, cursor: "pointer" }}>Tolak</button>
-                              </>
-                            )}
-                            {!isAdminRT && item.status === "Menunggu" && item.pemesan === user.nama && (
-                              <button onClick={() => handleBatal(item.id)} style={{ border: "1px solid #fecaca", backgroundColor: "#fef2f2", color: "#dc2626", padding: "6px 10px", borderRadius: "6px", fontSize: "12px", fontWeight: 600, cursor: "pointer" }}>Batalkan</button>
-                            )}
-                          </div>
-                        </td>
+
                       </tr>
-                    )) : (
-                      <tr><td colSpan="8" style={{ padding: "45px 20px", textAlign: "center", color: "#94a3b8" }}>Belum ada data booking.</td></tr>
+
                     )}
                   </>
                 )
               })()}
+
             </tbody>
+
           </table>
+
         </div>
 
+        {/* PAGINATION */}
         {(() => {
+
           const ITEMS_PER_PAGE = 10
-          const totalPages = Math.ceil(bookingDitampilkan.length / ITEMS_PER_PAGE)
+
+          const totalPages = Math.ceil(
+            bookingDitampilkan.length /
+              ITEMS_PER_PAGE
+          )
+
           return (
-            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px', marginTop: '16px', alignItems: 'center', paddingBottom: '10px' }}>
+
+            <div
+              style={{
+                display: 'flex',
+                justifyContent:
+                  'flex-end',
+                gap: '8px',
+                marginTop: '16px',
+                alignItems: 'center',
+              }}
+            >
+
               <button
-                onClick={() => setCurrentPage(prev => Math.max(0, prev - 1))}
+                type="button"
+                onClick={() =>
+                  setCurrentPage(
+                    (prev) =>
+                      Math.max(0, prev - 1)
+                  )
+                }
                 disabled={currentPage === 0}
-                style={{ padding: '6px 10px', borderRadius: '6px', border: '1px solid #cbd5e1', backgroundColor: '#fff', cursor: currentPage === 0 ? 'not-allowed' : 'pointer', opacity: currentPage === 0 ? 0.5 : 1, fontSize: '11px', fontWeight: 600 }}
+                style={{
+                  padding: '6px 10px',
+                  borderRadius: '6px',
+                  border:
+                    '1px solid #cbd5e1',
+                  backgroundColor: '#fff',
+                  cursor:
+                    currentPage === 0
+                      ? 'not-allowed'
+                      : 'pointer',
+                  opacity:
+                    currentPage === 0
+                      ? 0.5
+                      : 1,
+                  fontSize: '11px',
+                  fontWeight: 600,
+                }}
               >
                 Back
               </button>
-              <span style={{ fontSize: '11px', fontWeight: '500', color: '#64748b' }}>
-                {currentPage + 1} / {Math.max(1, totalPages)}
+
+              <span
+                style={{
+                  fontSize: '11px',
+                  fontWeight: 500,
+                  color: '#64748b',
+                }}
+              >
+                {currentPage + 1} /{' '}
+                {Math.max(
+                  1,
+                  totalPages
+                )}
               </span>
+
               <button
-                onClick={() => setCurrentPage(prev => (prev + 1 < totalPages ? prev + 1 : prev))}
-                disabled={currentPage + 1 >= totalPages}
-                style={{ padding: '6px 10px', borderRadius: '6px', border: '1px solid #cbd5e1', backgroundColor: '#fff', cursor: currentPage + 1 >= totalPages ? 'not-allowed' : 'pointer', opacity: currentPage + 1 >= totalPages ? 0.5 : 1, fontSize: '11px', fontWeight: 600 }}
+                type="button"
+                onClick={() =>
+                  setCurrentPage(
+                    (prev) =>
+                      prev + 1 <
+                      totalPages
+                        ? prev + 1
+                        : prev
+                  )
+                }
+                disabled={
+                  currentPage + 1 >=
+                  totalPages
+                }
+                style={{
+                  padding: '6px 10px',
+                  borderRadius: '6px',
+                  border:
+                    '1px solid #cbd5e1',
+                  backgroundColor: '#fff',
+                  cursor:
+                    currentPage + 1 >=
+                    totalPages
+                      ? 'not-allowed'
+                      : 'pointer',
+                  opacity:
+                    currentPage + 1 >=
+                    totalPages
+                      ? 0.5
+                      : 1,
+                  fontSize: '11px',
+                  fontWeight: 600,
+                }}
               >
                 Next
               </button>
+
             </div>
+
           )
         })()}
+
       </div>
 
+      {/* FORM BOOKING */}
       {showForm && (
-        <div style={{ position: "fixed", inset: 0, backgroundColor: "rgba(15,23,42,0.5)", display: "flex", alignItems: "center", justifyContent: "center", padding: "20px", zIndex: 1000 }}>
-          <div style={{ width: "100%", maxWidth: "600px", maxHeight: "90vh", overflowY: "auto", backgroundColor: "#fff", borderRadius: "14px", boxShadow: "0 20px 50px rgba(15,23,42,0.25)" }}>
-            <div style={{ padding: "20px 24px", borderBottom: "1px solid #e5e7eb", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-              <div><h2 style={{ margin: 0, color: "#172b4d", fontSize: "20px" }}>Ajukan Booking Ruangan</h2><p style={{ margin: "5px 0 0", color: "#94a3b8", fontSize: "13px" }}>Nama dan bagian otomatis terisi.</p></div>
-              <button onClick={() => setShowForm(false)} style={{ border: "none", backgroundColor: "#f1f5f9", color: "#64748b", width: "34px", height: "34px", borderRadius: "50%", cursor: "pointer", fontSize: "18px" }}>×</button>
+
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            backgroundColor:
+              'rgba(15,23,42,0.5)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent:
+              'center',
+            padding: '20px',
+            zIndex: 1000,
+          }}
+        >
+
+          <div
+            style={{
+              width: '100%',
+              maxWidth: '600px',
+              maxHeight: '90vh',
+              overflowY: 'auto',
+              backgroundColor: '#fff',
+              borderRadius: '14px',
+              boxShadow:
+                '0 20px 50px rgba(15,23,42,0.25)',
+            }}
+          >
+
+            {/* FORM HEADER */}
+            <div
+              style={{
+                padding:
+                  '20px 24px',
+                borderBottom:
+                  '1px solid #e5e7eb',
+                display: 'flex',
+                justifyContent:
+                  'space-between',
+                alignItems:
+                  'center',
+              }}
+            >
+
+              <div>
+
+                <h2
+                  style={{
+                    margin: 0,
+                    color: '#172b4d',
+                    fontSize: '20px',
+                  }}
+                >
+                  Ajukan Booking Ruangan
+                </h2>
+
+                <p
+                  style={{
+                    margin:
+                      '5px 0 0',
+                    color: '#94a3b8',
+                    fontSize: '13px',
+                  }}
+                >
+                  Nama dan bagian otomatis
+                  terisi dari data pengguna.
+                </p>
+
+              </div>
+
+              <button
+                type="button"
+                onClick={() =>
+                  setShowForm(false)
+                }
+                style={{
+                  border: 'none',
+                  backgroundColor:
+                    '#f1f5f9',
+                  color: '#64748b',
+                  width: '34px',
+                  height: '34px',
+                  borderRadius:
+                    '50%',
+                  cursor: 'pointer',
+                  fontSize: '18px',
+                }}
+              >
+                ×
+              </button>
+
             </div>
-            <form onSubmit={handleSubmit} style={{ padding: "24px", display: "grid", gridTemplateColumns: "1fr 1fr", gap: "18px" }}>
-              <div><label style={labelStyle}>Pemesan</label><input type="text" value={user.nama} disabled style={{ ...inputStyle, backgroundColor: "#f8fafc" }} /></div>
-              <div><label style={labelStyle}>Bagian</label><input type="text" value={user.bidang} disabled style={{ ...inputStyle, backgroundColor: "#f8fafc" }} /></div>
-              <div style={{ gridColumn: "1 / -1" }}><label style={labelStyle}>Ruangan</label>
-                <select name="ruangan" value={formData.ruangan} onChange={handleChange} required style={inputStyle}>
-                  <option value="">Pilih Ruangan</option>
-                  <option>Ruang Rapat Utama</option><option>Ruang Rapat 1</option><option>Ruang Rapat 2</option><option>Aula</option>
+
+            {/* FORM */}
+            <form
+              onSubmit={tambahBooking}
+              style={{
+                padding: '24px',
+                display: 'grid',
+                gridTemplateColumns:
+                  '1fr 1fr',
+                gap: '18px',
+              }}
+            >
+
+              {/* PEMESAN */}
+              <div>
+
+                <label style={labelStyle}>
+                  Pemesan
+                </label>
+
+                <input
+                  type="text"
+                  value={user.nama}
+                  disabled
+                  style={{
+                    ...inputStyle,
+                    backgroundColor:
+                      '#f8fafc',
+                  }}
+                />
+
+              </div>
+
+              {/* BAGIAN */}
+              <div>
+
+                <label style={labelStyle}>
+                  Bagian
+                </label>
+
+                <input
+                  type="text"
+                  value={user.bidang}
+                  disabled
+                  style={{
+                    ...inputStyle,
+                    backgroundColor:
+                      '#f8fafc',
+                  }}
+                />
+
+              </div>
+
+              {/* RUANGAN */}
+              <div
+                style={{
+                  gridColumn:
+                    '1 / -1',
+                }}
+              >
+
+                <label style={labelStyle}>
+                  Ruangan
+                </label>
+
+                <select
+                  name="ruangan"
+                  value={form.ruangan}
+                  onChange={
+                    handleChange
+                  }
+                  required
+                  style={inputStyle}
+                >
+
+                  <option value="">
+                    Pilih Ruangan
+                  </option>
+
+                  {daftarRuangan.map(
+                    (ruangan) => (
+                      <option
+                        key={ruangan}
+                        value={ruangan}
+                      >
+                        {ruangan}
+                      </option>
+                    )
+                  )}
+
                 </select>
+
               </div>
-              <div style={{ gridColumn: "1 / -1" }}><label style={labelStyle}>Kegiatan</label><input type="text" name="kegiatan" value={formData.kegiatan} onChange={handleChange} required style={inputStyle} /></div>
-              <div><label style={labelStyle}>Tanggal</label><input type="date" name="tanggal" value={formData.tanggal} onChange={handleChange} required style={inputStyle} /></div>
+
+              {/* KEGIATAN */}
+              <div
+                style={{
+                  gridColumn:
+                    '1 / -1',
+                }}
+              >
+
+                <label style={labelStyle}>
+                  Kegiatan
+                </label>
+
+                <input
+                  type="text"
+                  name="kegiatan"
+                  value={
+                    form.kegiatan
+                  }
+                  onChange={
+                    handleChange
+                  }
+                  placeholder="Contoh: Rapat Koordinasi"
+                  required
+                  style={inputStyle}
+                />
+
+              </div>
+
+              {/* DESKRIPSI */}
+              <div
+                style={{
+                  gridColumn:
+                    '1 / -1',
+                }}
+              >
+
+                <label style={labelStyle}>
+                  Deskripsi
+                </label>
+
+                <textarea
+                  name="deskripsi"
+                  value={
+                    form.deskripsi
+                  }
+                  onChange={
+                    handleChange
+                  }
+                  placeholder="Jelaskan secara singkat tujuan atau keperluan penggunaan ruangan..."
+                  required
+                  rows={4}
+                  style={{
+                    ...inputStyle,
+                    resize: 'vertical',
+                  }}
+                />
+
+              </div>
+
+              {/* TANGGAL */}
+              <div>
+
+                <label style={labelStyle}>
+                  Tanggal
+                </label>
+
+                <input
+                  type="date"
+                  name="tanggal"
+                  value={
+                    form.tanggal
+                  }
+                  onChange={
+                    handleChange
+                  }
+                  required
+                  style={inputStyle}
+                />
+
+              </div>
+
+              {/* KOSONG */}
               <div></div>
-              <div><label style={labelStyle}>Jam Mulai</label><input type="time" name="mulai" value={formData.mulai} onChange={handleChange} required style={inputStyle} /></div>
-              <div><label style={labelStyle}>Jam Selesai</label><input type="time" name="selesai" value={formData.selesai} onChange={handleChange} required style={inputStyle} /></div>
-              <div style={{ gridColumn: "1 / -1", display: "flex", justifyContent: "flex-end", gap: "10px", paddingTop: "18px", borderTop: "1px solid #e5e7eb" }}>
-                <button type="button" onClick={() => setShowForm(false)} style={{ padding: "10px 17px", border: "1px solid #cbd5e1", backgroundColor: "#fff", color: "#475569", borderRadius: "7px", fontWeight: 600, cursor: "pointer" }}>Batal</button>
-                <button type="submit" style={{ padding: "10px 18px", border: "none", backgroundColor: "#0b72e7", color: "#fff", borderRadius: "7px", fontWeight: 600, cursor: "pointer" }}>Ajukan Booking</button>
+
+              {/* JAM MULAI */}
+              <div>
+
+                <label style={labelStyle}>
+                  Jam Mulai
+                </label>
+
+                <input
+                  type="time"
+                  name="mulai"
+                  value={
+                    form.mulai
+                  }
+                  onChange={
+                    handleChange
+                  }
+                  required
+                  style={inputStyle}
+                />
+
               </div>
+
+              {/* JAM SELESAI */}
+              <div>
+
+                <label style={labelStyle}>
+                  Jam Selesai
+                </label>
+
+                <input
+                  type="time"
+                  name="selesai"
+                  value={
+                    form.selesai
+                  }
+                  onChange={
+                    handleChange
+                  }
+                  required
+                  style={inputStyle}
+                />
+
+              </div>
+
+              {/* BUTTON */}
+              <div
+                style={{
+                  gridColumn:
+                    '1 / -1',
+                  display: 'flex',
+                  justifyContent:
+                    'flex-end',
+                  gap: '10px',
+                  paddingTop: '18px',
+                  borderTop:
+                    '1px solid #e5e7eb',
+                }}
+              >
+
+                <button
+                  type="button"
+                  className="btn"
+                  onClick={() =>
+                    setShowForm(false)
+                  }
+                >
+                  Batal
+                </button>
+
+                <button
+                  type="submit"
+                  className="btn"
+                >
+                  Simpan Booking
+                </button>
+
+              </div>
+
             </form>
+
           </div>
+
         </div>
+
       )}
+
     </div>
-  );
+  )
 }
 
-const thStyle = { padding: "14px 16px", color: "#64748b", fontSize: "12px", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.03em", textAlign: "left", whiteSpace: "nowrap" };
-const tdStyle = { padding: "15px 16px", color: "#475569", fontSize: "13px", verticalAlign: "middle" };
-const labelStyle = { display: "block", marginBottom: "7px", color: "#334155", fontSize: "13px", fontWeight: 600 };
-const inputStyle = { width: "100%", boxSizing: "border-box", padding: "10px 12px", border: "1px solid #cbd5e1", borderRadius: "7px", outline: "none", fontSize: "14px", color: "#334155", backgroundColor: "#fff" };
-
-export default BookingRuangan;
+export default BookingRuangan
