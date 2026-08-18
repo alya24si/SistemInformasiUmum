@@ -179,6 +179,8 @@ function DataAbsensi() {
 
   const [search, setSearch] = useState('')
 
+  const [currentPage, setCurrentPage] = useState(0)
+
   const pegawaiProfiles = [
     {
       nama: 'Delita Br Tinambunan',
@@ -401,11 +403,6 @@ function DataAbsensi() {
       <div className="card">
 
         <h3>📥 Import Data Absensi</h3>
-
-        <p>
-          Upload file Excel absensi ke backend. Backend akan
-          memproses dan menyimpan data ke MySQL.
-        </p>
 
         <div className="form-row">
 
@@ -648,85 +645,123 @@ function DataAbsensi() {
 
             <tbody>
 
-              {dataFiltered.length > 0 ? (
+              {(() => {
+                const ITEMS_PER_PAGE = 10
+                const totalPages = Math.ceil(dataFiltered.length / ITEMS_PER_PAGE)
+                const startIndex = currentPage * ITEMS_PER_PAGE
+                const endIndex = startIndex + ITEMS_PER_PAGE
+                const dataPaginated = dataFiltered.slice(startIndex, endIndex)
 
-                dataFiltered.map((d, index) => {
+                return (
+                  <>
+                    {dataPaginated.length > 0 ? (
 
-                  const st =
-                    statusAbsensi(d.status)
+                      dataPaginated.map((d, index) => {
 
-                  return (
-                    <tr key={d.id}>
+                        const st =
+                          statusAbsensi(d.status)
 
-                      <td>
-                        {index + 1}
-                      </td>
+                        return (
+                          <tr key={d.id}>
 
-                      <td>
-                        <div className="cell-main">
-                          {d.nama}
-                        </div>
-                      </td>
+                            <td>
+                              {startIndex + index + 1}
+                            </td>
 
-                      <td>
-                        {formatTanggal(
-                          d.tanggal
-                        )}
-                      </td>
+                            <td>
+                              <div className="cell-main">
+                                {d.nama}
+                              </div>
+                            </td>
 
-                      <td>
-                        {d.jamMasuk}
-                      </td>
+                            <td>
+                              {formatTanggal(
+                                d.tanggal
+                              )}
+                            </td>
 
-                      <td>
-                        {d.jamPulang}
-                      </td>
+                            <td>
+                              {d.jamMasuk}
+                            </td>
 
-                      <td>
-                        <span
-                          className={`badge ${st.cls}`}
+                            <td>
+                              {d.jamPulang}
+                            </td>
+
+                            <td>
+                              <span
+                                className={`badge ${st.cls}`}
+                              >
+                                {st.label}
+                              </span>
+                            </td>
+
+                            <td>
+                              <button
+                                type="button"
+                                className="btn-danger"
+                                onClick={() =>
+                                  hapusData(d.id)
+                                }
+                              >
+                                🗑
+                              </button>
+                            </td>
+
+                          </tr>
+                        )
+                      })
+
+                    ) : (
+
+                      <tr>
+                        <td
+                          colSpan={7}
+                          style={{
+                            textAlign: 'center',
+                            padding: '30px',
+                          }}
                         >
-                          {st.label}
-                        </span>
-                      </td>
+                          Tidak ada data absensi.
+                        </td>
+                      </tr>
 
-                      <td>
-                        <button
-                          type="button"
-                          className="btn-danger"
-                          onClick={() =>
-                            hapusData(d.id)
-                          }
-                        >
-                          🗑
-                        </button>
-                      </td>
-
-                    </tr>
-                  )
-                })
-
-              ) : (
-
-                <tr>
-                  <td
-                    colSpan={7}
-                    style={{
-                      textAlign: 'center',
-                      padding: '30px',
-                    }}
-                  >
-                    Tidak ada data absensi.
-                  </td>
-                </tr>
-
-              )}
+                    )}
+                  </>
+                )
+              })()}
 
             </tbody>
 
           </table>
 
         </div>
+
+        {(() => {
+          const ITEMS_PER_PAGE = 10
+          const totalPages = Math.ceil(dataFiltered.length / ITEMS_PER_PAGE)
+          return (
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px', marginTop: '16px', alignItems: 'center' }}>
+              <button
+                onClick={() => setCurrentPage(prev => Math.max(0, prev - 1))}
+                disabled={currentPage === 0}
+                style={{ padding: '6px 10px', borderRadius: '6px', border: '1px solid #cbd5e1', backgroundColor: '#fff', cursor: currentPage === 0 ? 'not-allowed' : 'pointer', opacity: currentPage === 0 ? 0.5 : 1, fontSize: '11px', fontWeight: 600 }}
+              >
+                Back
+              </button>
+              <span style={{ fontSize: '11px', fontWeight: '500', color: '#64748b' }}>
+                {currentPage + 1} / {Math.max(1, totalPages)}
+              </span>
+              <button
+                onClick={() => setCurrentPage(prev => (prev + 1 < totalPages ? prev + 1 : prev))}
+                disabled={currentPage + 1 >= totalPages}
+                style={{ padding: '6px 10px', borderRadius: '6px', border: '1px solid #cbd5e1', backgroundColor: '#fff', cursor: currentPage + 1 >= totalPages ? 'not-allowed' : 'pointer', opacity: currentPage + 1 >= totalPages ? 0.5 : 1, fontSize: '11px', fontWeight: 600 }}
+              >
+                Next
+              </button>
+            </div>
+          )
+        })()}
 
       </div>
 

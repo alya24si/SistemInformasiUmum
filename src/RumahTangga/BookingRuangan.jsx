@@ -11,6 +11,7 @@ function BookingRuangan({ user }) {
 
   const [showForm, setShowForm] = useState(false);
   const [formData, setFormData] = useState({ ruangan: "", kegiatan: "", tanggal: "", mulai: "", selesai: "" });
+  const [currentPage, setCurrentPage] = useState(0);
 
   const handleChange = (e) => setFormData({ ...formData, [e.target.name]: e.target.value });
 
@@ -123,38 +124,76 @@ function BookingRuangan({ user }) {
               </tr>
             </thead>
             <tbody>
-              {bookingDitampilkan.length > 0 ? bookingDitampilkan.map((item) => (
-                <tr key={item.id} style={{ borderTop: "1px solid #edf2f7" }}>
-                  <td style={tdStyle}><div style={{ fontWeight: 600, color: "#1e293b" }}>{item.ruangan}</div></td>
-                  <td style={tdStyle}>{item.pemesan}</td>
-                  <td style={tdStyle}>{item.bagian}</td>
-                  <td style={{ ...tdStyle, maxWidth: "220px" }}>{item.kegiatan}</td>
-                  <td style={{ ...tdStyle, whiteSpace: "nowrap" }}>{formatTanggal(item.tanggal)}</td>
-                  <td style={{ ...tdStyle, whiteSpace: "nowrap" }}><span style={{ backgroundColor: "#f1f5f9", color: "#475569", padding: "6px 9px", borderRadius: "6px", fontSize: "12px", fontWeight: 600 }}>{item.mulai} - {item.selesai}</span></td>
-                  <td style={{ ...tdStyle, textAlign: "center" }}>
-                    <span style={{ ...getStatusStyle(item.status), display: "inline-block", padding: "6px 11px", borderRadius: "20px", fontSize: "12px", fontWeight: 600 }}>{item.status}</span>
-                    {item.status === "Ditolak" && item.alasanTolak && <div style={{ marginTop: "6px", color: "#991b1b", fontSize: "11px", maxWidth: "180px" }}>{item.alasanTolak}</div>}
-                  </td>
-                  <td style={{ ...tdStyle, textAlign: "center" }}>
-                    <div style={{ display: "flex", justifyContent: "center", gap: "6px", flexWrap: "wrap" }}>
-                      {isAdminRT && item.status === "Menunggu" && (
-                        <>
-                          <button onClick={() => handleSetujui(item.id)} style={{ border: "1px solid #bbf7d0", backgroundColor: "#f0fdf4", color: "#15803d", padding: "6px 10px", borderRadius: "6px", fontSize: "12px", fontWeight: 600, cursor: "pointer" }}>Setujui</button>
-                          <button onClick={() => handleTolak(item.id)} style={{ border: "1px solid #fecaca", backgroundColor: "#fef2f2", color: "#dc2626", padding: "6px 10px", borderRadius: "6px", fontSize: "12px", fontWeight: 600, cursor: "pointer" }}>Tolak</button>
-                        </>
-                      )}
-                      {!isAdminRT && item.status === "Menunggu" && item.pemesan === user.nama && (
-                        <button onClick={() => handleBatal(item.id)} style={{ border: "1px solid #fecaca", backgroundColor: "#fef2f2", color: "#dc2626", padding: "6px 10px", borderRadius: "6px", fontSize: "12px", fontWeight: 600, cursor: "pointer" }}>Batalkan</button>
-                      )}
-                    </div>
-                  </td>
-                </tr>
-              )) : (
-                <tr><td colSpan="8" style={{ padding: "45px 20px", textAlign: "center", color: "#94a3b8" }}>Belum ada data booking.</td></tr>
-              )}
+              {(() => {
+                const ITEMS_PER_PAGE = 10
+                const totalPages = Math.ceil(bookingDitampilkan.length / ITEMS_PER_PAGE)
+                const startIndex = currentPage * ITEMS_PER_PAGE
+                const endIndex = startIndex + ITEMS_PER_PAGE
+                const dataPaginated = bookingDitampilkan.slice(startIndex, endIndex)
+
+                return (
+                  <>
+                    {dataPaginated.length > 0 ? dataPaginated.map((item) => (
+                      <tr key={item.id} style={{ borderTop: "1px solid #edf2f7" }}>
+                        <td style={tdStyle}><div style={{ fontWeight: 600, color: "#1e293b" }}>{item.ruangan}</div></td>
+                        <td style={tdStyle}>{item.pemesan}</td>
+                        <td style={tdStyle}>{item.bagian}</td>
+                        <td style={{ ...tdStyle, maxWidth: "220px" }}>{item.kegiatan}</td>
+                        <td style={{ ...tdStyle, whiteSpace: "nowrap" }}>{formatTanggal(item.tanggal)}</td>
+                        <td style={{ ...tdStyle, whiteSpace: "nowrap" }}><span style={{ backgroundColor: "#f1f5f9", color: "#475569", padding: "6px 9px", borderRadius: "6px", fontSize: "12px", fontWeight: 600 }}>{item.mulai} - {item.selesai}</span></td>
+                        <td style={{ ...tdStyle, textAlign: "center" }}>
+                          <span style={{ ...getStatusStyle(item.status), display: "inline-block", padding: "6px 11px", borderRadius: "20px", fontSize: "12px", fontWeight: 600 }}>{item.status}</span>
+                          {item.status === "Ditolak" && item.alasanTolak && <div style={{ marginTop: "6px", color: "#991b1b", fontSize: "11px", maxWidth: "180px" }}>{item.alasanTolak}</div>}
+                        </td>
+                        <td style={{ ...tdStyle, textAlign: "center" }}>
+                          <div style={{ display: "flex", justifyContent: "center", gap: "6px", flexWrap: "wrap" }}>
+                            {isAdminRT && item.status === "Menunggu" && (
+                              <>
+                                <button onClick={() => handleSetujui(item.id)} style={{ border: "1px solid #bbf7d0", backgroundColor: "#f0fdf4", color: "#15803d", padding: "6px 10px", borderRadius: "6px", fontSize: "12px", fontWeight: 600, cursor: "pointer" }}>Setujui</button>
+                                <button onClick={() => handleTolak(item.id)} style={{ border: "1px solid #fecaca", backgroundColor: "#fef2f2", color: "#dc2626", padding: "6px 10px", borderRadius: "6px", fontSize: "12px", fontWeight: 600, cursor: "pointer" }}>Tolak</button>
+                              </>
+                            )}
+                            {!isAdminRT && item.status === "Menunggu" && item.pemesan === user.nama && (
+                              <button onClick={() => handleBatal(item.id)} style={{ border: "1px solid #fecaca", backgroundColor: "#fef2f2", color: "#dc2626", padding: "6px 10px", borderRadius: "6px", fontSize: "12px", fontWeight: 600, cursor: "pointer" }}>Batalkan</button>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    )) : (
+                      <tr><td colSpan="8" style={{ padding: "45px 20px", textAlign: "center", color: "#94a3b8" }}>Belum ada data booking.</td></tr>
+                    )}
+                  </>
+                )
+              })()}
             </tbody>
           </table>
         </div>
+
+        {(() => {
+          const ITEMS_PER_PAGE = 10
+          const totalPages = Math.ceil(bookingDitampilkan.length / ITEMS_PER_PAGE)
+          return (
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px', marginTop: '16px', alignItems: 'center', paddingBottom: '10px' }}>
+              <button
+                onClick={() => setCurrentPage(prev => Math.max(0, prev - 1))}
+                disabled={currentPage === 0}
+                style={{ padding: '6px 10px', borderRadius: '6px', border: '1px solid #cbd5e1', backgroundColor: '#fff', cursor: currentPage === 0 ? 'not-allowed' : 'pointer', opacity: currentPage === 0 ? 0.5 : 1, fontSize: '11px', fontWeight: 600 }}
+              >
+                Back
+              </button>
+              <span style={{ fontSize: '11px', fontWeight: '500', color: '#64748b' }}>
+                {currentPage + 1} / {Math.max(1, totalPages)}
+              </span>
+              <button
+                onClick={() => setCurrentPage(prev => (prev + 1 < totalPages ? prev + 1 : prev))}
+                disabled={currentPage + 1 >= totalPages}
+                style={{ padding: '6px 10px', borderRadius: '6px', border: '1px solid #cbd5e1', backgroundColor: '#fff', cursor: currentPage + 1 >= totalPages ? 'not-allowed' : 'pointer', opacity: currentPage + 1 >= totalPages ? 0.5 : 1, fontSize: '11px', fontWeight: 600 }}
+              >
+                Next
+              </button>
+            </div>
+          )
+        })()}
       </div>
 
       {showForm && (

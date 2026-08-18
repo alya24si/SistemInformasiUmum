@@ -13,6 +13,7 @@ function DataRuangan({ user }) {
 
   const [search, setSearch] = useState("");
   const [showForm, setShowForm] = useState(false);
+  const [currentPage, setCurrentPage] = useState(0);
   const [formData, setFormData] = useState({ nama: "", kode: "", kapasitas: "", lokasi: "", fasilitas: "", status: "Tersedia" });
 
   const filteredRuangan = ruangan.filter((item) => {
@@ -71,26 +72,64 @@ function DataRuangan({ user }) {
               </tr>
             </thead>
             <tbody>
-              {filteredRuangan.length > 0 ? filteredRuangan.map((item, index) => (
-                <tr key={item.id} style={{ borderTop: "1px solid #edf2f7" }}>
-                  <td style={tdCenterStyle}>{index + 1}</td>
-                  <td style={tdStyle}><div style={{ fontWeight: 600, color: "#1e293b" }}>{item.nama}</div></td>
-                  <td style={tdCenterStyle}><span style={{ backgroundColor: "#eff6ff", color: "#1d4ed8", padding: "5px 9px", borderRadius: "6px", fontSize: "12px", fontWeight: 600 }}>{item.kode}</span></td>
-                  <td style={tdCenterStyle}>{item.kapasitas} orang</td>
-                  <td style={tdCenterStyle}>{item.lokasi}</td>
-                  <td style={{ ...tdStyle, color: "#64748b", maxWidth: "260px" }}>{item.fasilitas}</td>
-                  <td style={tdCenterStyle}><span style={{ ...getStatusStyle(item.status), padding: "6px 11px", borderRadius: "20px", fontSize: "12px", fontWeight: 600 }}>{item.status}</span></td>
-                  {isAdminRT && (
-                    <td style={tdCenterStyle}><div style={{ display: "flex", justifyContent: "center", gap: "7px" }}>
-                      <button style={{ border: "1px solid #bfdbfe", backgroundColor: "#eff6ff", color: "#2563eb", padding: "7px 11px", borderRadius: "6px", fontSize: "12px", fontWeight: 600, cursor: "pointer" }}>Edit</button>
-                      <button onClick={() => handleDelete(item.id)} style={{ border: "1px solid #fecaca", backgroundColor: "#fef2f2", color: "#dc2626", padding: "7px 11px", borderRadius: "6px", fontSize: "12px", fontWeight: 600, cursor: "pointer" }}>Hapus</button>
-                    </div></td>
-                  )}
-                </tr>
-              )) : <tr><td colSpan={isAdminRT ? 8 : 7} style={{ padding: "40px 20px", textAlign: "center", color: "#94a3b8" }}>Data ruangan tidak ditemukan.</td></tr>}
+              {(() => {
+                const ITEMS_PER_PAGE = 10
+                const totalPages = Math.ceil(filteredRuangan.length / ITEMS_PER_PAGE)
+                const startIndex = currentPage * ITEMS_PER_PAGE
+                const endIndex = startIndex + ITEMS_PER_PAGE
+                const dataPaginated = filteredRuangan.slice(startIndex, endIndex)
+
+                return (
+                  <>
+                    {dataPaginated.length > 0 ? dataPaginated.map((item, index) => (
+                      <tr key={item.id} style={{ borderTop: "1px solid #edf2f7" }}>
+                        <td style={tdCenterStyle}>{startIndex + index + 1}</td>
+                        <td style={tdStyle}><div style={{ fontWeight: 600, color: "#1e293b" }}>{item.nama}</div></td>
+                        <td style={tdCenterStyle}><span style={{ backgroundColor: "#eff6ff", color: "#1d4ed8", padding: "5px 9px", borderRadius: "6px", fontSize: "12px", fontWeight: 600 }}>{item.kode}</span></td>
+                        <td style={tdCenterStyle}>{item.kapasitas} orang</td>
+                        <td style={tdCenterStyle}>{item.lokasi}</td>
+                        <td style={{ ...tdStyle, color: "#64748b", maxWidth: "260px" }}>{item.fasilitas}</td>
+                        <td style={tdCenterStyle}><span style={{ ...getStatusStyle(item.status), padding: "6px 11px", borderRadius: "20px", fontSize: "12px", fontWeight: 600 }}>{item.status}</span></td>
+                        {isAdminRT && (
+                          <td style={tdCenterStyle}><div style={{ display: "flex", justifyContent: "center", gap: "7px" }}>
+                            <button style={{ border: "1px solid #bfdbfe", backgroundColor: "#eff6ff", color: "#2563eb", padding: "7px 11px", borderRadius: "6px", fontSize: "12px", fontWeight: 600, cursor: "pointer" }}>Edit</button>
+                            <button onClick={() => handleDelete(item.id)} style={{ border: "1px solid #fecaca", backgroundColor: "#fef2f2", color: "#dc2626", padding: "7px 11px", borderRadius: "6px", fontSize: "12px", fontWeight: 600, cursor: "pointer" }}>Hapus</button>
+                          </div></td>
+                        )}
+                      </tr>
+                    )) : <tr><td colSpan={isAdminRT ? 8 : 7} style={{ padding: "40px 20px", textAlign: "center", color: "#94a3b8" }}>Data ruangan tidak ditemukan.</td></tr>}
+                  </>
+                )
+              })()}
             </tbody>
           </table>
         </div>
+
+        {(() => {
+          const ITEMS_PER_PAGE = 10
+          const totalPages = Math.ceil(filteredRuangan.length / ITEMS_PER_PAGE)
+          return (
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px', marginTop: '16px', alignItems: 'center', paddingBottom: '10px' }}>
+              <button
+                onClick={() => setCurrentPage(prev => Math.max(0, prev - 1))}
+                disabled={currentPage === 0}
+                style={{ padding: '6px 10px', borderRadius: '6px', border: '1px solid #cbd5e1', backgroundColor: '#fff', cursor: currentPage === 0 ? 'not-allowed' : 'pointer', opacity: currentPage === 0 ? 0.5 : 1, fontSize: '11px', fontWeight: 600 }}
+              >
+                Back
+              </button>
+              <span style={{ fontSize: '11px', fontWeight: '500', color: '#64748b' }}>
+                {currentPage + 1} / {Math.max(1, totalPages)}
+              </span>
+              <button
+                onClick={() => setCurrentPage(prev => (prev + 1 < totalPages ? prev + 1 : prev))}
+                disabled={currentPage + 1 >= totalPages}
+                style={{ padding: '6px 10px', borderRadius: '6px', border: '1px solid #cbd5e1', backgroundColor: '#fff', cursor: currentPage + 1 >= totalPages ? 'not-allowed' : 'pointer', opacity: currentPage + 1 >= totalPages ? 0.5 : 1, fontSize: '11px', fontWeight: 600 }}
+              >
+                Next
+              </button>
+            </div>
+          )
+        })()}
       </div>
 
       {showForm && isAdminRT && (

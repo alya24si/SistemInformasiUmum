@@ -11,6 +11,7 @@ function KerusakanRuangan({ user }) {
 
   const [showForm, setShowForm] = useState(false);
   const [formData, setFormData] = useState({ ruangan: "", kerusakan: "", deskripsi: "" });
+  const [currentPage, setCurrentPage] = useState(0);
 
   const handleChange = (e) => setFormData({ ...formData, [e.target.name]: e.target.value });
 
@@ -108,30 +109,68 @@ function KerusakanRuangan({ user }) {
               </tr>
             </thead>
             <tbody>
-              {laporanDitampilkan.length > 0 ? laporanDitampilkan.map((item) => (
-                <tr key={item.id} style={{ borderBottom: "1px solid #edf2f7" }}>
-                  <td style={tdStyle}><div style={{ fontWeight: 600, color: "#334155" }}>{item.ruangan}</div></td>
-                  <td style={tdStyle}>{item.pelapor}</td>
-                  <td style={tdStyle}>{item.bagian}</td>
-                  <td style={{ ...tdStyle, whiteSpace: "nowrap" }}>{formatTanggal(item.tanggal)}</td>
-                  <td style={tdStyle}><div style={{ fontWeight: 600, color: "#334155" }}>{item.kerusakan}</div></td>
-                  <td style={{ ...tdStyle, maxWidth: "260px", color: "#64748b" }}>{item.deskripsi}</td>
-                  <td style={tdStyle}><span style={{ backgroundColor: "#f1f5f9", color: "#475569", padding: "5px 9px", borderRadius: "6px", fontSize: "11px", fontWeight: 600 }}>{item.sumber}</span></td>
-                  <td style={tdStyle}><span style={{ ...getStatusStyle(item.status), display: "inline-flex", alignItems: "center", padding: "6px 10px", borderRadius: "20px", fontSize: "11px", fontWeight: 700 }}><span style={{ width: "6px", height: "6px", borderRadius: "50%", backgroundColor: "currentColor", marginRight: "6px" }} />{item.status}</span></td>
-                  {isAdminRT && (
-                    <td style={{ ...tdStyle, textAlign: "center" }}>
-                      <div style={{ display: "flex", justifyContent: "center", gap: "6px" }}>
-                        {item.status === "Menunggu" && <button onClick={() => handleProses(item.id)} style={{ ...actionButtonStyle, backgroundColor: "#eff6ff", color: "#1d4ed8", border: "1px solid #bfdbfe" }}>Proses</button>}
-                        {item.status === "Diproses" && <button onClick={() => handleSelesai(item.id)} style={{ ...actionButtonStyle, backgroundColor: "#f0fdf4", color: "#15803d", border: "1px solid #bbf7d0" }}>Selesai</button>}
-                        <button onClick={() => handleHapus(item.id)} style={{ ...actionButtonStyle, backgroundColor: "#fef2f2", color: "#dc2626", border: "1px solid #fecaca" }}>Hapus</button>
-                      </div>
-                    </td>
-                  )}
-                </tr>
-              )) : <tr><td colSpan={isAdminRT ? 9 : 8} style={{ padding: "55px 20px", textAlign: "center" }}>Belum ada laporan kerusakan.</td></tr>}
+              {(() => {
+                const ITEMS_PER_PAGE = 10
+                const totalPages = Math.ceil(laporanDitampilkan.length / ITEMS_PER_PAGE)
+                const startIndex = currentPage * ITEMS_PER_PAGE
+                const endIndex = startIndex + ITEMS_PER_PAGE
+                const dataPaginated = laporanDitampilkan.slice(startIndex, endIndex)
+
+                return (
+                  <>
+                    {dataPaginated.length > 0 ? dataPaginated.map((item) => (
+                      <tr key={item.id} style={{ borderBottom: "1px solid #edf2f7" }}>
+                        <td style={tdStyle}><div style={{ fontWeight: 600, color: "#334155" }}>{item.ruangan}</div></td>
+                        <td style={tdStyle}>{item.pelapor}</td>
+                        <td style={tdStyle}>{item.bagian}</td>
+                        <td style={{ ...tdStyle, whiteSpace: "nowrap" }}>{formatTanggal(item.tanggal)}</td>
+                        <td style={tdStyle}><div style={{ fontWeight: 600, color: "#334155" }}>{item.kerusakan}</div></td>
+                        <td style={{ ...tdStyle, maxWidth: "260px", color: "#64748b" }}>{item.deskripsi}</td>
+                        <td style={tdStyle}><span style={{ backgroundColor: "#f1f5f9", color: "#475569", padding: "5px 9px", borderRadius: "6px", fontSize: "11px", fontWeight: 600 }}>{item.sumber}</span></td>
+                        <td style={tdStyle}><span style={{ ...getStatusStyle(item.status), display: "inline-flex", alignItems: "center", padding: "6px 10px", borderRadius: "20px", fontSize: "11px", fontWeight: 700 }}><span style={{ width: "6px", height: "6px", borderRadius: "50%", backgroundColor: "currentColor", marginRight: "6px" }} />{item.status}</span></td>
+                        {isAdminRT && (
+                          <td style={{ ...tdStyle, textAlign: "center" }}>
+                            <div style={{ display: "flex", justifyContent: "center", gap: "6px" }}>
+                              {item.status === "Menunggu" && <button onClick={() => handleProses(item.id)} style={{ ...actionButtonStyle, backgroundColor: "#eff6ff", color: "#1d4ed8", border: "1px solid #bfdbfe" }}>Proses</button>}
+                              {item.status === "Diproses" && <button onClick={() => handleSelesai(item.id)} style={{ ...actionButtonStyle, backgroundColor: "#f0fdf4", color: "#15803d", border: "1px solid #bbf7d0" }}>Selesai</button>}
+                              <button onClick={() => handleHapus(item.id)} style={{ ...actionButtonStyle, backgroundColor: "#fef2f2", color: "#dc2626", border: "1px solid #fecaca" }}>Hapus</button>
+                            </div>
+                          </td>
+                        )}
+                      </tr>
+                    )) : <tr><td colSpan={isAdminRT ? 9 : 8} style={{ padding: "55px 20px", textAlign: "center" }}>Belum ada laporan kerusakan.</td></tr>}
+                  </>
+                )
+              })()}
             </tbody>
           </table>
         </div>
+
+        {(() => {
+          const ITEMS_PER_PAGE = 10
+          const totalPages = Math.ceil(laporanDitampilkan.length / ITEMS_PER_PAGE)
+          return (
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px', marginTop: '16px', alignItems: 'center', paddingBottom: '10px' }}>
+              <button
+                onClick={() => setCurrentPage(prev => Math.max(0, prev - 1))}
+                disabled={currentPage === 0}
+                style={{ padding: '6px 10px', borderRadius: '6px', border: '1px solid #cbd5e1', backgroundColor: '#fff', cursor: currentPage === 0 ? 'not-allowed' : 'pointer', opacity: currentPage === 0 ? 0.5 : 1, fontSize: '11px', fontWeight: 600 }}
+              >
+                Back
+              </button>
+              <span style={{ fontSize: '11px', fontWeight: '500', color: '#64748b' }}>
+                {currentPage + 1} / {Math.max(1, totalPages)}
+              </span>
+              <button
+                onClick={() => setCurrentPage(prev => (prev + 1 < totalPages ? prev + 1 : prev))}
+                disabled={currentPage + 1 >= totalPages}
+                style={{ padding: '6px 10px', borderRadius: '6px', border: '1px solid #cbd5e1', backgroundColor: '#fff', cursor: currentPage + 1 >= totalPages ? 'not-allowed' : 'pointer', opacity: currentPage + 1 >= totalPages ? 0.5 : 1, fontSize: '11px', fontWeight: 600 }}
+              >
+                Next
+              </button>
+            </div>
+          )
+        })()}
       </div>
     </div>
   );

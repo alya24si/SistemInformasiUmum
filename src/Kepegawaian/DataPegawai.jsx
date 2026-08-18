@@ -62,6 +62,7 @@ function DataPegawai() {
   const [search, setSearch] = useState('')
   const [filterBagian, setFilterBagian] = useState('semua')
   const [filterStatus, setFilterStatus] = useState('semua')
+  const [currentPage, setCurrentPage] = useState(0)
 
   const [form, setForm] = useState({
     nip: '',
@@ -201,11 +202,6 @@ function DataPegawai() {
       {isAdmin && (
         <div className="card">
           <h3>📥 Import Data Pegawai</h3>
-
-          <p>
-            Upload file Excel pegawai ke backend. Backend akan
-            memproses dan menyimpan data ke MySQL.
-          </p>
 
           <div className="form-row">
             <input
@@ -381,50 +377,91 @@ function DataPegawai() {
             </thead>
 
             <tbody>
-              {dataFiltered.length > 0 ? (
-                dataFiltered.map((pegawai, index) => {
-                  const status = statusPegawai(pegawai.status)
+              {(() => {
+                const ITEMS_PER_PAGE = 10
+                const totalPages = Math.ceil(dataFiltered.length / ITEMS_PER_PAGE)
+                const startIndex = currentPage * ITEMS_PER_PAGE
+                const endIndex = startIndex + ITEMS_PER_PAGE
+                const dataPaginated = dataFiltered.slice(startIndex, endIndex)
 
-                  return (
-                    <tr key={pegawai.id}>
-                      <td>{index + 1}</td>
-                      <td>{pegawai.nip}</td>
-                      <td>{pegawai.nama}</td>
-                      <td>{pegawai.jabatan}</td>
-                      <td>{pegawai.bagian}</td>
-                      <td>{pegawai.noHp || '-'}</td>
-                      <td>{pegawai.email || '-'}</td>
-                      <td>
-                        <span
-                          className={`badge ${status.className}`}
-                        >
-                          {status.label}
-                        </span>
-                      </td>
-                      {isAdmin && (
-                        <td>
-                          <button
-                            type="button"
-                            onClick={() => hapusData(pegawai.id)}
-                            className="btn-danger"
-                          >
-                            🗑 
-                          </button>
+                return (
+                  <>
+                    {dataPaginated.length > 0 ? (
+                      dataPaginated.map((pegawai, index) => {
+                        const status = statusPegawai(pegawai.status)
+
+                        return (
+                          <tr key={pegawai.id}>
+                            <td>{startIndex + index + 1}</td>
+                            <td>{pegawai.nip}</td>
+                            <td>{pegawai.nama}</td>
+                            <td>{pegawai.jabatan}</td>
+                            <td>{pegawai.bagian}</td>
+                            <td>{pegawai.noHp || '-'}</td>
+                            <td>{pegawai.email || '-'}</td>
+                            <td>
+                              <span
+                                className={`badge ${status.className}`}
+                              >
+                                {status.label}
+                              </span>
+                            </td>
+                            {isAdmin && (
+                              <td>
+                                <button
+                                  type="button"
+                                  onClick={() => hapusData(pegawai.id)}
+                                  className="btn-danger"
+                                >
+                                  🗑 
+                                </button>
+                              </td>
+                            )}
+                          </tr>
+                        )
+                      })
+                    ) : (
+                      <tr>
+                        <td colSpan={isAdmin ? 9 : 8}>
+                          Tidak ada data pegawai.
                         </td>
-                      )}
-                    </tr>
-                  )
-                })
-              ) : (
-                <tr>
-                  <td colSpan={isAdmin ? 9 : 8}>
-                    Tidak ada data pegawai.
-                  </td>
-                </tr>
-              )}
+                      </tr>
+                    )}
+                  </>
+                )
+              })()}
             </tbody>
           </table>
         </div>
+
+        {(() => {
+          const ITEMS_PER_PAGE = 10
+          const totalPages = Math.ceil(dataFiltered.length / ITEMS_PER_PAGE)
+          return (
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px', marginTop: '16px', alignItems: 'center' }}>
+              <button
+                onClick={() => setCurrentPage(prev => Math.max(0, prev - 1))}
+                disabled={currentPage === 0}
+                className="btn"
+                style={{ padding: '6px 10px', borderRadius: '6px', border: '1px solid #cbd5e1', backgroundColor: '#fff', cursor: currentPage === 0 ? 'not-allowed' : 'pointer', opacity: currentPage === 0 ? 0.5 : 1, fontSize: '11px', fontWeight: 600 }}
+              >
+                Back
+              </button>
+              <span style={{ fontSize: '11px', fontWeight: '500', color: '#64748b' }}>
+                {currentPage + 1} / {Math.max(1, totalPages)}
+              </span>
+              <button
+                onClick={() => setCurrentPage(prev => (prev + 1 < totalPages ? prev + 1 : prev))}
+                disabled={currentPage + 1 >= totalPages}
+                className="btn"
+                style={{ padding: '6px 10px', borderRadius: '6px', border: '1px solid #cbd5e1', backgroundColor: '#fff', cursor: currentPage + 1 >= totalPages ? 'not-allowed' : 'pointer', opacity: currentPage + 1 >= totalPages ? 0.5 : 1, fontSize: '11px', fontWeight: 600 }}
+              >
+                Next
+              </button>
+            </div>
+          )
+        })()}
+
       </div>
     </div>
   )

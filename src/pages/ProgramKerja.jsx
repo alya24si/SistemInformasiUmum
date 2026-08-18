@@ -24,6 +24,7 @@ function ProgramKerja({ user }) {
   const [formRealisasi, setFormRealisasi] = useState({ id: '', triwulan: 'TW1', status: '100' })
   const [filterTahun, setFilterTahun] = useState('semua')
   const [filterBidang, setFilterBidang] = useState('semua')
+  const [currentPage, setCurrentPage] = useState(0)
 
   const milikUser = isAdmin ? programs : programs.filter((p) => p.bidang === user.bidang)
 
@@ -122,20 +123,60 @@ function ProgramKerja({ user }) {
               <tr><th>Tahun</th><th>Bidang</th><th>Program Kerja</th><th>Target</th><th>TW I</th><th>TW II</th><th>TW III</th><th>TW IV</th><th>Status</th><th>Aksi</th></tr>
             </thead>
             <tbody>
-              {programsFiltered.map((p) => {
-                const st = statusProgram(p)
+              {(() => {
+                const ITEMS_PER_PAGE = 10
+                const totalPages = Math.ceil(programsFiltered.length / ITEMS_PER_PAGE)
+                const startIndex = currentPage * ITEMS_PER_PAGE
+                const endIndex = startIndex + ITEMS_PER_PAGE
+                const dataPaginated = programsFiltered.slice(startIndex, endIndex)
+
                 return (
-                  <tr key={p.id}>
-                    <td>{p.tahun}</td><td>{p.bidang}</td><td>{p.program}</td><td>{p.target}</td>
-                    <td>{cellTW(p.realisasi.TW1)}</td><td>{cellTW(p.realisasi.TW2)}</td><td>{cellTW(p.realisasi.TW3)}</td><td>{cellTW(p.realisasi.TW4)}</td>
-                    <td><span className={`badge ${st.cls}`}>{st.label}</span></td>
-                    <td>{isAdmin && <button className="btn-danger" onClick={() => hapusProgram(p.id)}>🗑</button>}</td>
-                  </tr>
+                  <>
+                    {dataPaginated.map((p) => {
+                      const st = statusProgram(p)
+                      return (
+                        <tr key={p.id}>
+                          <td>{p.tahun}</td><td>{p.bidang}</td><td>{p.program}</td><td>{p.target}</td>
+                          <td>{cellTW(p.realisasi.TW1)}</td><td>{cellTW(p.realisasi.TW2)}</td><td>{cellTW(p.realisasi.TW3)}</td><td>{cellTW(p.realisasi.TW4)}</td>
+                          <td><span className={`badge ${st.cls}`}>{st.label}</span></td>
+                          <td>{isAdmin && <button className="btn-danger" onClick={() => hapusProgram(p.id)}>🗑</button>}</td>
+                        </tr>
+                      )
+                    })}
+                  </>
                 )
-              })}
+              })()}
             </tbody>
           </table>
         </div>
+
+        {(() => {
+          const ITEMS_PER_PAGE = 10
+          const totalPages = Math.ceil(programsFiltered.length / ITEMS_PER_PAGE)
+          return (
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px', marginTop: '16px', alignItems: 'center' }}>
+              <button
+                onClick={() => setCurrentPage(prev => Math.max(0, prev - 1))}
+                disabled={currentPage === 0}
+                className="btn"
+                style={{ padding: '6px 10px', borderRadius: '6px', border: '1px solid #cbd5e1', backgroundColor: '#fff', cursor: currentPage === 0 ? 'not-allowed' : 'pointer', opacity: currentPage === 0 ? 0.5 : 1, fontSize: '11px', fontWeight: 600 }}
+              >
+                Back
+              </button>
+              <span style={{ fontSize: '11px', fontWeight: '500', color: '#64748b' }}>
+                {currentPage + 1} / {Math.max(1, totalPages)}
+              </span>
+              <button
+                onClick={() => setCurrentPage(prev => (prev + 1 < totalPages ? prev + 1 : prev))}
+                disabled={currentPage + 1 >= totalPages}
+                className="btn"
+                style={{ padding: '6px 10px', borderRadius: '6px', border: '1px solid #cbd5e1', backgroundColor: '#fff', cursor: currentPage + 1 >= totalPages ? 'not-allowed' : 'pointer', opacity: currentPage + 1 >= totalPages ? 0.5 : 1, fontSize: '11px', fontWeight: 600 }}
+              >
+                Next
+              </button>
+            </div>
+          )
+        })()}
       </div>
     </div>
   )
