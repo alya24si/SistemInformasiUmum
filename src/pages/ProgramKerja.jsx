@@ -1,5 +1,6 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 
+const API = 'http://localhost:8000/api'
 const daftarBidang = ['Umum', 'P2', 'KI', 'Pabean', 'Fasilitas']
 const daftarTriwulan = ['TW1', 'TW2', 'TW3', 'TW4']
 const tahunIni = new Date().getFullYear()
@@ -19,7 +20,30 @@ const statusProgram = (p) => {
 
 function ProgramKerja({ user }) {
   const isAdmin = user.role === 'admin_keuangan' || user.role === 'superadmin'
-  const [programs, setPrograms] = useState(dataAwal)
+  const [programs, setPrograms] = useState([])
+
+  const muatData = async () => {
+    const res = await fetch(API + '/program_kerja')
+    const json = await res.json()
+    if (json.success) {
+      setPrograms(
+        json.data.map((d) => ({
+          ...d,
+          tahun: Number(d.tahun),
+          realisasi: {
+            TW1: Number(d.realisasi_tw1),
+            TW2: Number(d.realisasi_tw2),
+            TW3: Number(d.realisasi_tw3),
+            TW4: Number(d.realisasi_tw4),
+          },
+        }))
+      )
+    }
+  }
+
+  useEffect(() => {
+    muatData()
+  }, [])
   const [formProgram, setFormProgram] = useState({ tahun: tahunIni, bidang: daftarBidang[0], program: '', target: '' })
   const [formRealisasi, setFormRealisasi] = useState({ id: '', triwulan: 'TW1', status: '100' })
   const [filterTahun, setFilterTahun] = useState('semua')
@@ -38,21 +62,41 @@ function ProgramKerja({ user }) {
   const totalBidang = isAdmin ? new Set(programs.map((p) => p.bidang)).size : 1
   const totalSelesai = milikUser.filter((p) => Object.values(p.realisasi).every((v) => v === 100)).length
 
-  const tambahProgram = (e) => {
+  const tambahProgram = async (e) => {
     e.preventDefault()
-    const baru = { id: Date.now(), tahun: Number(formProgram.tahun), bidang: formProgram.bidang, program: formProgram.program, target: formProgram.target, realisasi: { TW1: 0, TW2: 0, TW3: 0, TW4: 0 } }
-    setPrograms([...programs, baru])
+    await fetch(API + '/program_kerja', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        tahun: Number(formProgram.tahun),
+        bidang: formProgram.bidang,
+        program: formProgram.program,
+        target: formProgram.target,
+      }),
+    })
     setFormProgram({ tahun: tahunIni, bidang: daftarBidang[0], program: '', target: '' })
+    muatData()
   }
 
-  const updateRealisasi = (e) => {
+  const updateRealisasi = async (e) => {
     e.preventDefault()
-    setPrograms(programs.map((p) => p.id === Number(formRealisasi.id) ? { ...p, realisasi: { ...p.realisasi, [formRealisasi.triwulan]: Number(formRealisasi.status) } } : p))
+    await fetch(API + '/program_kerja/' + formRealisasi.id + '/realisasi', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        triwulan: formRealisasi.triwulan,
+        status: Number(formRealisasi.status),
+      }),
+    })
     setFormRealisasi({ id: '', triwulan: 'TW1', status: '100' })
+    muatData()
   }
 
-  const hapusProgram = (id) => {
-    if (window.confirm('Yakin ingin menghapus program kerja ini?')) setPrograms(programs.filter((p) => p.id !== id))
+  const hapusProgram = async (id) => {
+    if (window.confirm('Yakin ingin menghapus program kerja ini?')) {
+      await fetch(API + '/program_kerja/' + id, { method: 'DELETE' })
+      muatData()
+    }
   }
 
   const cellTW = (nilai) => nilai === 100 ? <span className="tw-done">✔ 100%</span> : <span className="tw-not">✘ 0%</span>

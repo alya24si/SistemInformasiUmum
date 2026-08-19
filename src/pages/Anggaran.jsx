@@ -1,4 +1,6 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+
+const API = 'http://localhost:8000/api'
 
 const daftarBidang = [
   'Umum',
@@ -127,7 +129,29 @@ function Anggaran({ user }) {
     user.role === 'admin_keuangan' ||
     user.role === 'superadmin'
 
-  const [data, setData] = useState(dataAwal)
+  const [data, setData] = useState([])
+
+  const muatData = async () => {
+    const res = await fetch(API + '/anggaran')
+    const json = await res.json()
+    if (json.success) {
+      setData(
+        json.data.map((d) => ({
+          ...d,
+          tahun: Number(d.tahun),
+          unit: Number(d.unit),
+          hargaSatuan: Number(d.harga_satuan),
+          pagu: Number(d.pagu),
+          realisasi: Number(d.realisasi),
+          kodeAkun: d.kode_akun,
+        }))
+      )
+    }
+  }
+
+  useEffect(() => {
+    muatData()
+  }, [])
 
   const [form, setForm] = useState({
     tahun: tahunIni,
@@ -195,27 +219,23 @@ function Anggaran({ user }) {
     Number(form.unit || 0) *
     Number(form.hargaSatuan || 0)
 
-  const tambahData = (e) => {
+    const tambahData = async (e) => {
     e.preventDefault()
 
-    const unit = Number(form.unit)
-    const harga = Number(form.hargaSatuan)
-
-    const baru = {
-      id: Date.now(),
-      tahun: Number(form.tahun),
-      bidang: form.bidang,
-      tipe: form.tipe,
-      kodeAkun: form.kodeAkun,
-      deskripsi: form.deskripsi,
-      unit,
-      satuan: form.satuan,
-      hargaSatuan: harga,
-      pagu: unit * harga,
-      realisasi: 0,
-    }
-
-    setData([...data, baru])
+    await fetch(API + '/anggaran', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        tahun: Number(form.tahun),
+        bidang: form.bidang,
+        tipe: form.tipe,
+        kode_akun: form.kodeAkun,
+        deskripsi: form.deskripsi,
+        unit: Number(form.unit),
+        satuan: form.satuan,
+        harga_satuan: Number(form.hargaSatuan),
+      }),
+    })
 
     setForm({
       tahun: tahunIni,
@@ -227,22 +247,22 @@ function Anggaran({ user }) {
       satuan: '',
       hargaSatuan: '',
     })
+
+    muatData()
   }
 
-  const tambahRealisasi = (e) => {
+   const tambahRealisasi = async (e) => {
     e.preventDefault()
 
-    setData(
-      data.map((d) =>
-        d.id === Number(formRealisasi.id)
-          ? {
-              ...d,
-              realisasi:
-                d.realisasi +
-                Number(formRealisasi.jumlah),
-            }
-          : d
-      )
+    await fetch(
+      API + '/anggaran/' + formRealisasi.id + '/realisasi',
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          jumlah: Number(formRealisasi.jumlah),
+        }),
+      }
     )
 
     setFormRealisasi({
@@ -250,30 +270,36 @@ function Anggaran({ user }) {
       bulan: daftarBulan[0],
       jumlah: '',
     })
+
+    muatData()
   }
 
   const updatePagu = (id, nilai) => {
     setData(
       data.map((d) =>
         d.id === id
-          ? {
-              ...d,
-              pagu: Number(nilai) || 0,
-            }
+          ? { ...d, pagu: Number(nilai) || 0 }
           : d
       )
     )
+
+    fetch(API + '/anggaran/' + id + '/pagu', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ pagu: Number(nilai) || 0 }),
+    })
   }
 
-  const hapusData = (id) => {
+  const hapusData = async (id) => {
     if (
       window.confirm(
         'Yakin ingin menghapus baris anggaran ini?'
       )
     ) {
-      setData(
-        data.filter((d) => d.id !== id)
-      )
+      await fetch(API + '/anggaran/' + id, {
+        method: 'DELETE',
+      })
+      muatData()
     }
   }
 
