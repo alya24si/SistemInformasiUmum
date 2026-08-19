@@ -1,33 +1,51 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState } from 'react'
 
 const API = 'http://localhost:8000/api'
 
 function PerbaikanRuangan({ user }) {
-  const isAdminRT = user.role === 'admin_rumahtangga' || user.role === 'superadmin';
+  const isAdmin =
+    user.role === 'admin_rumahtangga' ||
+    user.role === 'superadmin'
 
-  const [kerusakanBelumDiperbaiki, setKerusakanBelumDiperbaiki] = useState([]);
-  const [perbaikan, setPerbaikan] = useState([]);
+  const [kerusakanBelumDiperbaiki, setKerusakanBelumDiperbaiki] =
+    useState([])
 
-  const [loading, setLoading] = useState(true);
-  const [errorMsg, setErrorMsg] = useState("");
-  const [submitting, setSubmitting] = useState(false);
+  const [perbaikan, setPerbaikan] = useState([])
 
-  const [formData, setFormData] = useState({ kerusakanId: "", jenisPerbaikan: "", penanggungJawab: "", tanggalMulai: "", status: "Diproses" });
-  const [showForm, setShowForm] = useState(false);
-  const [currentPage, setCurrentPage] = useState(0);
+  const [loading, setLoading] = useState(true)
+  const [errorMsg, setErrorMsg] = useState('')
+  const [submitting, setSubmitting] = useState(false)
+
+  const [formData, setFormData] = useState({
+    kerusakanId: '',
+    jenisPerbaikan: '',
+    penanggungJawab: '',
+    tanggalMulai: '',
+    status: 'Diproses',
+  })
+
+  const [showForm, setShowForm] = useState(false)
+  const [currentPage, setCurrentPage] = useState(0)
+
+  // =========================
+  // LOAD DATA
+  // =========================
 
   const muatData = async () => {
-    setLoading(true);
-    setErrorMsg("");
+    setLoading(true)
+    setErrorMsg('')
 
     try {
-      const [resPerbaikan, resBelum] = await Promise.all([
+      const [
+        resPerbaikan,
+        resBelum,
+      ] = await Promise.all([
         fetch(API + '/perbaikan_ruangan'),
         fetch(API + '/perbaikan_ruangan/belum_diperbaiki'),
-      ]);
+      ])
 
-      const jsonPerbaikan = await resPerbaikan.json();
-      const jsonBelum = await resBelum.json();
+      const jsonPerbaikan = await resPerbaikan.json()
+      const jsonBelum = await resBelum.json()
 
       setPerbaikan(
         (jsonPerbaikan?.data || []).map((d) => ({
@@ -40,34 +58,68 @@ function PerbaikanRuangan({ user }) {
           tanggalMulai: d.tanggal_mulai,
           status: d.status,
         }))
-      );
+      )
 
-      setKerusakanBelumDiperbaiki(jsonBelum?.data || []);
+      setKerusakanBelumDiperbaiki(
+        jsonBelum?.data || []
+      )
     } catch (err) {
-      setErrorMsg("Gagal memuat data perbaikan ruangan.");
+      setErrorMsg(
+        'Gagal memuat data perbaikan ruangan.'
+      )
     } finally {
-      setLoading(false);
+      setLoading(false)
     }
-  };
+  }
 
   useEffect(() => {
-    muatData();
-  }, []);
+    muatData()
+  }, [])
 
-  const handleChange = (e) => setFormData({ ...formData, [e.target.name]: e.target.value });
-  const handleKerusakanChange = (e) => setFormData({ ...formData, kerusakanId: e.target.value });
+  // =========================
+  // FORM
+  // =========================
+
+  const handleChange = (e) => {
+    setFormData({
+      ...formData,
+      [e.target.name]: e.target.value,
+    })
+  }
+
+  const handleKerusakanChange = (e) => {
+    setFormData({
+      ...formData,
+      kerusakanId: e.target.value,
+    })
+  }
+
+  const resetForm = () => {
+    setFormData({
+      kerusakanId: '',
+      jenisPerbaikan: '',
+      penanggungJawab: '',
+      tanggalMulai: '',
+      status: 'Diproses',
+    })
+  }
 
   const handleSubmit = async (e) => {
-    e.preventDefault();
+    e.preventDefault()
 
-    if (!formData.kerusakanId) { alert("Pilih data kerusakan."); return; }
+    if (!formData.kerusakanId) {
+      alert('Pilih data kerusakan.')
+      return
+    }
 
-    setSubmitting(true);
+    setSubmitting(true)
 
     try {
       await fetch(API + '/perbaikan_ruangan', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+        },
         body: JSON.stringify({
           kerusakan_id: formData.kerusakanId,
           jenis_perbaikan: formData.jenisPerbaikan,
@@ -75,202 +127,983 @@ function PerbaikanRuangan({ user }) {
           tanggal_mulai: formData.tanggalMulai,
           status: formData.status,
         }),
-      });
+      })
 
-      await muatData();
+      await muatData()
 
-      resetForm();
-      setShowForm(false);
+      resetForm()
+      setShowForm(false)
+
+      alert(
+        'Data perbaikan berhasil ditambahkan.'
+      )
     } catch (err) {
-      alert("Gagal menyimpan data perbaikan.");
+      alert(
+        'Gagal menyimpan data perbaikan.'
+      )
     } finally {
-      setSubmitting(false);
+      setSubmitting(false)
     }
-  };
+  }
 
-  const resetForm = () => setFormData({ kerusakanId: "", jenisPerbaikan: "", penanggungJawab: "", tanggalMulai: "", status: "Diproses" });
+  // =========================
+  // AKSI ADMIN
+  // =========================
 
   const handleDelete = async (id) => {
-    if (!window.confirm("Hapus data perbaikan ini?")) return;
+    if (
+      !window.confirm(
+        'Hapus data perbaikan ini?'
+      )
+    ) {
+      return
+    }
 
     try {
-      await fetch(API + '/perbaikan_ruangan/' + id, {
-        method: 'DELETE',
-      });
-      await muatData();
+      await fetch(
+        API + '/perbaikan_ruangan/' + id,
+        {
+          method: 'DELETE',
+        }
+      )
+
+      await muatData()
     } catch (err) {
-      alert("Gagal menghapus data perbaikan.");
+      alert(
+        'Gagal menghapus data perbaikan.'
+      )
     }
-  };
+  }
 
   const handleSelesai = async (id) => {
-    if (!window.confirm("Tandai perbaikan ini selesai?")) return;
+    if (
+      !window.confirm(
+        'Tandai perbaikan ini selesai?'
+      )
+    ) {
+      return
+    }
 
     try {
-      await fetch(API + '/perbaikan_ruangan/' + id + '/selesai', {
-        method: 'PUT',
-      });
-      await muatData();
-    } catch (err) {
-      alert("Gagal menandai perbaikan selesai.");
-    }
-  };
+      await fetch(
+        API +
+          '/perbaikan_ruangan/' +
+          id +
+          '/selesai',
+        {
+          method: 'PUT',
+        }
+      )
 
-  const getStatusStyle = (status) => status === "Diproses" ? { backgroundColor: "#dbeafe", color: "#1d4ed8" } : { backgroundColor: "#dcfce7", color: "#166534" };
-  const formatTanggal = (tanggal) => !tanggal ? "-" : new Date(`${tanggal}T00:00:00`).toLocaleDateString("id-ID", { day: "2-digit", month: "short", year: "numeric" });
+      await muatData()
+    } catch (err) {
+      alert(
+        'Gagal menandai perbaikan selesai.'
+      )
+    }
+  }
+
+  // =========================
+  // STATUS
+  // =========================
+
+  const getStatusClass = (status) => {
+    if (status === 'Selesai') {
+      return 'green'
+    }
+
+    if (status === 'Diproses') {
+      return 'blue'
+    }
+
+    return 'yellow'
+  }
+
+  const formatTanggal = (tanggal) => {
+    if (!tanggal) {
+      return '-'
+    }
+
+    return new Date(
+      `${tanggal}T00:00:00`
+    ).toLocaleDateString('id-ID', {
+      day: '2-digit',
+      month: 'short',
+      year: 'numeric',
+    })
+  }
+
+  // =========================
+  // PAGINATION
+  // =========================
+
+  const ITEMS_PER_PAGE = 10
+
+  const totalPages = Math.ceil(
+    perbaikan.length / ITEMS_PER_PAGE
+  )
+
+  const startIndex =
+    currentPage * ITEMS_PER_PAGE
+
+  const dataPaginated = perbaikan.slice(
+    startIndex,
+    startIndex + ITEMS_PER_PAGE
+  )
 
   return (
-    <div style={{ padding: "32px", minHeight: "100%", backgroundColor: "#f5f8fc", fontFamily: "Inter, ui-sans-serif, system-ui, sans-serif" }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "20px", marginBottom: "24px" }}>
-        <div><h1 style={{ margin: 0, fontSize: "30px", fontWeight: 700, color: "#102a43" }}>Perbaikan Ruangan</h1><p style={{ margin: "7px 0 0", color: "#64748b", fontSize: "15px" }}>{isAdminRT ? "Kelola tindak lanjut perbaikan fasilitas." : "Pantau status perbaikan fasilitas yang Anda laporkan."}</p></div>
-        {isAdminRT && <button onClick={() => setShowForm(true)} disabled={kerusakanBelumDiperbaiki.length === 0} style={{ border: "none", backgroundColor: kerusakanBelumDiperbaiki.length === 0 ? "#cbd5e1" : "#0b72e7", color: "#fff", padding: "11px 18px", borderRadius: "8px", fontSize: "13px", fontWeight: 600, cursor: kerusakanBelumDiperbaiki.length === 0 ? "not-allowed" : "pointer" }}>+ Tambah Perbaikan</button>}
-      </div>
+    <div className="page">
 
-      <div style={{ backgroundColor: "#fff", border: "1px solid #e2e8f0", borderRadius: "12px", padding: "18px 20px", marginBottom: "22px" }}>
-        <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-          <div style={{ width: "9px", height: "9px", borderRadius: "50%", backgroundColor: isAdminRT ? "#0b72e7" : "#16a34a" }} />
-          <strong style={{ color: "#1e293b", fontSize: "15px" }}>{isAdminRT ? "Mode Admin Rumah Tangga" : "Mode Pegawai (Tracking)"}</strong>
-        </div>
-        <p style={{ margin: "8px 0 0 19px", color: "#64748b", fontSize: "14px", lineHeight: 1.6 }}>
-          {isAdminRT ? "Buat & kelola tindak lanjut perbaikan berdasarkan laporan kerusakan." : "Anda dapat melihat status perbaikan fasilitas yang telah dilaporkan."}
+      {/* =========================
+          HEADER
+      ========================= */}
+
+      <div className="page-title">
+        <h1>🔧 Perbaikan Ruangan</h1>
+
+        <p>
+          Kelola dan pantau proses perbaikan
+          fasilitas ruangan.
         </p>
       </div>
 
+      {/* =========================
+          MODE USER
+      ========================= */}
+
+      {!isAdmin && (
+        <div className="guest-note">
+          👁️ Mode tamu: Anda dapat melihat
+          status perbaikan fasilitas ruangan.
+        </div>
+      )}
+
+      {/* =========================
+          ERROR
+      ========================= */}
+
       {errorMsg && (
-        <div style={{ padding: "12px 16px", marginBottom: "16px", borderRadius: "8px", backgroundColor: "#fee2e2", color: "#991b1b", fontSize: "13px" }}>
+        <div
+          style={{
+            padding: '12px 16px',
+            marginBottom: '16px',
+            borderRadius: '8px',
+            backgroundColor: '#fee2e2',
+            color: '#991b1b',
+            fontSize: '13px',
+          }}
+        >
           ⚠️ {errorMsg}
         </div>
       )}
 
+      {/* =========================
+          LOADING
+      ========================= */}
+
       {loading && (
-        <div style={{ padding: "12px 16px", marginBottom: "16px", borderRadius: "8px", backgroundColor: "#f1f5f9", color: "#475569", fontSize: "13px" }}>
+        <div
+          style={{
+            padding: '12px 16px',
+            marginBottom: '16px',
+            borderRadius: '8px',
+            backgroundColor: '#f1f5f9',
+            color: '#475569',
+            fontSize: '13px',
+          }}
+        >
           Memuat data perbaikan ruangan...
         </div>
       )}
 
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: "15px", marginBottom: "22px" }}>
-        <SummaryCard title="Total Perbaikan" value={perbaikan.length} icon="🔧" />
-        <SummaryCard title="Diproses" value={perbaikan.filter((i) => i.status === "Diproses").length} icon="⚙" />
-        <SummaryCard title="Selesai" value={perbaikan.filter((i) => i.status === "Selesai").length} icon="✓" />
+      {/* =========================
+          SUMMARY
+      ========================= */}
+
+      <div className="stats-grid">
+
+        <div className="stat-card">
+          <div className="stat-icon">
+            🔧
+          </div>
+
+          <div className="stat-info">
+            <h4>Total Perbaikan</h4>
+
+            <div className="stat-value">
+              {perbaikan.length}
+            </div>
+
+            <div className="stat-desc">
+              Seluruh data perbaikan
+            </div>
+          </div>
+        </div>
+
+        <div className="stat-card gold">
+          <div className="stat-icon">
+            ⚙️
+          </div>
+
+          <div className="stat-info">
+            <h4>Diproses</h4>
+
+            <div className="stat-value">
+              {
+                perbaikan.filter(
+                  (item) =>
+                    item.status ===
+                    'Diproses'
+                ).length
+              }
+            </div>
+
+            <div className="stat-desc">
+              Sedang diperbaiki
+            </div>
+          </div>
+        </div>
+
+        <div className="stat-card green">
+          <div className="stat-icon">
+            ✅
+          </div>
+
+          <div className="stat-info">
+            <h4>Selesai</h4>
+
+            <div className="stat-value">
+              {
+                perbaikan.filter(
+                  (item) =>
+                    item.status ===
+                    'Selesai'
+                ).length
+              }
+            </div>
+
+            <div className="stat-desc">
+              Perbaikan selesai
+            </div>
+          </div>
+        </div>
+
       </div>
 
-      {showForm && isAdminRT && (
-        <div style={{ position: "fixed", inset: 0, backgroundColor: "rgba(15,23,42,0.45)", display: "flex", alignItems: "center", justifyContent: "center", padding: "20px", zIndex: 1000 }} onClick={() => { resetForm(); setShowForm(false); }}>
-          <div style={{ width: "100%", maxWidth: "600px", maxHeight: "90vh", overflowY: "auto", backgroundColor: "#fff", borderRadius: "14px" }} onClick={(e) => e.stopPropagation()}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "20px 22px", borderBottom: "1px solid #e2e8f0" }}>
-              <div><h2 style={{ margin: 0, fontSize: "19px", fontWeight: 650, color: "#172b4d" }}>Tambah Data Perbaikan</h2></div>
-              <button onClick={() => { resetForm(); setShowForm(false); }} style={{ width: "34px", height: "34px", border: "none", borderRadius: "8px", backgroundColor: "#f1f5f9", color: "#64748b", fontSize: "18px", cursor: "pointer" }}>×</button>
+      {/* =========================
+          FORM TAMBAH PERBAIKAN
+      ========================= */}
+
+      {isAdmin && (
+        <div className="card">
+
+          <div
+            style={{
+              display: 'flex',
+              justifyContent:
+                'space-between',
+              alignItems:
+                'flex-start',
+              gap: '20px',
+            }}
+          >
+
+            <div>
+              <h3>
+                ➕ Tambah Data Perbaikan
+              </h3>
+
+              <p
+                style={{
+                  margin:
+                    '5px 0 0',
+                  color: '#64748b',
+                  fontSize: '13px',
+                }}
+              >
+                Tambahkan tindak lanjut
+                berdasarkan laporan
+                kerusakan.
+              </p>
             </div>
-            <form onSubmit={handleSubmit} style={{ padding: "22px" }}>
-              <div style={{ marginBottom: "17px" }}><label style={labelStyle}>Laporan Kerusakan</label>
-                <select name="kerusakanId" value={formData.kerusakanId} onChange={handleKerusakanChange} required style={inputStyle}>
-                  <option value="">Pilih Laporan</option>
-                  {kerusakanBelumDiperbaiki.map((i) => <option key={i.id} value={i.id}>{i.ruangan} - {i.kerusakan}</option>)}
-                </select>
-              </div>
-              <div style={{ marginBottom: "17px" }}><label style={labelStyle}>Jenis Perbaikan</label><input type="text" name="jenisPerbaikan" value={formData.jenisPerbaikan} onChange={handleChange} required style={inputStyle} /></div>
-              <div style={{ marginBottom: "17px" }}><label style={labelStyle}>Penanggung Jawab</label><input type="text" name="penanggungJawab" value={formData.penanggungJawab} onChange={handleChange} required style={inputStyle} /></div>
-              <div style={{ marginBottom: "17px" }}><label style={labelStyle}>Tanggal Mulai</label><input type="date" name="tanggalMulai" value={formData.tanggalMulai} onChange={handleChange} required style={inputStyle} /></div>
-              <div style={{ marginBottom: "22px" }}><label style={labelStyle}>Status</label><select name="status" value={formData.status} onChange={handleChange} style={inputStyle}><option>Diproses</option><option>Selesai</option></select></div>
-              <div style={{ display: "flex", justifyContent: "flex-end", gap: "10px", paddingTop: "18px", borderTop: "1px solid #e2e8f0" }}>
-                <button type="button" onClick={() => { resetForm(); setShowForm(false); }} style={{ border: "1px solid #cbd5e1", backgroundColor: "#fff", color: "#475569", padding: "10px 17px", borderRadius: "8px", fontWeight: 600, cursor: "pointer" }}>Batal</button>
-                <button type="submit" disabled={submitting} style={{ border: "none", backgroundColor: submitting ? "#94a3b8" : "#0b72e7", color: "#fff", padding: "10px 17px", borderRadius: "8px", fontWeight: 600, cursor: submitting ? "not-allowed" : "pointer" }}>{submitting ? "Menyimpan..." : "Simpan"}</button>
-              </div>
-            </form>
+
+            <button
+              type="button"
+              className="btn"
+              onClick={() =>
+                setShowForm(
+                  !showForm
+                )
+              }
+              disabled={
+                kerusakanBelumDiperbaiki.length ===
+                0
+              }
+            >
+              {showForm
+                ? 'Tutup'
+                : '+ Tambah Perbaikan'}
+            </button>
+
           </div>
+
+          {showForm && (
+            <form
+              onSubmit={handleSubmit}
+              style={{
+                marginTop: '20px',
+                paddingTop: '20px',
+                borderTop:
+                  '1px solid #e2e8f0',
+              }}
+            >
+
+              {/* LAPORAN KERUSAKAN */}
+
+              <div
+                style={{
+                  marginBottom: '16px',
+                }}
+              >
+
+                <label
+                  style={{
+                    display: 'block',
+                    marginBottom: '6px',
+                    fontSize: '12px',
+                    fontWeight: 600,
+                    color: '#475569',
+                  }}
+                >
+                  Laporan Kerusakan
+                </label>
+
+                <select
+                  name="kerusakanId"
+                  value={
+                    formData.kerusakanId
+                  }
+                  onChange={
+                    handleKerusakanChange
+                  }
+                  required
+                  style={{
+                    width: '100%',
+                    boxSizing:
+                      'border-box',
+                    padding:
+                      '9px 11px',
+                    border:
+                      '1px solid #cbd5e1',
+                    borderRadius:
+                      '6px',
+                    backgroundColor:
+                      '#fff',
+                    color:
+                      '#334155',
+                    fontSize:
+                      '12px',
+                  }}
+                >
+
+                  <option value="">
+                    -- Pilih Laporan Kerusakan --
+                  </option>
+
+                  {kerusakanBelumDiperbaiki.map(
+                    (item) => (
+                      <option
+                        key={item.id}
+                        value={item.id}
+                      >
+                        {item.ruangan} -
+                        {' '}
+                        {item.kerusakan}
+                      </option>
+                    )
+                  )}
+
+                </select>
+
+              </div>
+
+              {/* JENIS + PENANGGUNG JAWAB */}
+
+              <div
+                style={{
+                  display: 'grid',
+                  gridTemplateColumns:
+                    '1fr 1fr',
+                  gap: '14px',
+                  marginBottom:
+                    '16px',
+                }}
+              >
+
+                <div>
+
+                  <label
+                    style={{
+                      display:
+                        'block',
+                      marginBottom:
+                        '6px',
+                      fontSize:
+                        '12px',
+                      fontWeight:
+                        600,
+                      color:
+                        '#475569',
+                    }}
+                  >
+                    Jenis Perbaikan
+                  </label>
+
+                  <input
+                    type="text"
+                    name="jenisPerbaikan"
+                    value={
+                      formData.jenisPerbaikan
+                    }
+                    onChange={
+                      handleChange
+                    }
+                    placeholder="Contoh: Perbaikan AC"
+                    required
+                    style={{
+                      width:
+                        '100%',
+                      boxSizing:
+                        'border-box',
+                      padding:
+                        '9px 11px',
+                      border:
+                        '1px solid #cbd5e1',
+                      borderRadius:
+                        '6px',
+                      backgroundColor:
+                        '#fff',
+                      color:
+                        '#334155',
+                      fontSize:
+                        '12px',
+                    }}
+                  />
+
+                </div>
+
+                <div>
+
+                  <label
+                    style={{
+                      display:
+                        'block',
+                      marginBottom:
+                        '6px',
+                      fontSize:
+                        '12px',
+                      fontWeight:
+                        600,
+                      color:
+                        '#475569',
+                    }}
+                  >
+                    Penanggung Jawab
+                  </label>
+
+                  <input
+                    type="text"
+                    name="penanggungJawab"
+                    value={
+                      formData.penanggungJawab
+                    }
+                    onChange={
+                      handleChange
+                    }
+                    placeholder="Nama penanggung jawab"
+                    required
+                    style={{
+                      width:
+                        '100%',
+                      boxSizing:
+                        'border-box',
+                      padding:
+                        '9px 11px',
+                      border:
+                        '1px solid #cbd5e1',
+                      borderRadius:
+                        '6px',
+                      backgroundColor:
+                        '#fff',
+                      color:
+                        '#334155',
+                      fontSize:
+                        '12px',
+                    }}
+                  />
+
+                </div>
+
+              </div>
+
+              {/* TANGGAL + STATUS */}
+
+              <div
+                style={{
+                  display: 'grid',
+                  gridTemplateColumns:
+                    '1fr 1fr',
+                  gap: '14px',
+                  marginBottom:
+                    '20px',
+                }}
+              >
+
+                <div>
+
+                  <label
+                    style={{
+                      display:
+                        'block',
+                      marginBottom:
+                        '6px',
+                      fontSize:
+                        '12px',
+                      fontWeight:
+                        600,
+                      color:
+                        '#475569',
+                    }}
+                  >
+                    Tanggal Mulai
+                  </label>
+
+                  <input
+                    type="date"
+                    name="tanggalMulai"
+                    value={
+                      formData.tanggalMulai
+                    }
+                    onChange={
+                      handleChange
+                    }
+                    required
+                    style={{
+                      width:
+                        '100%',
+                      boxSizing:
+                        'border-box',
+                      padding:
+                        '9px 11px',
+                      border:
+                        '1px solid #cbd5e1',
+                      borderRadius:
+                        '6px',
+                      backgroundColor:
+                        '#fff',
+                      color:
+                        '#334155',
+                      fontSize:
+                        '12px',
+                    }}
+                  />
+
+                </div>
+
+                <div>
+
+                  <label
+                    style={{
+                      display:
+                        'block',
+                      marginBottom:
+                        '6px',
+                      fontSize:
+                        '12px',
+                      fontWeight:
+                        600,
+                      color:
+                        '#475569',
+                    }}
+                  >
+                    Status
+                  </label>
+
+                  <select
+                    name="status"
+                    value={
+                      formData.status
+                    }
+                    onChange={
+                      handleChange
+                    }
+                    style={{
+                      width:
+                        '100%',
+                      boxSizing:
+                        'border-box',
+                      padding:
+                        '9px 11px',
+                      border:
+                        '1px solid #cbd5e1',
+                      borderRadius:
+                        '6px',
+                      backgroundColor:
+                        '#fff',
+                      color:
+                        '#334155',
+                      fontSize:
+                        '12px',
+                    }}
+                  >
+
+                    <option value="Diproses">
+                      Diproses
+                    </option>
+
+                    <option value="Selesai">
+                      Selesai
+                    </option>
+
+                  </select>
+
+                </div>
+
+              </div>
+
+              {/* BUTTON */}
+
+              <div
+                style={{
+                  display: 'flex',
+                  justifyContent:
+                    'flex-end',
+                  gap: '8px',
+                  borderTop:
+                    '1px solid #e2e8f0',
+                  paddingTop:
+                    '16px',
+                }}
+              >
+
+                <button
+                  type="button"
+                  className="btn"
+                  onClick={() => {
+                    resetForm()
+                    setShowForm(false)
+                  }}
+                  style={{
+                    backgroundColor:
+                      '#fff',
+                    border:
+                      '1px solid #cbd5e1',
+                  }}
+                >
+                  Batal
+                </button>
+
+                <button
+                  type="submit"
+                  className="btn"
+                  disabled={
+                    submitting
+                  }
+                >
+                  {submitting
+                    ? 'Menyimpan...'
+                    : 'Simpan Perbaikan'}
+                </button>
+
+              </div>
+
+            </form>
+          )}
+
         </div>
       )}
 
-      <div style={{ backgroundColor: "#fff", border: "1px solid #e2e8f0", borderRadius: "12px", overflow: "hidden" }}>
-        <div style={{ padding: "20px 22px", borderBottom: "1px solid #e2e8f0" }}>
-          <h2 style={{ margin: 0, fontSize: "18px", fontWeight: 650, color: "#172b4d" }}>Daftar Perbaikan</h2>
-          <p style={{ margin: "5px 0 0", color: "#94a3b8", fontSize: "13px" }}>Tindak lanjut perbaikan fasilitas ruangan.</p>
+      {/* =========================
+          TABLE
+      ========================= */}
+
+      <div className="card">
+
+        <h3>
+          📋 Daftar Perbaikan Ruangan
+        </h3>
+
+        <div className="filter-info">
+          Menampilkan {perbaikan.length}{' '}
+          data perbaikan
         </div>
-        <div style={{ overflowX: "auto" }}>
-          <table style={{ width: "100%", borderCollapse: "collapse", minWidth: "950px" }}>
+
+        <div className="table-wrap">
+
+          <table className="table">
+
             <thead>
-              <tr style={{ backgroundColor: "#f8fafc" }}>
-                <th style={thStyle}>Ruangan</th><th style={thStyle}>Kerusakan</th><th style={thStyle}>Jenis Perbaikan</th><th style={thStyle}>Penanggung Jawab</th><th style={thStyle}>Tanggal Mulai</th><th style={thStyle}>Status</th>
-                {isAdminRT && <th style={{ ...thStyle, textAlign: "center" }}>Aksi</th>}
+              <tr>
+
+                <th>Ruangan</th>
+
+                <th>Kerusakan</th>
+
+                <th>Jenis Perbaikan</th>
+
+                <th>Penanggung Jawab</th>
+
+                <th>Tanggal Mulai</th>
+
+                <th>Status</th>
+
+                <th>Aksi</th>
+
               </tr>
             </thead>
-            <tbody>
-              {(() => {
-                const ITEMS_PER_PAGE = 10
-                const totalPages = Math.ceil(perbaikan.length / ITEMS_PER_PAGE)
-                const startIndex = currentPage * ITEMS_PER_PAGE
-                const endIndex = startIndex + ITEMS_PER_PAGE
-                const dataPaginated = perbaikan.slice(startIndex, endIndex)
 
-                return (
-                  <>
-                    {dataPaginated.length > 0 ? dataPaginated.map((item) => (
-                      <tr key={item.id} style={{ borderBottom: "1px solid #edf2f7" }}>
-                        <td style={tdStyle}><div style={{ fontWeight: 600, color: "#334155" }}>{item.ruangan}</div></td>
-                        <td style={tdStyle}><div style={{ fontWeight: 500, color: "#475569" }}>{item.kerusakan}</div></td>
-                        <td style={tdStyle}>{item.jenisPerbaikan}</td>
-                        <td style={tdStyle}>{item.penanggungJawab}</td>
-                        <td style={{ ...tdStyle, whiteSpace: "nowrap" }}>{formatTanggal(item.tanggalMulai)}</td>
-                        <td style={tdStyle}><span style={{ ...getStatusStyle(item.status), display: "inline-flex", alignItems: "center", padding: "6px 10px", borderRadius: "20px", fontSize: "11px", fontWeight: 700 }}><span style={{ width: "6px", height: "6px", borderRadius: "50%", backgroundColor: "currentColor", marginRight: "6px" }} />{item.status}</span></td>
-                        {isAdminRT && (
-                          <td style={{ ...tdStyle, textAlign: "center" }}>
-                            <div style={{ display: "flex", justifyContent: "center", gap: "6px" }}>
-                              {item.status === "Diproses" && <button onClick={() => handleSelesai(item.id)} style={{ padding: "6px 10px", borderRadius: "6px", fontSize: "11px", fontWeight: 600, cursor: "pointer", backgroundColor: "#f0fdf4", color: "#15803d", border: "1px solid #bbf7d0" }}>Selesai</button>}
-                              <button onClick={() => handleDelete(item.id)} style={{ padding: "6px 10px", borderRadius: "6px", fontSize: "11px", fontWeight: 600, cursor: "pointer", backgroundColor: "#fef2f2", color: "#dc2626", border: "1px solid #fecaca" }}>Hapus</button>
+            <tbody>
+
+              {dataPaginated.length > 0 ? (
+
+                dataPaginated.map(
+                  (item) => {
+
+                    const statusClass =
+                      getStatusClass(
+                        item.status
+                      )
+
+                    return (
+                      <tr key={item.id}>
+
+                        <td>
+                          {item.ruangan}
+                        </td>
+
+                        <td>
+                          {item.kerusakan}
+                        </td>
+
+                        <td>
+                          {item.jenisPerbaikan}
+                        </td>
+
+                        <td>
+                          {item.penanggungJawab}
+                        </td>
+
+                        <td>
+                          {formatTanggal(
+                            item.tanggalMulai
+                          )}
+                        </td>
+
+                        <td>
+
+                          <span
+                            className={`badge ${statusClass}`}
+                          >
+                            {item.status}
+                          </span>
+
+                        </td>
+
+                        <td>
+
+                          {isAdmin && (
+                            <div
+                              style={{
+                                display:
+                                  'flex',
+                                gap: '5px',
+                                alignItems:
+                                  'center',
+                              }}
+                            >
+
+                              {item.status ===
+                                'Diproses' && (
+                                <button
+                                  className="btn"
+                                  onClick={() =>
+                                    handleSelesai(
+                                      item.id
+                                    )
+                                  }
+                                >
+                                  Selesai
+                                </button>
+                              )}
+
+                              <button
+                                className="btn-danger"
+                                onClick={() =>
+                                  handleDelete(
+                                    item.id
+                                  )
+                                }
+                              >
+                                🗑
+                              </button>
+
                             </div>
-                          </td>
-                        )}
+                          )}
+
+                        </td>
+
                       </tr>
-                    )) : <tr><td colSpan={isAdminRT ? 7 : 6} style={{ padding: "55px 20px", textAlign: "center" }}>Belum ada data perbaikan.</td></tr>}
-                  </>
+                    )
+                  }
                 )
-              })()}
+
+              ) : (
+
+                <tr>
+
+                  <td
+                    colSpan="7"
+                    style={{
+                      textAlign:
+                        'center',
+                      padding:
+                        '30px',
+                    }}
+                  >
+                    Belum ada data
+                    perbaikan.
+                  </td>
+
+                </tr>
+
+              )}
+
             </tbody>
+
           </table>
+
         </div>
 
-        {(() => {
-          const ITEMS_PER_PAGE = 10
-          const totalPages = Math.ceil(perbaikan.length / ITEMS_PER_PAGE)
-          return (
-            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px', marginTop: '16px', alignItems: 'center', paddingBottom: '10px' }}>
-              <button
-                onClick={() => setCurrentPage(prev => Math.max(0, prev - 1))}
-                disabled={currentPage === 0}
-                style={{ padding: '6px 10px', borderRadius: '6px', border: '1px solid #cbd5e1', backgroundColor: '#fff', cursor: currentPage === 0 ? 'not-allowed' : 'pointer', opacity: currentPage === 0 ? 0.5 : 1, fontSize: '11px', fontWeight: 600 }}
-              >
-                Back
-              </button>
-              <span style={{ fontSize: '11px', fontWeight: '500', color: '#64748b' }}>
-                {currentPage + 1} / {Math.max(1, totalPages)}
-              </span>
-              <button
-                onClick={() => setCurrentPage(prev => (prev + 1 < totalPages ? prev + 1 : prev))}
-                disabled={currentPage + 1 >= totalPages}
-                style={{ padding: '6px 10px', borderRadius: '6px', border: '1px solid #cbd5e1', backgroundColor: '#fff', cursor: currentPage + 1 >= totalPages ? 'not-allowed' : 'pointer', opacity: currentPage + 1 >= totalPages ? 0.5 : 1, fontSize: '11px', fontWeight: 600 }}
-              >
-                Next
-              </button>
-            </div>
-          )
-        })()}
+        {/* =========================
+            PAGINATION
+        ========================= */}
+
+        <div
+          style={{
+            display: 'flex',
+            justifyContent:
+              'flex-end',
+            gap: '8px',
+            marginTop: '16px',
+            alignItems:
+              'center',
+          }}
+        >
+
+          <button
+            onClick={() =>
+              setCurrentPage(
+                (prev) =>
+                  Math.max(
+                    0,
+                    prev - 1
+                  )
+              )
+            }
+            disabled={
+              currentPage === 0
+            }
+            className="btn"
+            style={{
+              padding:
+                '6px 10px',
+              borderRadius:
+                '6px',
+              border:
+                '1px solid #cbd5e1',
+              backgroundColor:
+                '#fff',
+              cursor:
+                currentPage === 0
+                  ? 'not-allowed'
+                  : 'pointer',
+              opacity:
+                currentPage === 0
+                  ? 0.5
+                  : 1,
+              fontSize:
+                '11px',
+              fontWeight: 600,
+            }}
+          >
+            Back
+          </button>
+
+          <span
+            style={{
+              fontSize:
+                '11px',
+              fontWeight:
+                '500',
+              color:
+                '#64748b',
+            }}
+          >
+            {currentPage + 1} /{' '}
+            {Math.max(
+              1,
+              totalPages
+            )}
+          </span>
+
+          <button
+            onClick={() =>
+              setCurrentPage(
+                (prev) =>
+                  prev + 1 <
+                  totalPages
+                    ? prev + 1
+                    : prev
+              )
+            }
+            disabled={
+              currentPage + 1 >=
+              totalPages
+            }
+            className="btn"
+            style={{
+              padding:
+                '6px 10px',
+              borderRadius:
+                '6px',
+              border:
+                '1px solid #cbd5e1',
+              backgroundColor:
+                '#fff',
+              cursor:
+                currentPage + 1 >=
+                totalPages
+                  ? 'not-allowed'
+                  : 'pointer',
+              opacity:
+                currentPage + 1 >=
+                totalPages
+                  ? 0.5
+                  : 1,
+              fontSize:
+                '11px',
+              fontWeight: 600,
+            }}
+          >
+            Next
+          </button>
+
+        </div>
+
       </div>
+
     </div>
-  );
+  )
 }
 
-function SummaryCard({ title, value, icon }) {
-  return (
-    <div style={{ backgroundColor: "#fff", border: "1px solid #e2e8f0", borderRadius: "12px", padding: "17px", display: "flex", alignItems: "center", gap: "13px" }}>
-      <div style={{ width: "42px", height: "42px", borderRadius: "9px", backgroundColor: "#eff6ff", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "19px" }}>{icon}</div>
-      <div><div style={{ color: "#94a3b8", fontSize: "12px", fontWeight: 600 }}>{title}</div><div style={{ marginTop: "2px", color: "#172b4d", fontSize: "23px", fontWeight: 700 }}>{value}</div></div>
-    </div>
-  );
-}
-
-const labelStyle = { display: "block", marginBottom: "7px", color: "#334155", fontSize: "13px", fontWeight: 600 };
-const inputStyle = { width: "100%", boxSizing: "border-box", padding: "10px 12px", border: "1px solid #cbd5e1", borderRadius: "8px", outline: "none", backgroundColor: "#fff", color: "#334155", fontSize: "13px" };
-const thStyle = { padding: "13px 15px", textAlign: "left", color: "#64748b", fontSize: "11px", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.03em", whiteSpace: "nowrap" };
-const tdStyle = { padding: "15px", color: "#64748b", fontSize: "12px", verticalAlign: "top" };
-
-export default PerbaikanRuangan;
+export default PerbaikanRuangan
