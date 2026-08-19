@@ -12,6 +12,7 @@ Route::post('/anggaran', [AnggaranController::class, 'store']);
 Route::put('/anggaran/{id}/pagu', [AnggaranController::class, 'updatePagu']);
 Route::post('/anggaran/{id}/realisasi', [AnggaranController::class, 'tambahRealisasi']);
 Route::delete('/anggaran/{id}', [AnggaranController::class, 'destroy']);
+Route::get('/anggaran/{id}/realisasi', [AnggaranController::class, 'riwayatRealisasi']);
 
 // ===== API PROGRAM KERJA =====
 Route::get('/program_kerja', [ProgramKerjaController::class, 'index']);

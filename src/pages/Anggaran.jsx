@@ -259,8 +259,9 @@ function Anggaran({ user }) {
       {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
+                body: JSON.stringify({
           jumlah: Number(formRealisasi.jumlah),
+          bulan: formRealisasi.bulan,
         }),
       }
     )
