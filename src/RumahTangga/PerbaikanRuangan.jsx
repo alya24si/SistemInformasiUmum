@@ -1,48 +1,119 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
+
+const API = 'http://localhost:8000/api'
 
 function PerbaikanRuangan({ user }) {
   const isAdminRT = user.role === 'admin_rumahtangga' || user.role === 'superadmin';
 
-  const [kerusakan] = useState([
-    { id: 1, ruangan: "Ruang Rapat 2", kerusakan: "AC tidak dingin", tanggalLapor: "2026-08-10", status: "Menunggu" },
-    { id: 2, ruangan: "Aula", kerusakan: "Lampu mati", tanggalLapor: "2026-08-09", status: "Menunggu" },
-    { id: 3, ruangan: "Ruang Arsip", kerusakan: "Pintu sulit ditutup", tanggalLapor: "2026-08-08", status: "Selesai" },
-  ]);
+  const [kerusakanBelumDiperbaiki, setKerusakanBelumDiperbaiki] = useState([]);
+  const [perbaikan, setPerbaikan] = useState([]);
 
-  const [perbaikan, setPerbaikan] = useState([
-    { id: 1, kerusakanId: 3, ruangan: "Ruang Arsip", kerusakan: "Pintu sulit ditutup", jenisPerbaikan: "Perbaikan engsel pintu", penanggungJawab: "Bagian Rumah Tangga", tanggalMulai: "2026-08-08", status: "Selesai" },
-  ]);
+  const [loading, setLoading] = useState(true);
+  const [errorMsg, setErrorMsg] = useState("");
+  const [submitting, setSubmitting] = useState(false);
 
   const [formData, setFormData] = useState({ kerusakanId: "", jenisPerbaikan: "", penanggungJawab: "", tanggalMulai: "", status: "Diproses" });
   const [showForm, setShowForm] = useState(false);
   const [currentPage, setCurrentPage] = useState(0);
 
-  const kerusakanBelumDiperbaiki = kerusakan.filter((item) => {
-    const sudahAda = perbaikan.some((p) => p.kerusakanId === item.id);
-    return !sudahAda && item.status !== "Selesai";
-  });
+  const muatData = async () => {
+    setLoading(true);
+    setErrorMsg("");
+
+    try {
+      const [resPerbaikan, resBelum] = await Promise.all([
+        fetch(API + '/perbaikan_ruangan'),
+        fetch(API + '/perbaikan_ruangan/belum_diperbaiki'),
+      ]);
+
+      const jsonPerbaikan = await resPerbaikan.json();
+      const jsonBelum = await resBelum.json();
+
+      setPerbaikan(
+        (jsonPerbaikan?.data || []).map((d) => ({
+          id: d.id,
+          kerusakanId: d.kerusakan_id,
+          ruangan: d.ruangan,
+          kerusakan: d.kerusakan,
+          jenisPerbaikan: d.jenis_perbaikan,
+          penanggungJawab: d.penanggung_jawab,
+          tanggalMulai: d.tanggal_mulai,
+          status: d.status,
+        }))
+      );
+
+      setKerusakanBelumDiperbaiki(jsonBelum?.data || []);
+    } catch (err) {
+      setErrorMsg("Gagal memuat data perbaikan ruangan.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    muatData();
+  }, []);
 
   const handleChange = (e) => setFormData({ ...formData, [e.target.name]: e.target.value });
   const handleKerusakanChange = (e) => setFormData({ ...formData, kerusakanId: e.target.value });
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    const dataKerusakan = kerusakan.find((i) => i.id === Number(formData.kerusakanId));
-    if (!dataKerusakan) { alert("Pilih data kerusakan."); return; }
-    setPerbaikan([...perbaikan, { id: Date.now(), kerusakanId: dataKerusakan.id, ruangan: dataKerusakan.ruangan, kerusakan: dataKerusakan.kerusakan, jenisPerbaikan: formData.jenisPerbaikan, penanggungJawab: formData.penanggungJawab, tanggalMulai: formData.tanggalMulai, status: formData.status }]);
-    resetForm(); setShowForm(false);
+
+    if (!formData.kerusakanId) { alert("Pilih data kerusakan."); return; }
+
+    setSubmitting(true);
+
+    try {
+      await fetch(API + '/perbaikan_ruangan', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          kerusakan_id: formData.kerusakanId,
+          jenis_perbaikan: formData.jenisPerbaikan,
+          penanggung_jawab: formData.penanggungJawab,
+          tanggal_mulai: formData.tanggalMulai,
+          status: formData.status,
+        }),
+      });
+
+      await muatData();
+
+      resetForm();
+      setShowForm(false);
+    } catch (err) {
+      alert("Gagal menyimpan data perbaikan.");
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   const resetForm = () => setFormData({ kerusakanId: "", jenisPerbaikan: "", penanggungJawab: "", tanggalMulai: "", status: "Diproses" });
 
-  const handleDelete = (id) => {
+  const handleDelete = async (id) => {
     if (!window.confirm("Hapus data perbaikan ini?")) return;
-    setPerbaikan(perbaikan.filter((i) => i.id !== id));
+
+    try {
+      await fetch(API + '/perbaikan_ruangan/' + id, {
+        method: 'DELETE',
+      });
+      await muatData();
+    } catch (err) {
+      alert("Gagal menghapus data perbaikan.");
+    }
   };
 
-  const handleSelesai = (id) => {
+  const handleSelesai = async (id) => {
     if (!window.confirm("Tandai perbaikan ini selesai?")) return;
-    setPerbaikan(perbaikan.map((i) => i.id === id ? { ...i, status: "Selesai" } : i));
+
+    try {
+      await fetch(API + '/perbaikan_ruangan/' + id + '/selesai', {
+        method: 'PUT',
+      });
+      await muatData();
+    } catch (err) {
+      alert("Gagal menandai perbaikan selesai.");
+    }
   };
 
   const getStatusStyle = (status) => status === "Diproses" ? { backgroundColor: "#dbeafe", color: "#1d4ed8" } : { backgroundColor: "#dcfce7", color: "#166534" };
@@ -64,6 +135,18 @@ function PerbaikanRuangan({ user }) {
           {isAdminRT ? "Buat & kelola tindak lanjut perbaikan berdasarkan laporan kerusakan." : "Anda dapat melihat status perbaikan fasilitas yang telah dilaporkan."}
         </p>
       </div>
+
+      {errorMsg && (
+        <div style={{ padding: "12px 16px", marginBottom: "16px", borderRadius: "8px", backgroundColor: "#fee2e2", color: "#991b1b", fontSize: "13px" }}>
+          ⚠️ {errorMsg}
+        </div>
+      )}
+
+      {loading && (
+        <div style={{ padding: "12px 16px", marginBottom: "16px", borderRadius: "8px", backgroundColor: "#f1f5f9", color: "#475569", fontSize: "13px" }}>
+          Memuat data perbaikan ruangan...
+        </div>
+      )}
 
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: "15px", marginBottom: "22px" }}>
         <SummaryCard title="Total Perbaikan" value={perbaikan.length} icon="🔧" />
@@ -91,7 +174,7 @@ function PerbaikanRuangan({ user }) {
               <div style={{ marginBottom: "22px" }}><label style={labelStyle}>Status</label><select name="status" value={formData.status} onChange={handleChange} style={inputStyle}><option>Diproses</option><option>Selesai</option></select></div>
               <div style={{ display: "flex", justifyContent: "flex-end", gap: "10px", paddingTop: "18px", borderTop: "1px solid #e2e8f0" }}>
                 <button type="button" onClick={() => { resetForm(); setShowForm(false); }} style={{ border: "1px solid #cbd5e1", backgroundColor: "#fff", color: "#475569", padding: "10px 17px", borderRadius: "8px", fontWeight: 600, cursor: "pointer" }}>Batal</button>
-                <button type="submit" style={{ border: "none", backgroundColor: "#0b72e7", color: "#fff", padding: "10px 17px", borderRadius: "8px", fontWeight: 600, cursor: "pointer" }}>Simpan</button>
+                <button type="submit" disabled={submitting} style={{ border: "none", backgroundColor: submitting ? "#94a3b8" : "#0b72e7", color: "#fff", padding: "10px 17px", borderRadius: "8px", fontWeight: 600, cursor: submitting ? "not-allowed" : "pointer" }}>{submitting ? "Menyimpan..." : "Simpan"}</button>
               </div>
             </form>
           </div>

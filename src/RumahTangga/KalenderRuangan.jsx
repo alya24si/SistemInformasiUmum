@@ -1,27 +1,98 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
+
+const API = 'http://localhost:8000/api'
+
+const toDateString = (date) => {
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, "0");
+  const d = String(date.getDate()).padStart(2, "0");
+  return `${y}-${m}-${d}`;
+};
+
+const namaHariSingkat = ["Min", "Sen", "Sel", "Rab", "Kam", "Jum", "Sab"];
+const namaBulan = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
+
+const todayString = toDateString(new Date());
+
+// Bangun grid kalender bulanan: array minggu, tiap minggu array 7 hari (null jika di luar bulan)
+const buatGridBulan = (tahun, bulan) => {
+  const tanggalPertama = new Date(tahun, bulan, 1);
+  const jumlahHari = new Date(tahun, bulan + 1, 0).getDate();
+  const offsetAwal = tanggalPertama.getDay(); // 0 = Minggu
+
+  const sel = [];
+  for (let i = 0; i < offsetAwal; i++) sel.push(null);
+  for (let d = 1; d <= jumlahHari; d++) {
+    sel.push(toDateString(new Date(tahun, bulan, d)));
+  }
+  while (sel.length % 7 !== 0) sel.push(null);
+
+  const minggu = [];
+  for (let i = 0; i < sel.length; i += 7) minggu.push(sel.slice(i, i + 7));
+  return minggu;
+};
 
 function KalenderRuangan({ user }) {
   const isAdminRT = user.role === 'admin_rumahtangga' || user.role === 'superadmin';
 
-  const [booking] = useState([
-    { id: 1, ruangan: "Ruang Rapat Utama", pemesan: "Delita Br Tinambunan", bagian: "Bagian Keuangan", kegiatan: "Rapat Koordinasi", tanggal: "2026-08-12", mulai: "08:00", selesai: "10:00", status: "Disetujui" },
-    { id: 2, ruangan: "Aula", pemesan: "Alya Deka Danisha", bagian: "Bagian Kepegawaian", kegiatan: "Kegiatan Internal", tanggal: "2026-08-12", mulai: "13:00", selesai: "16:00", status: "Disetujui" },
-    { id: 3, ruangan: "Ruang Rapat 1", pemesan: "Budi Santoso", bagian: "Bagian Umum", kegiatan: "Rapat Tim", tanggal: "2026-08-13", mulai: "09:00", selesai: "11:00", status: "Disetujui" },
-    { id: 4, ruangan: "Ruang Rapat 2", pemesan: "Siti Rahma", bagian: "Bagian Keuangan", kegiatan: "Evaluasi Anggaran", tanggal: "2026-08-15", mulai: "10:00", selesai: "12:00", status: "Disetujui" },
-  ]);
+  const [bookingDisetujui, setBookingDisetujui] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [errorMsg, setErrorMsg] = useState("");
 
-  const [tanggalDipilih, setTanggalDipilih] = useState("2026-08-12");
+  const hariIni = new Date();
+  const [bulanAktif, setBulanAktif] = useState(hariIni.getMonth());
+  const [tahunAktif, setTahunAktif] = useState(hariIni.getFullYear());
 
-  const formatTanggal = (tanggal) => new Date(`${tanggal}T00:00:00`).toLocaleDateString("id-ID", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
-  const formatTanggalSingkat = (tanggal) => {
-    const d = new Date(`${tanggal}T00:00:00`);
-    return { hari: d.toLocaleDateString("id-ID", { weekday: "short" }), tanggal: d.toLocaleDateString("id-ID", { day: "numeric" }), bulan: d.toLocaleDateString("id-ID", { month: "short" }) };
+  const gridBulan = buatGridBulan(tahunAktif, bulanAktif);
+
+  const [tanggalDipilih, setTanggalDipilih] = useState(todayString);
+
+  const keBulanSebelumnya = () => {
+    if (bulanAktif === 0) {
+      setBulanAktif(11);
+      setTahunAktif((t) => t - 1);
+    } else {
+      setBulanAktif((b) => b - 1);
+    }
   };
 
-  const bookingDisetujui = booking.filter((item) => item.status === "Disetujui");
-  const bookingHariIni = bookingDisetujui.filter((item) => item.tanggal === tanggalDipilih).sort((a, b) => a.mulai.localeCompare(b.mulai));
+  const keBulanBerikutnya = () => {
+    if (bulanAktif === 11) {
+      setBulanAktif(0);
+      setTahunAktif((t) => t + 1);
+    } else {
+      setBulanAktif((b) => b + 1);
+    }
+  };
 
-  const daftarTanggal = ["2026-08-10", "2026-08-11", "2026-08-12", "2026-08-13", "2026-08-14", "2026-08-15", "2026-08-16"];
+  const keBulanIni = () => {
+    setBulanAktif(hariIni.getMonth());
+    setTahunAktif(hariIni.getFullYear());
+    setTanggalDipilih(todayString);
+  };
+
+  useEffect(() => {
+    const muatData = async () => {
+      setLoading(true);
+      setErrorMsg("");
+
+      try {
+        const res = await fetch(API + '/booking_ruangan/kalender');
+        const json = await res.json();
+        setBookingDisetujui(json?.data || []);
+      } catch (err) {
+        setErrorMsg("Gagal memuat jadwal booking ruangan.");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    muatData();
+  }, []);
+
+  const formatTanggal = (tanggal) => new Date(`${tanggal}T00:00:00`).toLocaleDateString("id-ID", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
+
+  const bookingHariIni = bookingDisetujui.filter((item) => item.tanggal === tanggalDipilih).sort((a, b) => a.mulai.localeCompare(b.mulai));
 
   return (
     <div style={{ padding: "32px", minHeight: "100%", backgroundColor: "#f5f8fc", fontFamily: "Inter, ui-sans-serif, system-ui, sans-serif" }}>
@@ -38,22 +109,70 @@ function KalenderRuangan({ user }) {
         <p style={{ margin: "8px 0 0 19px", color: "#64748b", fontSize: "14px", lineHeight: 1.6 }}>Jadwal berasal dari booking yang telah disetujui oleh Admin Rumah Tangga.</p>
       </div>
 
+      {errorMsg && (
+        <div style={{ padding: "12px 16px", marginBottom: "16px", borderRadius: "8px", backgroundColor: "#fee2e2", color: "#991b1b", fontSize: "13px" }}>
+          ⚠️ {errorMsg}
+        </div>
+      )}
+
+      {loading && (
+        <div style={{ padding: "12px 16px", marginBottom: "16px", borderRadius: "8px", backgroundColor: "#f1f5f9", color: "#475569", fontSize: "13px" }}>
+          Memuat jadwal booking ruangan...
+        </div>
+      )}
+
       <div style={{ backgroundColor: "#fff", border: "1px solid #e2e8f0", borderRadius: "12px", padding: "22px", marginBottom: "22px" }}>
-        <div style={{ marginBottom: "16px" }}><h2 style={{ margin: 0, fontSize: "18px", fontWeight: 650, color: "#172b4d" }}>Pilih Tanggal</h2></div>
-        <div style={{ display: "flex", gap: "10px", overflowX: "auto", paddingBottom: "4px" }}>
-          {daftarTanggal.map((tanggal) => {
-            const info = formatTanggalSingkat(tanggal);
-            const aktif = tanggal === tanggalDipilih;
-            const jumlah = bookingDisetujui.filter((i) => i.tanggal === tanggal).length;
-            return (
-              <button key={tanggal} onClick={() => setTanggalDipilih(tanggal)} style={{ minWidth: "86px", padding: "12px 10px", border: aktif ? "2px solid #0b72e7" : "1px solid #e2e8f0", borderRadius: "10px", backgroundColor: aktif ? "#eff6ff" : "#fff", color: aktif ? "#0b72e7" : "#475569", cursor: "pointer", textAlign: "center" }}>
-                <div style={{ fontSize: "11px", fontWeight: 600, textTransform: "uppercase", marginBottom: "3px" }}>{info.hari}</div>
-                <div style={{ fontSize: "20px", fontWeight: 700 }}>{info.tanggal}</div>
-                <div style={{ fontSize: "11px", marginTop: "2px" }}>{info.bulan}</div>
-                {jumlah > 0 && <div style={{ marginTop: "7px", fontSize: "10px", fontWeight: 600 }}>{jumlah} jadwal</div>}
-              </button>
-            );
-          })}
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "18px" }}>
+          <h2 style={{ margin: 0, fontSize: "18px", fontWeight: 650, color: "#172b4d" }}>{namaBulan[bulanAktif]} {tahunAktif}</h2>
+          <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+            <button onClick={keBulanIni} style={{ padding: "7px 14px", border: "1px solid #e2e8f0", borderRadius: "8px", backgroundColor: "#fff", color: "#475569", fontSize: "13px", fontWeight: 600, cursor: "pointer" }}>Hari Ini</button>
+            <button onClick={keBulanSebelumnya} aria-label="Bulan sebelumnya" style={{ width: "34px", height: "34px", border: "1px solid #e2e8f0", borderRadius: "8px", backgroundColor: "#fff", color: "#475569", fontSize: "15px", cursor: "pointer" }}>‹</button>
+            <button onClick={keBulanBerikutnya} aria-label="Bulan berikutnya" style={{ width: "34px", height: "34px", border: "1px solid #e2e8f0", borderRadius: "8px", backgroundColor: "#fff", color: "#475569", fontSize: "15px", cursor: "pointer" }}>›</button>
+          </div>
+        </div>
+
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: "6px", marginBottom: "6px" }}>
+          {namaHariSingkat.map((h) => (
+            <div key={h} style={{ textAlign: "center", fontSize: "11px", fontWeight: 600, color: "#94a3b8", textTransform: "uppercase", padding: "4px 0" }}>{h}</div>
+          ))}
+        </div>
+
+        <div style={{ display: "grid", gap: "6px" }}>
+          {gridBulan.map((minggu, wi) => (
+            <div key={wi} style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: "6px" }}>
+              {minggu.map((tanggal, di) => {
+                if (!tanggal) return <div key={di} />;
+                const aktif = tanggal === tanggalDipilih;
+                const hariIniFlag = tanggal === todayString;
+                const jumlah = bookingDisetujui.filter((i) => i.tanggal === tanggal).length;
+                const nomorHari = Number(tanggal.split("-")[2]);
+                return (
+                  <button
+                    key={tanggal}
+                    onClick={() => setTanggalDipilih(tanggal)}
+                    style={{
+                      minHeight: "62px",
+                      padding: "8px 6px",
+                      border: aktif ? "2px solid #0b72e7" : hariIniFlag ? "1px solid #0b72e7" : "1px solid #e2e8f0",
+                      borderRadius: "10px",
+                      backgroundColor: aktif ? "#eff6ff" : "#fff",
+                      color: aktif ? "#0b72e7" : "#334155",
+                      cursor: "pointer",
+                      textAlign: "left",
+                      display: "flex",
+                      flexDirection: "column",
+                      justifyContent: "space-between",
+                    }}
+                  >
+                    <span style={{ fontSize: "13px", fontWeight: hariIniFlag ? 700 : 600 }}>{nomorHari}</span>
+                    {jumlah > 0 && (
+                      <span style={{ alignSelf: "flex-start", fontSize: "10px", fontWeight: 700, color: "#0b72e7", backgroundColor: "#eff6ff", borderRadius: "6px", padding: "1px 6px" }}>{jumlah}</span>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+          ))}
         </div>
       </div>
 
@@ -72,7 +191,10 @@ function KalenderRuangan({ user }) {
                   <h3 style={{ margin: 0, fontSize: "17px", fontWeight: 650, color: "#172b4d" }}>{item.ruangan}</h3>
                   <div style={{ display: "inline-flex", alignItems: "center", gap: "6px", marginTop: "9px", backgroundColor: "#eff6ff", color: "#0b72e7", padding: "6px 10px", borderRadius: "7px", fontSize: "12px", fontWeight: 700 }}>🕐 {item.mulai} - {item.selesai}</div>
                 </div>
-                <span style={{ backgroundColor: "#dcfce7", color: "#166534", padding: "5px 10px", borderRadius: "20px", fontSize: "11px", fontWeight: 600 }}>Disetujui</span>
+                <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: "6px" }}>
+                  <span style={{ backgroundColor: "#dcfce7", color: "#166534", padding: "5px 10px", borderRadius: "20px", fontSize: "11px", fontWeight: 600 }}>Disetujui</span>
+                  <span style={{ backgroundColor: item.jenis_pertemuan === "Online" ? "#dcfce7" : "#fef9c3", color: item.jenis_pertemuan === "Online" ? "#166534" : "#854d0e", padding: "5px 10px", borderRadius: "20px", fontSize: "11px", fontWeight: 600 }}>{item.jenis_pertemuan || "Offline"}</span>
+                </div>
               </div>
               <div style={{ borderTop: "1px solid #edf2f7", paddingTop: "15px", paddingLeft: "5px", display: "grid", gap: "11px" }}>
                 <div><div style={detailLabelStyle}>Kegiatan</div><div style={detailValueStyle}>{item.kegiatan}</div></div>

@@ -1,47 +1,6 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 
-const dataAwal = [
-  {
-    id: 1,
-    nama: 'Ruang Rapat Utama',
-    kapasitas: 30,
-    lokasi: 'Lantai 1',
-    fasilitas: 'AC, Proyektor, Meja, Kursi',
-    status: 'Tersedia',
-  },
-  {
-    id: 2,
-    nama: 'Ruang Rapat 1',
-    kapasitas: 15,
-    lokasi: 'Lantai 1',
-    fasilitas: 'AC, TV, Meja, Kursi',
-    status: 'Tersedia',
-  },
-  {
-    id: 3,
-    nama: 'Ruang Rapat 2',
-    kapasitas: 15,
-    lokasi: 'Lantai 2',
-    fasilitas: 'AC, Proyektor, Meja, Kursi',
-    status: 'Digunakan',
-  },
-  {
-    id: 4,
-    nama: 'Aula',
-    kapasitas: 100,
-    lokasi: 'Lantai 1',
-    fasilitas: 'AC, Sound System, Proyektor',
-    status: 'Tersedia',
-  },
-  {
-    id: 5,
-    nama: 'Ruang Arsip',
-    kapasitas: 10,
-    lokasi: 'Lantai 2',
-    fasilitas: 'Rak Arsip, AC',
-    status: 'Maintenance',
-  },
-]
+const API = 'http://localhost:8000/api'
 
 const statusRuangan = (status) => {
   if (status === 'Tersedia') {
@@ -69,7 +28,11 @@ function DataRuangan({ user }) {
     user.role === 'admin_rumahtangga' ||
     user.role === 'superadmin'
 
-  const [data, setData] = useState(dataAwal)
+  const [data, setData] = useState([])
+
+  const [loading, setLoading] = useState(true)
+  const [errorMsg, setErrorMsg] = useState('')
+  const [submitting, setSubmitting] = useState(false)
 
   const [form, setForm] = useState({
     nama: '',
@@ -86,6 +49,25 @@ function DataRuangan({ user }) {
 
   const [showForm, setShowForm] = useState(false)
   const [editId, setEditId] = useState(null)
+
+  const muatData = async () => {
+    setLoading(true)
+    setErrorMsg('')
+
+    try {
+      const res = await fetch(API + '/ruangan')
+      const json = await res.json()
+      setData(json?.data || [])
+    } catch (err) {
+      setErrorMsg('Gagal memuat data ruangan.')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    muatData()
+  }, [])
 
   const daftarLokasi = [
     ...new Set(data.map((item) => item.lokasi)),
@@ -152,62 +134,69 @@ function DataRuangan({ user }) {
     setShowForm(true)
   }
 
-  const simpanData = (e) => {
+  const simpanData = async (e) => {
     e.preventDefault()
 
-    if (editId) {
-      setData(
-        data.map((item) =>
-          item.id === editId
-            ? {
-                ...item,
-                nama: form.nama,
-                kapasitas: Number(form.kapasitas),
-                lokasi: form.lokasi,
-                fasilitas: form.fasilitas,
-                status: form.status,
-              }
-            : item
-        )
-      )
+    setSubmitting(true)
 
-      alert('Data ruangan berhasil diperbarui.')
-    } else {
-      const baru = {
-        id: Date.now(),
-        nama: form.nama,
-        kapasitas: Number(form.kapasitas),
-        lokasi: form.lokasi,
-        fasilitas: form.fasilitas,
-        status: form.status,
-      }
-
-      setData([...data, baru])
-
-      alert('Data ruangan berhasil ditambahkan.')
+    const payload = {
+      nama: form.nama,
+      kapasitas: Number(form.kapasitas),
+      lokasi: form.lokasi,
+      fasilitas: form.fasilitas,
+      status: form.status,
     }
 
-    setForm({
-      nama: '',
-      kapasitas: '',
-      lokasi: '',
-      fasilitas: '',
-      status: 'Tersedia',
-    })
+    try {
+      if (editId) {
+        await fetch(API + '/ruangan/' + editId, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        })
+        alert('Data ruangan berhasil diperbarui.')
+      } else {
+        await fetch(API + '/ruangan', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        })
+        alert('Data ruangan berhasil ditambahkan.')
+      }
 
-    setEditId(null)
-    setShowForm(false)
+      await muatData()
+
+      setForm({
+        nama: '',
+        kapasitas: '',
+        lokasi: '',
+        fasilitas: '',
+        status: 'Tersedia',
+      })
+
+      setEditId(null)
+      setShowForm(false)
+    } catch (err) {
+      alert('Gagal menyimpan data ruangan.')
+    } finally {
+      setSubmitting(false)
+    }
   }
 
-  const hapusData = (id) => {
+  const hapusData = async (id) => {
     if (
       window.confirm(
         'Yakin ingin menghapus data ruangan ini?'
       )
     ) {
-      setData(
-        data.filter((item) => item.id !== id)
-      )
+      try {
+        await fetch(API + '/ruangan/' + id, {
+          method: 'DELETE',
+        })
+        await muatData()
+      } catch (err) {
+        alert('Gagal menghapus data ruangan.')
+      }
     }
   }
 
@@ -223,6 +212,38 @@ function DataRuangan({ user }) {
           kapasitas, fasilitas, serta kondisi ruangan.
         </p>
       </div>
+
+      {/* ERROR */}
+      {errorMsg && (
+        <div
+          style={{
+            padding: '12px 16px',
+            marginBottom: '16px',
+            borderRadius: '8px',
+            backgroundColor: '#fee2e2',
+            color: '#991b1b',
+            fontSize: '13px',
+          }}
+        >
+          ⚠️ {errorMsg}
+        </div>
+      )}
+
+      {/* LOADING */}
+      {loading && (
+        <div
+          style={{
+            padding: '12px 16px',
+            marginBottom: '16px',
+            borderRadius: '8px',
+            backgroundColor: '#f1f5f9',
+            color: '#475569',
+            fontSize: '13px',
+          }}
+        >
+          Memuat data ruangan...
+        </div>
+      )}
 
       {/* STATISTIK */}
       <div className="stats-grid">
@@ -386,8 +407,13 @@ function DataRuangan({ user }) {
             <button
               type="submit"
               className="btn"
+              disabled={submitting}
             >
-              {editId ? 'Simpan Perubahan' : 'Simpan'}
+              {submitting
+                ? 'Menyimpan...'
+                : editId
+                ? 'Simpan Perubahan'
+                : 'Simpan'}
             </button>
 
             <button
@@ -434,14 +460,22 @@ function DataRuangan({ user }) {
               className="btn"
               onClick={bukaTambah}
             >
-              ➕ Tambah Ruangan
+              + Tambah Ruangan
             </button>
           )}
 
         </div>
 
         {/* FILTER */}
-        <div className="filter-row">
+        <div
+          className="filter-row"
+          style={{
+            display: 'flex',
+            gap: '10px',
+            flexWrap: 'wrap',
+            alignItems: 'center',
+          }}
+        >
 
           <input
             type="text"
@@ -451,6 +485,18 @@ function DataRuangan({ user }) {
               setSearchNama(e.target.value)
               setCurrentPage(0)
             }}
+            style={{
+              flex: '1 1 260px',
+              minWidth: '200px',
+              padding: '9px 12px',
+              border: '1px solid #cbd5e1',
+              borderRadius: '8px',
+              backgroundColor: '#fff',
+              color: '#1e293b',
+              fontSize: '13px',
+              fontWeight: 600,
+              boxSizing: 'border-box',
+            }}
           />
 
           <select
@@ -458,6 +504,20 @@ function DataRuangan({ user }) {
             onChange={(e) => {
               setFilterLokasi(e.target.value)
               setCurrentPage(0)
+            }}
+            style={{
+              flex: '0 0 auto',
+              minWidth: '160px',
+              padding: '9px 30px 9px 12px',
+              border: '1px solid #cbd5e1',
+              borderRadius: '8px',
+              backgroundColor: '#fff',
+              color: '#1e293b',
+              fontSize: '13px',
+              fontWeight: 600,
+              cursor: 'pointer',
+              boxSizing: 'border-box',
+              whiteSpace: 'nowrap',
             }}
           >
             <option value="semua">

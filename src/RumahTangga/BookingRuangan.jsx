@@ -1,55 +1,6 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 
-const daftarRuangan = [
-  'Ruang Rapat Utama',
-  'Ruang Rapat 1',
-  'Ruang Rapat 2',
-  'Aula',
-]
-
-const dataAwal = [
-  {
-    id: 1,
-    ruangan: 'Ruang Rapat Utama',
-    pemesan: 'Delita Br Tinambunan',
-    bagian: 'Bagian Keuangan',
-    kegiatan: 'Rapat Koordinasi',
-    deskripsi:
-      'Rapat koordinasi terkait kegiatan dan anggaran bagian.',
-    tanggal: '2026-08-12',
-    mulai: '08:00',
-    selesai: '10:00',
-    status: 'Disetujui',
-  },
-  {
-    id: 2,
-    ruangan: 'Aula',
-    pemesan: 'Alya Deka Danisha',
-    bagian: 'Bagian Kepegawaian',
-    kegiatan: 'Kegiatan Internal',
-    deskripsi:
-      'Kegiatan internal bersama pegawai.',
-    tanggal: '2026-08-12',
-    mulai: '13:00',
-    selesai: '16:00',
-    status: 'Menunggu',
-  },
-  {
-    id: 3,
-    ruangan: 'Ruang Rapat 1',
-    pemesan: 'Budi Santoso',
-    bagian: 'Bagian Umum',
-    kegiatan: 'Rapat Tim',
-    deskripsi:
-      'Rapat pembahasan pekerjaan tim.',
-    tanggal: '2026-08-13',
-    mulai: '09:00',
-    selesai: '11:00',
-    status: 'Ditolak',
-    alasanTolak:
-      'Jadwal ruangan tidak tersedia.',
-  },
-]
+const API = 'http://localhost:8000/api'
 
 const formatTanggal = (tanggal) => {
   if (!tanggal) return '-'
@@ -89,11 +40,17 @@ function BookingRuangan({ user }) {
     user.role === 'admin_rumahtangga' ||
     user.role === 'superadmin'
 
-  const [booking, setBooking] = useState(dataAwal)
+  const [booking, setBooking] = useState([])
+  const [daftarRuangan, setDaftarRuangan] = useState([])
+
+  const [loading, setLoading] = useState(true)
+  const [errorMsg, setErrorMsg] = useState('')
+  const [submitting, setSubmitting] = useState(false)
 
   const [form, setForm] = useState({
-    ruangan: '',
+    ruangan_id: '',
     kegiatan: '',
+    jenis_pertemuan: 'Offline',
     deskripsi: '',
     tanggal: '',
     mulai: '',
@@ -103,11 +60,81 @@ function BookingRuangan({ user }) {
   const [showForm, setShowForm] = useState(false)
   const [currentPage, setCurrentPage] = useState(0)
 
-  const bookingDitampilkan = isAdminRT
+  const [kataKunci, setKataKunci] = useState('')
+  const [filterStatus, setFilterStatus] = useState('Semua')
+
+  const muatData = async () => {
+    setLoading(true)
+    setErrorMsg('')
+
+    try {
+      const res = await fetch(API + '/booking_ruangan')
+      const json = await res.json()
+      setBooking(json?.data || [])
+    } catch (err) {
+      setErrorMsg('Gagal memuat data booking ruangan.')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const muatRuangan = async () => {
+    try {
+      const res = await fetch(API + '/ruangan')
+      const json = await res.json()
+      setDaftarRuangan(json?.data || [])
+    } catch (err) {
+      // dropdown ruangan tetap kosong kalau gagal, error utama ditangani muatData
+    }
+  }
+
+  useEffect(() => {
+    muatData()
+    muatRuangan()
+  }, [])
+
+  const bookingMilikSaya = isAdminRT
     ? booking
     : booking.filter(
         (item) => item.pemesan === user.nama
       )
+
+  const bookingDitampilkan = bookingMilikSaya
+    .filter((item) =>
+      filterStatus === 'Semua'
+        ? true
+        : item.status === filterStatus
+    )
+    .filter((item) => {
+      if (!kataKunci.trim()) return true
+
+      const q = kataKunci.trim().toLowerCase()
+
+      return (
+        (item.ruangan || '')
+          .toLowerCase()
+          .includes(q) ||
+        (item.pemesan || '')
+          .toLowerCase()
+          .includes(q) ||
+        (item.kegiatan || '')
+          .toLowerCase()
+          .includes(q) ||
+        (item.bagian || '')
+          .toLowerCase()
+          .includes(q)
+      )
+    })
+
+  const handleKataKunciChange = (e) => {
+    setKataKunci(e.target.value)
+    setCurrentPage(0)
+  }
+
+  const handleFilterStatusChange = (e) => {
+    setFilterStatus(e.target.value)
+    setCurrentPage(0)
+  }
 
   const handleChange = (e) => {
     const { name, value } = e.target
@@ -120,8 +147,9 @@ function BookingRuangan({ user }) {
 
   const resetForm = () => {
     setForm({
-      ruangan: '',
+      ruangan_id: '',
       kegiatan: '',
+      jenis_pertemuan: 'Offline',
       deskripsi: '',
       tanggal: '',
       mulai: '',
@@ -129,27 +157,7 @@ function BookingRuangan({ user }) {
     })
   }
 
-  const cekBentrok = () => {
-    return booking.some((item) => {
-      if (
-        item.ruangan !== form.ruangan ||
-        item.tanggal !== form.tanggal
-      ) {
-        return false
-      }
-
-      if (item.status === 'Ditolak') {
-        return false
-      }
-
-      return (
-        form.mulai < item.selesai &&
-        form.selesai > item.mulai
-      )
-    })
-  }
-
-  const tambahBooking = (e) => {
+  const tambahBooking = async (e) => {
     e.preventDefault()
 
     if (form.selesai <= form.mulai) {
@@ -159,100 +167,94 @@ function BookingRuangan({ user }) {
       return
     }
 
-    if (cekBentrok()) {
-      alert(
-        'Ruangan sudah memiliki booking pada waktu tersebut.'
-      )
-      return
-    }
+    setSubmitting(true)
 
-    const baru = {
-      id: Date.now(),
-      ruangan: form.ruangan,
+    const payload = {
+      ruangan_id: form.ruangan_id,
       pemesan: user.nama,
       bagian: user.bidang,
       kegiatan: form.kegiatan,
+      jenis_pertemuan: form.jenis_pertemuan,
       deskripsi: form.deskripsi,
       tanggal: form.tanggal,
       mulai: form.mulai,
       selesai: form.selesai,
-      status: 'Menunggu',
     }
 
-    setBooking([...booking, baru])
+    try {
+      const res = await fetch(API + '/booking_ruangan', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      })
 
-    resetForm()
-    setShowForm(false)
-    setCurrentPage(0)
+      const json = await res.json()
 
-    alert(
-      'Pengajuan booking berhasil dikirim.'
-    )
-  }
-
-  const handleSetujui = (id) => {
-    const bookingDipilih = booking.find(
-      (item) => item.id === id
-    )
-
-    if (!bookingDipilih) return
-
-    const bentrok = booking.some((item) => {
-      if (
-        item.id === id ||
-        item.ruangan !== bookingDipilih.ruangan ||
-        item.tanggal !== bookingDipilih.tanggal ||
-        item.status !== 'Disetujui'
-      ) {
-        return false
+      if (!res.ok) {
+        alert(
+          json.message ||
+            'Ruangan sudah memiliki booking pada waktu tersebut.'
+        )
+        return
       }
 
-      return (
-        bookingDipilih.mulai < item.selesai &&
-        bookingDipilih.selesai > item.mulai
-      )
-    })
+      await muatData()
 
-    if (bentrok) {
-      alert(
-        'Booking tidak dapat disetujui karena jadwal bentrok.'
-      )
-      return
+      resetForm()
+      setShowForm(false)
+      setCurrentPage(0)
+
+      alert('Pengajuan booking berhasil dikirim.')
+    } catch (err) {
+      alert('Gagal mengirim pengajuan booking.')
+    } finally {
+      setSubmitting(false)
     }
-
-    setBooking(
-      booking.map((item) =>
-        item.id === id
-          ? {
-              ...item,
-              status: 'Disetujui',
-            }
-          : item
-      )
-    )
   }
 
-  const handleTolak = (id) => {
+  const handleSetujui = async (id) => {
+    try {
+      const res = await fetch(
+        API + '/booking_ruangan/' + id + '/setujui',
+        { method: 'PUT' }
+      )
+
+      const json = await res.json()
+
+      if (!res.ok) {
+        alert(
+          json.message ||
+            'Booking tidak dapat disetujui karena jadwal bentrok.'
+        )
+        return
+      }
+
+      await muatData()
+    } catch (err) {
+      alert('Gagal menyetujui booking.')
+    }
+  }
+
+  const handleTolak = async (id) => {
     const alasan = window.prompt(
       'Masukkan alasan penolakan:'
     )
 
-    if (alasan === null) return
+    if (alasan === null || alasan.trim() === '') return
 
-    setBooking(
-      booking.map((item) =>
-        item.id === id
-          ? {
-              ...item,
-              status: 'Ditolak',
-              alasanTolak: alasan,
-            }
-          : item
-      )
-    )
+    try {
+      await fetch(API + '/booking_ruangan/' + id + '/tolak', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ alasan_tolak: alasan }),
+      })
+      await muatData()
+    } catch (err) {
+      alert('Gagal menolak booking.')
+    }
   }
 
-  const handleBatal = (id) => {
+  const handleBatal = async (id) => {
     if (
       !window.confirm(
         'Yakin ingin membatalkan booking ini?'
@@ -261,23 +263,28 @@ function BookingRuangan({ user }) {
       return
     }
 
-    setBooking(
-      booking.filter((item) => item.id !== id)
-    )
+    try {
+      await fetch(API + '/booking_ruangan/' + id, {
+        method: 'DELETE',
+      })
+      await muatData()
+    } catch (err) {
+      alert('Gagal membatalkan booking.')
+    }
   }
 
   const totalDisetujui =
-    bookingDitampilkan.filter(
+    bookingMilikSaya.filter(
       (item) => item.status === 'Disetujui'
     ).length
 
   const totalMenunggu =
-    bookingDitampilkan.filter(
+    bookingMilikSaya.filter(
       (item) => item.status === 'Menunggu'
     ).length
 
   const totalDitolak =
-    bookingDitampilkan.filter(
+    bookingMilikSaya.filter(
       (item) => item.status === 'Ditolak'
     ).length
 
@@ -318,6 +325,38 @@ function BookingRuangan({ user }) {
         </div>
       )}
 
+      {/* ERROR */}
+      {errorMsg && (
+        <div
+          style={{
+            padding: '12px 16px',
+            marginBottom: '16px',
+            borderRadius: '8px',
+            backgroundColor: '#fee2e2',
+            color: '#991b1b',
+            fontSize: '13px',
+          }}
+        >
+          ⚠️ {errorMsg}
+        </div>
+      )}
+
+      {/* LOADING */}
+      {loading && (
+        <div
+          style={{
+            padding: '12px 16px',
+            marginBottom: '16px',
+            borderRadius: '8px',
+            backgroundColor: '#f1f5f9',
+            color: '#475569',
+            fontSize: '13px',
+          }}
+        >
+          Memuat data booking ruangan...
+        </div>
+      )}
+
       {/* SUMMARY */}
       <div className="stats-grid">
 
@@ -330,7 +369,7 @@ function BookingRuangan({ user }) {
             <h4>Total Booking</h4>
 
             <div className="stat-value">
-              {bookingDitampilkan.length}
+              {bookingMilikSaya.length}
             </div>
 
             <div className="stat-desc">
@@ -421,8 +460,8 @@ function BookingRuangan({ user }) {
                 fontSize: '13px',
               }}
             >
-              Ajukan pemesanan ruangan untuk
-              kegiatan pegawai.
+              Pesan ruangan untuk rapat, pelatihan,
+              atau kegiatan kantor lainnya.
             </p>
           </div>
 
@@ -477,7 +516,16 @@ function BookingRuangan({ user }) {
                     color: '#475569',
                   }}
                 >
-                  Pemesan
+                  Pemesan{' '}
+                  <span
+                    style={{
+                      fontWeight: 400,
+                      color: '#94a3b8',
+                      textTransform: 'none',
+                    }}
+                  >
+                    (otomatis)
+                  </span>
                 </label>
 
                 <input
@@ -489,12 +537,13 @@ function BookingRuangan({ user }) {
                     boxSizing: 'border-box',
                     padding: '9px 11px',
                     border:
-                      '1px solid #cbd5e1',
+                      '1px dashed #cbd5e1',
                     borderRadius: '6px',
                     backgroundColor:
-                      '#f8fafc',
-                    color: '#64748b',
+                      '#f1f5f9',
+                    color: '#94a3b8',
                     fontSize: '12px',
+                    cursor: 'not-allowed',
                   }}
                 />
               </div>
@@ -510,7 +559,16 @@ function BookingRuangan({ user }) {
                     color: '#475569',
                   }}
                 >
-                  Bagian
+                  Bagian{' '}
+                  <span
+                    style={{
+                      fontWeight: 400,
+                      color: '#94a3b8',
+                      textTransform: 'none',
+                    }}
+                  >
+                    (otomatis)
+                  </span>
                 </label>
 
                 <input
@@ -522,12 +580,13 @@ function BookingRuangan({ user }) {
                     boxSizing: 'border-box',
                     padding: '9px 11px',
                     border:
-                      '1px solid #cbd5e1',
+                      '1px dashed #cbd5e1',
                     borderRadius: '6px',
                     backgroundColor:
-                      '#f8fafc',
-                    color: '#64748b',
+                      '#f1f5f9',
+                    color: '#94a3b8',
                     fontSize: '12px',
+                    cursor: 'not-allowed',
                   }}
                 />
               </div>
@@ -543,7 +602,16 @@ function BookingRuangan({ user }) {
                     color: '#475569',
                   }}
                 >
-                  Tanggal Pengajuan
+                  Tanggal Pengajuan{' '}
+                  <span
+                    style={{
+                      fontWeight: 400,
+                      color: '#94a3b8',
+                      textTransform: 'none',
+                    }}
+                  >
+                    (otomatis)
+                  </span>
                 </label>
 
                 <input
@@ -559,12 +627,13 @@ function BookingRuangan({ user }) {
                     boxSizing: 'border-box',
                     padding: '9px 11px',
                     border:
-                      '1px solid #cbd5e1',
+                      '1px dashed #cbd5e1',
                     borderRadius: '6px',
                     backgroundColor:
-                      '#f8fafc',
-                    color: '#64748b',
+                      '#f1f5f9',
+                    color: '#94a3b8',
                     fontSize: '12px',
+                    cursor: 'not-allowed',
                   }}
                 />
               </div>
@@ -576,7 +645,7 @@ function BookingRuangan({ user }) {
               style={{
                 display: 'grid',
                 gridTemplateColumns:
-                  '1fr 1fr',
+                  '1fr 1fr 1fr',
                 gap: '14px',
                 marginBottom: '16px',
               }}
@@ -597,8 +666,8 @@ function BookingRuangan({ user }) {
                 </label>
 
                 <select
-                  name="ruangan"
-                  value={form.ruangan}
+                  name="ruangan_id"
+                  value={form.ruangan_id}
                   onChange={handleChange}
                   required
                   style={{
@@ -620,10 +689,10 @@ function BookingRuangan({ user }) {
                   {daftarRuangan.map(
                     (ruangan) => (
                       <option
-                        key={ruangan}
-                        value={ruangan}
+                        key={ruangan.id}
+                        value={ruangan.id}
                       >
-                        {ruangan}
+                        {ruangan.nama}
                       </option>
                     )
                   )}
@@ -663,6 +732,46 @@ function BookingRuangan({ user }) {
                     fontSize: '12px',
                   }}
                 />
+              </div>
+
+              {/* JENIS PERTEMUAN */}
+              <div>
+                <label
+                  style={{
+                    display: 'block',
+                    marginBottom: '6px',
+                    fontSize: '12px',
+                    fontWeight: 600,
+                    color: '#475569',
+                  }}
+                >
+                  Jenis Pertemuan
+                </label>
+
+                <select
+                  name="jenis_pertemuan"
+                  value={form.jenis_pertemuan}
+                  onChange={handleChange}
+                  required
+                  style={{
+                    width: '100%',
+                    boxSizing: 'border-box',
+                    padding: '9px 11px',
+                    border:
+                      '1px solid #cbd5e1',
+                    borderRadius: '6px',
+                    backgroundColor: '#fff',
+                    color: '#334155',
+                    fontSize: '12px',
+                  }}
+                >
+                  <option value="Offline">
+                    Offline
+                  </option>
+                  <option value="Online">
+                    Online
+                  </option>
+                </select>
               </div>
 
             </div>
@@ -822,81 +931,24 @@ function BookingRuangan({ user }) {
 
             </div>
 
-            {/* DATA OTOMATIS */}
+            {/* CATATAN STATUS */}
             <div
               style={{
-                display: 'grid',
-                gridTemplateColumns:
-                  '1fr 1fr',
-                gap: '14px',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                padding: '10px 14px',
                 marginBottom: '20px',
+                borderRadius: '8px',
+                backgroundColor: '#fffbeb',
+                border: '1px solid #fde68a',
+                color: '#92400e',
+                fontSize: '12px',
               }}
             >
-
-              <div>
-                <label
-                  style={{
-                    display: 'block',
-                    marginBottom: '6px',
-                    fontSize: '12px',
-                    fontWeight: 600,
-                    color: '#475569',
-                  }}
-                >
-                  Status
-                </label>
-
-                <input
-                  type="text"
-                  value="Menunggu"
-                  disabled
-                  style={{
-                    width: '100%',
-                    boxSizing: 'border-box',
-                    padding: '9px 11px',
-                    border:
-                      '1px solid #cbd5e1',
-                    borderRadius: '6px',
-                    backgroundColor:
-                      '#f8fafc',
-                    color: '#64748b',
-                    fontSize: '12px',
-                  }}
-                />
-              </div>
-
-              <div>
-                <label
-                  style={{
-                    display: 'block',
-                    marginBottom: '6px',
-                    fontSize: '12px',
-                    fontWeight: 600,
-                    color: '#475569',
-                  }}
-                >
-                  Keterangan
-                </label>
-
-                <input
-                  type="text"
-                  value="Menunggu persetujuan admin"
-                  disabled
-                  style={{
-                    width: '100%',
-                    boxSizing: 'border-box',
-                    padding: '9px 11px',
-                    border:
-                      '1px solid #cbd5e1',
-                    borderRadius: '6px',
-                    backgroundColor:
-                      '#f8fafc',
-                    color: '#64748b',
-                    fontSize: '12px',
-                  }}
-                />
-              </div>
-
+              ⏳ Booking ini akan berstatus{' '}
+              <strong>Menunggu</strong> hingga
+              disetujui oleh Admin Rumah Tangga.
             </div>
 
             {/* BUTTON */}
@@ -930,8 +982,17 @@ function BookingRuangan({ user }) {
               <button
                 type="submit"
                 className="btn"
+                disabled={submitting}
+                style={{
+                  opacity: submitting ? 0.6 : 1,
+                  cursor: submitting
+                    ? 'not-allowed'
+                    : 'pointer',
+                }}
               >
-                Simpan Booking
+                {submitting
+                  ? 'Menyimpan...'
+                  : 'Simpan Booking'}
               </button>
 
             </div>
@@ -950,6 +1011,49 @@ function BookingRuangan({ user }) {
             : '📋 Booking Saya'}
         </h3>
 
+        <div
+          style={{
+            display: 'flex',
+            flexWrap: 'wrap',
+            gap: '10px',
+            alignItems: 'center',
+            margin: '12px 0 16px',
+          }}
+        >
+          <input
+            type="text"
+            placeholder="Cari ruangan, pemesan, kegiatan, atau bagian..."
+            value={kataKunci}
+            onChange={handleKataKunciChange}
+            style={{
+              flex: '1 1 240px',
+              minWidth: '200px',
+              padding: '8px 12px',
+              borderRadius: '8px',
+              border: '1px solid #cbd5e1',
+              fontSize: '13px',
+            }}
+          />
+
+          <select
+            value={filterStatus}
+            onChange={handleFilterStatusChange}
+            style={{
+              padding: '8px 12px',
+              borderRadius: '8px',
+              border: '1px solid #cbd5e1',
+              fontSize: '13px',
+              backgroundColor: '#fff',
+              color: '#334155',
+            }}
+          >
+            <option value="Semua">Semua Status</option>
+            <option value="Menunggu">Menunggu</option>
+            <option value="Disetujui">Disetujui</option>
+            <option value="Ditolak">Ditolak</option>
+          </select>
+        </div>
+
         <div className="filter-info">
           Menampilkan {bookingDitampilkan.length}{' '}
           data booking
@@ -966,6 +1070,7 @@ function BookingRuangan({ user }) {
                 <th>Pemesan</th>
                 <th>Bagian</th>
                 <th>Kegiatan</th>
+                <th>Jenis</th>
                 <th>Deskripsi</th>
                 <th>Tanggal</th>
                 <th>Waktu</th>
@@ -1013,6 +1118,20 @@ function BookingRuangan({ user }) {
                           {item.kegiatan}
                         </td>
 
+                        <td>
+                          <span
+                            className={`badge ${
+                              item.jenis_pertemuan ===
+                              'Online'
+                                ? 'green'
+                                : 'yellow'
+                            }`}
+                          >
+                            {item.jenis_pertemuan ||
+                              'Offline'}
+                          </span>
+                        </td>
+
                         <td
                           style={{
                             maxWidth: '220px',
@@ -1042,7 +1161,7 @@ function BookingRuangan({ user }) {
 
                           {item.status ===
                             'Ditolak' &&
-                            item.alasanTolak && (
+                            item.alasan_tolak && (
                               <div
                                 style={{
                                   marginTop:
@@ -1055,7 +1174,7 @@ function BookingRuangan({ user }) {
                                     '180px',
                                 }}
                               >
-                                {item.alasanTolak}
+                                {item.alasan_tolak}
                               </div>
                             )}
 
@@ -1160,7 +1279,7 @@ function BookingRuangan({ user }) {
 
                 <tr>
                   <td
-                    colSpan="10"
+                    colSpan="11"
                     style={{
                       textAlign: 'center',
                       padding: '30px',

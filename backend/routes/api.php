@@ -3,6 +3,10 @@
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AnggaranController;
 use App\Http\Controllers\ProgramKerjaController;
+use App\Http\Controllers\RuanganController;
+use App\Http\Controllers\BookingRuanganController;
+use App\Http\Controllers\KerusakanRuanganController;
+use App\Http\Controllers\PerbaikanRuanganController;
 // use App\Http\Controllers\AuthController; // ⏳ nanti saat login dibangun
 
 // ===== Keuangan =====
@@ -22,3 +26,32 @@ Route::delete('/program_kerja/{id}', [ProgramKerjaController::class, 'destroy'])
 
 // NANTI, kalau login sudah dibangun, tambahkan baris ini:
 // Route::post('/login', [AuthController::class, 'login']);
+
+// ===== Rumah Tangga =====
+// ===== API RUANGAN =====
+Route::get('/ruangan', [RuanganController::class, 'index']);
+Route::post('/ruangan', [RuanganController::class, 'store']);
+Route::put('/ruangan/{id}', [RuanganController::class, 'update']);
+Route::delete('/ruangan/{id}', [RuanganController::class, 'destroy']);
+
+// ===== API BOOKING RUANGAN =====
+Route::get('/booking_ruangan', [BookingRuanganController::class, 'index']);
+Route::get('/booking_ruangan/kalender', [BookingRuanganController::class, 'kalender']);
+Route::post('/booking_ruangan', [BookingRuanganController::class, 'store']);
+Route::put('/booking_ruangan/{id}/setujui', [BookingRuanganController::class, 'setujui']);
+Route::put('/booking_ruangan/{id}/tolak', [BookingRuanganController::class, 'tolak']);
+Route::delete('/booking_ruangan/{id}', [BookingRuanganController::class, 'destroy']);
+
+// ===== API KERUSAKAN RUANGAN =====
+Route::get('/kerusakan_ruangan', [KerusakanRuanganController::class, 'index']);
+Route::post('/kerusakan_ruangan', [KerusakanRuanganController::class, 'store']);
+Route::put('/kerusakan_ruangan/{id}/proses', [KerusakanRuanganController::class, 'proses']);
+Route::put('/kerusakan_ruangan/{id}/selesai', [KerusakanRuanganController::class, 'selesai']);
+Route::delete('/kerusakan_ruangan/{id}', [KerusakanRuanganController::class, 'destroy']);
+
+// ===== API PERBAIKAN RUANGAN =====
+Route::get('/perbaikan_ruangan', [PerbaikanRuanganController::class, 'index']);
+Route::get('/perbaikan_ruangan/belum_diperbaiki', [PerbaikanRuanganController::class, 'kerusakanBelumDiperbaiki']);
+Route::post('/perbaikan_ruangan', [PerbaikanRuanganController::class, 'store']);
+Route::put('/perbaikan_ruangan/{id}/selesai', [PerbaikanRuanganController::class, 'selesai']);
+Route::delete('/perbaikan_ruangan/{id}', [PerbaikanRuanganController::class, 'destroy']);

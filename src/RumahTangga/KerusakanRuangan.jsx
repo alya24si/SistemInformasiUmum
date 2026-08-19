@@ -1,61 +1,22 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 
-const daftarRuangan = [
-  'Ruang Rapat Utama',
-  'Ruang Rapat 1',
-  'Ruang Rapat 2',
-  'Aula',
-]
-
-const dataAwal = [
-  {
-    id: 1,
-    ruangan: 'Ruang Rapat Utama',
-    pelapor: 'Delita Br Tinambunan',
-    bagian: 'Bagian Keuangan',
-    tanggal: '2026-08-10',
-    kerusakan: 'AC tidak dingin',
-    deskripsi: 'AC ruangan tidak menghasilkan udara dingin sejak pagi.',
-    bukti: 'ac-ruang-rapat.jpg',
-    status: 'Menunggu',
-    sumber: 'Laporan Pegawai',
-  },
-  {
-    id: 2,
-    ruangan: 'Ruang Rapat 1',
-    pelapor: 'Alya Deka Danisha',
-    bagian: 'Bagian Kepegawaian',
-    tanggal: '2026-08-09',
-    kerusakan: 'Proyektor tidak menyala',
-    deskripsi:
-      'Proyektor tidak dapat digunakan ketika akan dipakai untuk rapat.',
-    bukti: 'proyektor.jpg',
-    status: 'Diproses',
-    sumber: 'Laporan Pegawai',
-  },
-  {
-    id: 3,
-    ruangan: 'Aula',
-    pelapor: 'Admin Rumah Tangga',
-    bagian: 'Rumah Tangga',
-    tanggal: '2026-08-08',
-    kerusakan: 'Lampu mati',
-    deskripsi: 'Beberapa lampu di bagian depan aula tidak menyala.',
-    bukti: 'lampu-aula.jpg',
-    status: 'Selesai',
-    sumber: 'Pemeriksaan Admin',
-  },
-]
+const API = 'http://localhost:8000/api'
+const STORAGE_URL = 'http://localhost:8000/storage'
 
 function KerusakanRuangan({ user }) {
   const isAdmin =
     user.role === 'admin_rumahtangga' ||
     user.role === 'superadmin'
 
-  const [laporan, setLaporan] = useState(dataAwal)
+  const [laporan, setLaporan] = useState([])
+  const [daftarRuangan, setDaftarRuangan] = useState([])
+
+  const [loading, setLoading] = useState(true)
+  const [errorMsg, setErrorMsg] = useState('')
+  const [submitting, setSubmitting] = useState(false)
 
   const [formData, setFormData] = useState({
-    ruangan: '',
+    ruangan_id: '',
     kerusakan: '',
     deskripsi: '',
     bukti: null,
@@ -63,6 +24,32 @@ function KerusakanRuangan({ user }) {
 
   const [showForm, setShowForm] = useState(false)
   const [currentPage, setCurrentPage] = useState(0)
+
+  const muatData = async () => {
+    setLoading(true)
+    setErrorMsg('')
+
+    try {
+      const [resLaporan, resRuangan] = await Promise.all([
+        fetch(API + '/kerusakan_ruangan'),
+        fetch(API + '/ruangan'),
+      ])
+
+      const jsonLaporan = await resLaporan.json()
+      const jsonRuangan = await resRuangan.json()
+
+      setLaporan(jsonLaporan?.data || [])
+      setDaftarRuangan(jsonRuangan?.data || [])
+    } catch (err) {
+      setErrorMsg('Gagal memuat data kerusakan ruangan.')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    muatData()
+  }, [])
 
   const handleChange = (e) => {
     const { name, value, files } = e.target
@@ -73,7 +60,7 @@ function KerusakanRuangan({ user }) {
     })
   }
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault()
 
     if (!formData.bukti) {
@@ -81,68 +68,89 @@ function KerusakanRuangan({ user }) {
       return
     }
 
-    const laporanBaru = {
-      id: Date.now(),
-      ruangan: formData.ruangan,
-      pelapor: user.nama,
-      bagian: user.bidang,
-      tanggal: new Date().toISOString().split('T')[0],
-      kerusakan: formData.kerusakan,
-      deskripsi: formData.deskripsi,
-      bukti: formData.bukti.name,
-      status: isAdmin ? 'Diproses' : 'Menunggu',
-      sumber: isAdmin
-        ? 'Pemeriksaan Admin'
-        : 'Laporan Pegawai',
+    const payload = new FormData()
+    payload.append('ruangan_id', formData.ruangan_id)
+    payload.append('pelapor', user.nama)
+    payload.append('bagian', user.bidang)
+    payload.append('kerusakan', formData.kerusakan)
+    payload.append('deskripsi', formData.deskripsi)
+    payload.append('bukti', formData.bukti)
+    payload.append(
+      'sumber',
+      isAdmin ? 'Pemeriksaan Admin' : 'Laporan Pegawai'
+    )
+    payload.append(
+      'status',
+      isAdmin ? 'Diproses' : 'Menunggu'
+    )
+
+    setSubmitting(true)
+
+    try {
+      await fetch(API + '/kerusakan_ruangan', {
+        method: 'POST',
+        body: payload,
+      })
+
+      await muatData()
+
+      setFormData({
+        ruangan_id: '',
+        kerusakan: '',
+        deskripsi: '',
+        bukti: null,
+      })
+
+      setShowForm(false)
+
+      alert(
+        isAdmin
+          ? 'Data kerusakan berhasil ditambahkan.'
+          : 'Laporan kerusakan berhasil dikirim.'
+      )
+    } catch (err) {
+      alert('Gagal mengirim laporan kerusakan.')
+    } finally {
+      setSubmitting(false)
     }
-
-    setLaporan([...laporan, laporanBaru])
-
-    setFormData({
-      ruangan: '',
-      kerusakan: '',
-      deskripsi: '',
-      bukti: null,
-    })
-
-    setShowForm(false)
-
-    alert(
-      isAdmin
-        ? 'Data kerusakan berhasil ditambahkan.'
-        : 'Laporan kerusakan berhasil dikirim.'
-    )
   }
 
-  const handleProses = (id) => {
-    setLaporan(
-      laporan.map((item) =>
-        item.id === id
-          ? { ...item, status: 'Diproses' }
-          : item
-      )
-    )
+  const handleProses = async (id) => {
+    try {
+      await fetch(API + '/kerusakan_ruangan/' + id + '/proses', {
+        method: 'PUT',
+      })
+      await muatData()
+    } catch (err) {
+      alert('Gagal memproses laporan.')
+    }
   }
 
-  const handleSelesai = (id) => {
-    setLaporan(
-      laporan.map((item) =>
-        item.id === id
-          ? { ...item, status: 'Selesai' }
-          : item
-      )
-    )
+  const handleSelesai = async (id) => {
+    try {
+      await fetch(API + '/kerusakan_ruangan/' + id + '/selesai', {
+        method: 'PUT',
+      })
+      await muatData()
+    } catch (err) {
+      alert('Gagal menyelesaikan laporan.')
+    }
   }
 
-  const handleHapus = (id) => {
+  const handleHapus = async (id) => {
     if (
       window.confirm(
         'Yakin ingin menghapus data kerusakan ini?'
       )
     ) {
-      setLaporan(
-        laporan.filter((item) => item.id !== id)
-      )
+      try {
+        await fetch(API + '/kerusakan_ruangan/' + id, {
+          method: 'DELETE',
+        })
+        await muatData()
+      } catch (err) {
+        alert('Gagal menghapus data.')
+      }
     }
   }
 
@@ -212,6 +220,38 @@ function KerusakanRuangan({ user }) {
         <div className="guest-note">
           👁️ Mode tamu: Anda dapat melaporkan kerusakan
           dan melihat laporan kerusakan Anda sendiri.
+        </div>
+      )}
+
+      {/* ERROR */}
+      {errorMsg && (
+        <div
+          style={{
+            padding: '12px 16px',
+            marginBottom: '16px',
+            borderRadius: '8px',
+            backgroundColor: '#fee2e2',
+            color: '#991b1b',
+            fontSize: '13px',
+          }}
+        >
+          ⚠️ {errorMsg}
+        </div>
+      )}
+
+      {/* LOADING */}
+      {loading && (
+        <div
+          style={{
+            padding: '12px 16px',
+            marginBottom: '16px',
+            borderRadius: '8px',
+            backgroundColor: '#f1f5f9',
+            color: '#475569',
+            fontSize: '13px',
+          }}
+        >
+          Memuat data kerusakan ruangan...
         </div>
       )}
 
@@ -469,8 +509,8 @@ function KerusakanRuangan({ user }) {
                 </label>
 
                 <select
-                  name="ruangan"
-                  value={formData.ruangan}
+                  name="ruangan_id"
+                  value={formData.ruangan_id}
                   onChange={handleChange}
                   required
                   style={{
@@ -491,10 +531,10 @@ function KerusakanRuangan({ user }) {
                   {daftarRuangan.map(
                     (ruangan) => (
                       <option
-                        key={ruangan}
-                        value={ruangan}
+                        key={ruangan.id}
+                        value={ruangan.id}
                       >
-                        {ruangan}
+                        {ruangan.nama}
                       </option>
                     )
                   )}
@@ -735,8 +775,11 @@ function KerusakanRuangan({ user }) {
               <button
                 type="submit"
                 className="btn"
+                disabled={submitting}
               >
-                Simpan Laporan
+                {submitting
+                  ? 'Mengirim...'
+                  : 'Simpan Laporan'}
               </button>
 
             </div>
@@ -801,9 +844,23 @@ function KerusakanRuangan({ user }) {
                       <td>{item.deskripsi}</td>
 
                       <td>
-                        <span className="badge blue">
-                          📷 Ada
-                        </span>
+                        {item.bukti ? (
+                          <a
+                            href={`${STORAGE_URL}/${item.bukti}`}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="badge blue"
+                            style={{
+                              textDecoration: 'none',
+                            }}
+                          >
+                            📷 Lihat
+                          </a>
+                        ) : (
+                          <span className="badge yellow">
+                            Tidak ada
+                          </span>
+                        )}
                       </td>
 
                       <td>
