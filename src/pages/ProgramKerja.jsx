@@ -18,6 +18,18 @@ const formatTitik = (angka) => {
   return n.replace(/\B(?=(\d{3})+(?!\d))/g, '.')
 }
 
+// persen terserap per kegiatan = realisasi ÷ target
+const persenKegiatan = (k) =>
+  k.target_anggaran > 0
+    ? Math.min(100, Math.round((k.realisasi / k.target_anggaran) * 100))
+    : 0
+
+const hitungTarget = (p) =>
+  (p.kegiatan || []).reduce((a, k) => a + k.target_anggaran, 0)
+
+const hitungRealisasi = (p) =>
+  (p.kegiatan || []).reduce((a, k) => a + k.realisasi, 0)
+
 function ProgramKerja({ user }) {
   const isAdmin =
     user.role === 'admin_keuangan' ||
@@ -26,12 +38,13 @@ function ProgramKerja({ user }) {
   const [programs, setPrograms] = useState([])
   const [selectedId, setSelectedId] = useState(null)
   const [editingKegiatan, setEditingKegiatan] = useState(null)
-  const [editingProgram, setEditingProgram] = useState(null) // ✨ BARU
+  const [editingProgram, setEditingProgram] = useState(null)
   const [filterTahun, setFilterTahun] = useState('semua')
   const [filterBidang, setFilterBidang] = useState('semua')
   const [currentPage, setCurrentPage] = useState(0)
+  const [ringkasanPage, setRingkasanPage] = useState(0)
   const panelKelolaRef = useRef(null)
-  const panelEditProgramRef = useRef(null) // ✨ BARU
+  const panelEditProgramRef = useRef(null)
 
   const [formProgram, setFormProgram] = useState({
     tahun: tahunIni,
@@ -41,7 +54,7 @@ function ProgramKerja({ user }) {
     target: '',
   })
 
-  const [formEditProgram, setFormEditProgram] = useState({ // ✨ BARU
+  const [formEditProgram, setFormEditProgram] = useState({
     tahun: tahunIni,
     bidang: daftarBidang[0],
     program: '',
@@ -52,7 +65,7 @@ function ProgramKerja({ user }) {
   const [formKegiatan, setFormKegiatan] = useState({
     bulan: daftarBulan[0],
     target_anggaran: '',
-    persen_realisasi: '0',
+    realisasi: '',
   })
 
   const muatData = async () => {
@@ -66,7 +79,7 @@ function ProgramKerja({ user }) {
           kegiatan: (d.kegiatan || []).map((k) => ({
             ...k,
             target_anggaran: Number(k.target_anggaran),
-            persen_realisasi: Number(k.persen_realisasi),
+            realisasi: Number(k.realisasi),
           })),
         }))
       )
@@ -103,16 +116,16 @@ function ProgramKerja({ user }) {
     0
   )
   const totalSelesai = milikUser.filter((p) => {
-  if (!p.kegiatan || p.kegiatan.length === 0) return false
-  const total = p.kegiatan.reduce((acc, k) => acc + k.persen_realisasi, 0)
-  return Math.round(total / 12) === 100
-}).length
+    const t = hitungTarget(p)
+    const r = hitungRealisasi(p)
+    return t > 0 && r >= t
+  }).length
 
   const persenProgram = (p) => {
-  if (!p.kegiatan || p.kegiatan.length === 0) return 0
-  const total = p.kegiatan.reduce((acc, k) => acc + k.persen_realisasi, 0)
-  return Math.round(total / 12)  // ← dibagi 12 bulan
-}
+    if (!p.kegiatan || p.kegiatan.length === 0) return 0
+    const total = p.kegiatan.reduce((acc, k) => acc + persenKegiatan(k), 0)
+    return Math.round(total / 12)
+  }
 
   const statusBadge = (persen) => {
     if (persen === 100) return { label: 'Selesai', cls: 'green' }
@@ -131,7 +144,6 @@ function ProgramKerja({ user }) {
     }, 100)
   }
 
-  // ✨ BARU: masuk mode edit program
   const mulaiEditProgram = (p) => {
     setEditingProgram(p)
     setFormEditProgram({
@@ -162,7 +174,7 @@ function ProgramKerja({ user }) {
     setFormKegiatan({
       bulan: k.bulan,
       target_anggaran: formatTitik(k.target_anggaran),
-      persen_realisasi: String(k.persen_realisasi),
+      realisasi: formatTitik(k.realisasi),
     })
     window.scrollTo({ top: panelKelolaRef.current?.offsetTop - 20 || 0, behavior: 'smooth' })
   }
@@ -172,7 +184,7 @@ function ProgramKerja({ user }) {
     setFormKegiatan({
       bulan: daftarBulan[0],
       target_anggaran: '',
-      persen_realisasi: '0',
+      realisasi: '',
     })
   }
 
@@ -199,7 +211,6 @@ function ProgramKerja({ user }) {
     muatData()
   }
 
-  // ✨ BARU: update program
   const updateProgram = async (e) => {
     e.preventDefault()
     if (!editingProgram) return
@@ -240,10 +251,8 @@ function ProgramKerja({ user }) {
     const payload = {
       program_kerja_id: selectedProgram.id,
       bulan: formKegiatan.bulan,
-      target_anggaran: Number(
-        formKegiatan.target_anggaran.replace(/\./g, '')
-      ),
-      persen_realisasi: Number(formKegiatan.persen_realisasi),
+      target_anggaran: Number(formKegiatan.target_anggaran.replace(/\./g, '')),
+      realisasi: Number(formKegiatan.realisasi.replace(/\./g, '')),
     }
 
     if (editingKegiatan) {
@@ -261,11 +270,7 @@ function ProgramKerja({ user }) {
     }
 
     setEditingKegiatan(null)
-    setFormKegiatan({
-      bulan: daftarBulan[0],
-      target_anggaran: '',
-      persen_realisasi: '0',
-    })
+    setFormKegiatan({ bulan: daftarBulan[0], target_anggaran: '', realisasi: '' })
     muatData()
   }
 
@@ -277,13 +282,143 @@ function ProgramKerja({ user }) {
     }
   }
 
+  // ✨ RINGKASAN: Target vs Terlaksana vs Selisih (Rupiah)
+  const SectionRingkasan = () => {
+    const totalTarget = programsFiltered.reduce((a, p) => a + hitungTarget(p), 0)
+    const totalSudah = programsFiltered.reduce((a, p) => a + hitungRealisasi(p), 0)
+    const totalSelisih = totalTarget - totalSudah
+
+    const ITEMS = 5
+    const totalPagesRingkasan = Math.ceil(programsFiltered.length / ITEMS)
+    const ringkasanPaginated = programsFiltered.slice(
+      ringkasanPage * ITEMS,
+      ringkasanPage * ITEMS + ITEMS
+    )
+
+    return (
+      <div className="card" style={{ borderLeft: '4px solid #3b82f6' }}>
+        <h3>🎯 Ringkasan Target vs Realisasi Anggaran</h3>
+        <p style={{ color: '#64748b', fontSize: '13px', marginBottom: '16px' }}>
+          Total target anggaran yang direncanakan dibanding yang sudah terlaksana.
+        </p>
+
+        <div className="stats-grid" style={{ marginBottom: '16px' }}>
+          <div className="stat-card">
+            <div className="stat-icon">🎯</div>
+            <div className="stat-info">
+              <h4>Total Target</h4>
+              <div className="stat-value" style={{ fontSize: '15px' }}>{formatRupiah(totalTarget)}</div>
+              <div className="stat-desc">Anggaran direncanakan</div>
+            </div>
+          </div>
+          <div className="stat-card green">
+            <div className="stat-icon">✅</div>
+            <div className="stat-info">
+              <h4>Sudah Terlaksana</h4>
+              <div className="stat-value" style={{ fontSize: '15px' }}>{formatRupiah(totalSudah)}</div>
+              <div className="stat-desc">Realisasi berjalan</div>
+            </div>
+          </div>
+          <div className="stat-card gold">
+            <div className="stat-icon">📊</div>
+            <div className="stat-info">
+              <h4>Selisih</h4>
+              <div className="stat-value" style={{ fontSize: '15px', color: totalSelisih > 0 ? '#d97706' : '#16a34a' }}>
+                {formatRupiah(totalSelisih)}
+              </div>
+              <div className="stat-desc">
+                {totalSelisih > 0 ? 'Belum terlaksana' : 'Semua terlaksana'}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="table-wrap">
+          <table className="table">
+            <thead>
+              <tr>
+                <th>Tahun</th>
+                <th>Bidang</th>
+                <th>Program Kerja</th>
+                <th className="num">Target Anggaran</th>
+                <th className="num">Sudah Terlaksana</th>
+                <th className="num">Selisih</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              {programsFiltered.length === 0 ? (
+                <tr>
+                  <td colSpan="7" style={{ textAlign: 'center', padding: '20px', color: '#94a3b8' }}>
+                    Belum ada data program kerja.
+                  </td>
+                </tr>
+              ) : (
+                ringkasanPaginated.map((p) => {
+                  const target = hitungTarget(p)
+                  const sudah = hitungRealisasi(p)
+                  const selisih = target - sudah
+                  const kosong = target === 0
+                  const selesai = !kosong && selisih <= 0
+                  return (
+                    <tr key={p.id}>
+                      <td>{p.tahun}</td>
+                      <td>{p.bidang}</td>
+                      <td><strong>{p.program}</strong></td>
+                      <td className="num">{formatRupiah(target)}</td>
+                      <td className="num">{formatRupiah(sudah)}</td>
+                      <td className="num">
+                        <span style={{ color: selisih > 0 ? '#d97706' : '#16a34a', fontWeight: 700 }}>
+                          {formatRupiah(selisih)}
+                        </span>
+                      </td>
+                      <td>
+                        <span className={`badge ${kosong ? 'red' : selesai ? 'green' : 'yellow'}`}>
+                          {kosong ? 'Belum Ada Kegiatan' : selesai ? 'Tercapai' : 'Berjalan'}
+                        </span>
+                      </td>
+                    </tr>
+                  )
+                })
+              )}
+            </tbody>
+          </table>
+        </div>
+
+        {totalPagesRingkasan > 1 && (
+          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px', marginTop: '16px', alignItems: 'center' }}>
+            <button
+              onClick={() => setRingkasanPage((prev) => Math.max(0, prev - 1))}
+              disabled={ringkasanPage === 0}
+              className="btn"
+              style={{ padding: '6px 10px', borderRadius: '6px', border: '1px solid #cbd5e1', backgroundColor: '#fff', cursor: ringkasanPage === 0 ? 'not-allowed' : 'pointer', opacity: ringkasanPage === 0 ? 0.5 : 1, fontSize: '11px', fontWeight: 600 }}
+            >
+              Back
+            </button>
+            <span style={{ fontSize: '11px', fontWeight: '500', color: '#64748b' }}>
+              {ringkasanPage + 1} / {Math.max(1, totalPagesRingkasan)}
+            </span>
+            <button
+              onClick={() => setRingkasanPage((prev) => (prev + 1 < totalPagesRingkasan ? prev + 1 : prev))}
+              disabled={ringkasanPage + 1 >= totalPagesRingkasan}
+              className="btn"
+              style={{ padding: '6px 10px', borderRadius: '6px', border: '1px solid #cbd5e1', backgroundColor: '#fff', cursor: ringkasanPage + 1 >= totalPagesRingkasan ? 'not-allowed' : 'pointer', opacity: ringkasanPage + 1 >= totalPagesRingkasan ? 0.5 : 1, fontSize: '11px', fontWeight: 600 }}
+            >
+              Next
+            </button>
+          </div>
+        )}
+      </div>
+    )
+  }
+
   return (
     <div className="page">
       <div className="page-title">
         <h1>📋 Monitoring Program Kerja</h1>
         <p>
-          Program kerja dilaporkan di awal tahun, lalu update target
-          anggaran dan realisasi dilakukan per bulan.
+          Program kerja dilaporkan di awal tahun, lalu target anggaran
+          dan realisasi per bulan diperbarui secara berkala.
         </p>
       </div>
 
@@ -325,12 +460,11 @@ function ProgramKerja({ user }) {
           <div className="stat-info">
             <h4>Program Selesai</h4>
             <div className="stat-value">{totalSelesai}</div>
-            <div className="stat-desc">Realisasi 100%</div>
+            <div className="stat-desc">Realisasi penuh</div>
           </div>
         </div>
       </div>
 
-      {/* ✨ BARU: Panel Edit Program (card kuning) */}
       {isAdmin && editingProgram && (
         <div ref={panelEditProgramRef} className="card" style={{ border: '2px solid #f59e0b', background: '#fef3c7' }}>
           <h3>
@@ -338,49 +472,18 @@ function ProgramKerja({ user }) {
           </h3>
           <form onSubmit={updateProgram} style={{ marginTop: '12px' }}>
             <div className="form-row">
-              <select
-                value={formEditProgram.tahun}
-                onChange={(e) => setFormEditProgram({ ...formEditProgram, tahun: e.target.value })}
-              >
-                {daftarTahun.map((t) => (
-                  <option key={t} value={t}>Tahun {t}</option>
-                ))}
+              <select value={formEditProgram.tahun} onChange={(e) => setFormEditProgram({ ...formEditProgram, tahun: e.target.value })}>
+                {daftarTahun.map((t) => (<option key={t} value={t}>Tahun {t}</option>))}
               </select>
-              <select
-                value={formEditProgram.bidang}
-                onChange={(e) => setFormEditProgram({ ...formEditProgram, bidang: e.target.value })}
-              >
-                {daftarBidang.map((b) => (
-                  <option key={b} value={b}>{b}</option>
-                ))}
+              <select value={formEditProgram.bidang} onChange={(e) => setFormEditProgram({ ...formEditProgram, bidang: e.target.value })}>
+                {daftarBidang.map((b) => (<option key={b} value={b}>{b}</option>))}
               </select>
-              <input
-                type="text"
-                placeholder="Nama program kerja"
-                required
-                value={formEditProgram.program}
-                onChange={(e) => setFormEditProgram({ ...formEditProgram, program: e.target.value })}
-              />
-              <input
-                type="text"
-                placeholder="Deskripsi program"
-                value={formEditProgram.deskripsi}
-                onChange={(e) => setFormEditProgram({ ...formEditProgram, deskripsi: e.target.value })}
-              />
-              <input
-                type="text"
-                placeholder="Target (contoh: 4 Kegiatan)"
-                required
-                value={formEditProgram.target}
-                onChange={(e) => setFormEditProgram({ ...formEditProgram, target: e.target.value })}
-              />
+              <input type="text" placeholder="Nama program kerja" required value={formEditProgram.program} onChange={(e) => setFormEditProgram({ ...formEditProgram, program: e.target.value })} />
+              <input type="text" placeholder="Deskripsi program" value={formEditProgram.deskripsi} onChange={(e) => setFormEditProgram({ ...formEditProgram, deskripsi: e.target.value })} />
+              <input type="text" placeholder="Target (contoh: 4 Kegiatan)" required value={formEditProgram.target} onChange={(e) => setFormEditProgram({ ...formEditProgram, target: e.target.value })} />
               <div style={{ display: 'flex', gap: '6px' }}>
-                <button type="submit" className="btn" style={{ background: '#f59e0b' }}>
-                  💾 Update
-                </button>
-                <button type="button" className="btn" onClick={batalEditProgram} style={{ background: '#e2e8f0', color: '#0f172a' }}>
-                  Batal
-                </button>
+                <button type="submit" className="btn" style={{ background: '#f59e0b' }}>💾 Update</button>
+                <button type="button" className="btn" onClick={batalEditProgram} style={{ background: '#e2e8f0', color: '#0f172a' }}>Batal</button>
               </div>
             </div>
           </form>
@@ -391,42 +494,15 @@ function ProgramKerja({ user }) {
         <div className="card">
           <h3>➕ Lapor Program Kerja (Awal Tahun)</h3>
           <form onSubmit={tambahProgram} className="form-row">
-            <select
-              value={formProgram.tahun}
-              onChange={(e) => setFormProgram({ ...formProgram, tahun: e.target.value })}
-            >
-              {daftarTahun.map((t) => (
-                <option key={t} value={t}>Tahun {t}</option>
-              ))}
+            <select value={formProgram.tahun} onChange={(e) => setFormProgram({ ...formProgram, tahun: e.target.value })}>
+              {daftarTahun.map((t) => (<option key={t} value={t}>Tahun {t}</option>))}
             </select>
-            <select
-              value={formProgram.bidang}
-              onChange={(e) => setFormProgram({ ...formProgram, bidang: e.target.value })}
-            >
-              {daftarBidang.map((b) => (
-                <option key={b} value={b}>{b}</option>
-              ))}
+            <select value={formProgram.bidang} onChange={(e) => setFormProgram({ ...formProgram, bidang: e.target.value })}>
+              {daftarBidang.map((b) => (<option key={b} value={b}>{b}</option>))}
             </select>
-            <input
-              type="text"
-              placeholder="Nama program kerja"
-              required
-              value={formProgram.program}
-              onChange={(e) => setFormProgram({ ...formProgram, program: e.target.value })}
-            />
-            <input
-              type="text"
-              placeholder="Deskripsi program"
-              value={formProgram.deskripsi}
-              onChange={(e) => setFormProgram({ ...formProgram, deskripsi: e.target.value })}
-            />
-            <input
-              type="text"
-              placeholder="Target (contoh: 4 Kegiatan)"
-              required
-              value={formProgram.target}
-              onChange={(e) => setFormProgram({ ...formProgram, target: e.target.value })}
-            />
+            <input type="text" placeholder="Nama program kerja" required value={formProgram.program} onChange={(e) => setFormProgram({ ...formProgram, program: e.target.value })} />
+            <input type="text" placeholder="Deskripsi program" value={formProgram.deskripsi} onChange={(e) => setFormProgram({ ...formProgram, deskripsi: e.target.value })} />
+            <input type="text" placeholder="Target (contoh: 4 Kegiatan)" required value={formProgram.target} onChange={(e) => setFormProgram({ ...formProgram, target: e.target.value })} />
             <button type="submit" className="btn">Simpan</button>
           </form>
         </div>
@@ -435,18 +511,14 @@ function ProgramKerja({ user }) {
       <div className="card">
         <h3>📋 Daftar Program Kerja & Kalender Realisasi</h3>
         <div className="filter-row">
-          <select value={filterTahun} onChange={(e) => { setFilterTahun(e.target.value); setCurrentPage(0) }}>
+          <select value={filterTahun} onChange={(e) => { setFilterTahun(e.target.value); setCurrentPage(0); setRingkasanPage(0) }}>
             <option value="semua">Semua Tahun</option>
-            {daftarTahun.map((t) => (
-              <option key={t} value={t}>Tahun {t}</option>
-            ))}
+            {daftarTahun.map((t) => (<option key={t} value={t}>Tahun {t}</option>))}
           </select>
           {isAdmin && (
-            <select value={filterBidang} onChange={(e) => { setFilterBidang(e.target.value); setCurrentPage(0) }}>
+            <select value={filterBidang} onChange={(e) => { setFilterBidang(e.target.value); setCurrentPage(0); setRingkasanPage(0) }}>
               <option value="semua">Semua Bidang</option>
-              {daftarBidang.map((b) => (
-                <option key={b} value={b}>{b}</option>
-              ))}
+              {daftarBidang.map((b) => (<option key={b} value={b}>{b}</option>))}
             </select>
           )}
         </div>
@@ -470,9 +542,7 @@ function ProgramKerja({ user }) {
               {(() => {
                 const ITEMS_PER_PAGE = 5
                 const totalPages = Math.ceil(programsFiltered.length / ITEMS_PER_PAGE)
-                const startIndex = currentPage * ITEMS_PER_PAGE
-                const endIndex = startIndex + ITEMS_PER_PAGE
-                const dataPaginated = programsFiltered.slice(startIndex, endIndex)
+                const dataPaginated = programsFiltered.slice(currentPage * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE + ITEMS_PER_PAGE)
 
                 return (
                   <>
@@ -487,30 +557,18 @@ function ProgramKerja({ user }) {
                             <td>
                               <div style={{ fontWeight: 700 }}>{p.program}</div>
                               {p.deskripsi && (
-                                <div style={{ fontSize: '11px', color: '#94a3b8', marginTop: '2px' }}>
-                                  {p.deskripsi}
-                                </div>
+                                <div style={{ fontSize: '11px', color: '#94a3b8', marginTop: '2px' }}>{p.deskripsi}</div>
                               )}
                             </td>
                             <td>{p.target}</td>
                             <td><span className={`badge ${st.cls}`}>{st.label}</span></td>
                             <td>
-                              <button
-                                className="btn"
-                                style={{ padding: '4px 8px', fontSize: '11px', marginRight: '4px' }}
-                                onClick={() => mulaiEditProgram(p)}
-                              >
-                                ✏️ Edit
-                              </button>
-                              <button
-                                className="btn"
-                                style={{ padding: '4px 8px', fontSize: '11px', marginRight: '4px' }}
-                                onClick={() => bukaKelola(p.id)}
-                              >
-                                Kelola
-                              </button>
                               {isAdmin && (
-                                <button className="btn-danger" onClick={() => hapusProgram(p.id)}>🗑</button>
+                                <>
+                                  <button className="btn" style={{ padding: '4px 8px', fontSize: '11px', marginRight: '4px' }} onClick={() => mulaiEditProgram(p)}>✏️ Edit</button>
+                                  <button className="btn" style={{ padding: '4px 8px', fontSize: '11px', marginRight: '4px' }} onClick={() => bukaKelola(p.id)}>Kelola</button>
+                                  <button className="btn-danger" onClick={() => hapusProgram(p.id)}>🗑</button>
+                                </>
                               )}
                             </td>
                           </tr>
@@ -519,11 +577,12 @@ function ProgramKerja({ user }) {
                               <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
                                 {daftarBulan.map((bulan, i) => {
                                   const k = (p.kegiatan || []).find((x) => x.bulan === bulan)
+                                  const prs = k ? persenKegiatan(k) : 0
                                   return (
                                     <div
                                       key={bulan}
                                       style={{
-                                        minWidth: '88px',
+                                        minWidth: '92px',
                                         padding: '6px 8px',
                                         borderRadius: '8px',
                                         background: k ? '#eff6ff' : '#f8fafc',
@@ -531,17 +590,11 @@ function ProgramKerja({ user }) {
                                         textAlign: 'center',
                                       }}
                                     >
-                                      <div style={{ fontSize: '10px', fontWeight: 700, color: '#64748b' }}>
-                                        {bulanSingkat[i]}
-                                      </div>
+                                      <div style={{ fontSize: '10px', fontWeight: 700, color: '#64748b' }}>{bulanSingkat[i]}</div>
                                       {k ? (
                                         <>
-                                          <div style={{ fontSize: '10px', color: '#64748b' }}>
-                                            {formatRupiah(k.target_anggaran)}
-                                          </div>
-                                          <div style={{ fontSize: '11px', fontWeight: 800, color: warnaPersen(k.persen_realisasi) }}>
-                                            {k.persen_realisasi}%
-                                          </div>
+                                          <div style={{ fontSize: '10px', color: '#64748b' }}>{formatRupiah(k.target_anggaran)}</div>
+                                          <div style={{ fontSize: '11px', fontWeight: 800, color: warnaPersen(prs) }}>{prs}%</div>
                                         </>
                                       ) : (
                                         <div style={{ fontSize: '10px', color: '#cbd5e1' }}>–</div>
@@ -567,29 +620,15 @@ function ProgramKerja({ user }) {
           const totalPages = Math.ceil(programsFiltered.length / ITEMS_PER_PAGE)
           return (
             <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px', marginTop: '16px', alignItems: 'center' }}>
-              <button
-                onClick={() => setCurrentPage((prev) => Math.max(0, prev - 1))}
-                disabled={currentPage === 0}
-                className="btn"
-                style={{ padding: '6px 10px', borderRadius: '6px', border: '1px solid #cbd5e1', backgroundColor: '#fff', cursor: currentPage === 0 ? 'not-allowed' : 'pointer', opacity: currentPage === 0 ? 0.5 : 1, fontSize: '11px', fontWeight: 600 }}
-              >
-                Back
-              </button>
-              <span style={{ fontSize: '11px', fontWeight: '500', color: '#64748b' }}>
-                {currentPage + 1} / {Math.max(1, totalPages)}
-              </span>
-              <button
-                onClick={() => setCurrentPage((prev) => (prev + 1 < totalPages ? prev + 1 : prev))}
-                disabled={currentPage + 1 >= totalPages}
-                className="btn"
-                style={{ padding: '6px 10px', borderRadius: '6px', border: '1px solid #cbd5e1', backgroundColor: '#fff', cursor: currentPage + 1 >= totalPages ? 'not-allowed' : 'pointer', opacity: currentPage + 1 >= totalPages ? 0.5 : 1, fontSize: '11px', fontWeight: 600 }}
-              >
-                Next
-              </button>
+              <button onClick={() => setCurrentPage((prev) => Math.max(0, prev - 1))} disabled={currentPage === 0} className="btn" style={{ padding: '6px 10px', borderRadius: '6px', border: '1px solid #cbd5e1', backgroundColor: '#fff', cursor: currentPage === 0 ? 'not-allowed' : 'pointer', opacity: currentPage === 0 ? 0.5 : 1, fontSize: '11px', fontWeight: 600 }}>Back</button>
+              <span style={{ fontSize: '11px', fontWeight: '500', color: '#64748b' }}>{currentPage + 1} / {Math.max(1, totalPages)}</span>
+              <button onClick={() => setCurrentPage((prev) => (prev + 1 < totalPages ? prev + 1 : prev))} disabled={currentPage + 1 >= totalPages} className="btn" style={{ padding: '6px 10px', borderRadius: '6px', border: '1px solid #cbd5e1', backgroundColor: '#fff', cursor: currentPage + 1 >= totalPages ? 'not-allowed' : 'pointer', opacity: currentPage + 1 >= totalPages ? 0.5 : 1, fontSize: '11px', fontWeight: 600 }}>Next</button>
             </div>
           )
         })()}
       </div>
+
+      {!selectedProgram && <SectionRingkasan />}
 
       {selectedProgram && (
         <div ref={panelKelolaRef} className="card" style={{ border: '2px solid #3b82f6' }}>
@@ -606,13 +645,8 @@ function ProgramKerja({ user }) {
                 {editingKegiatan ? `✏️ Edit Kegiatan: ${editingKegiatan.bulan}` : '➕ Tambah Kegiatan Baru'}
               </div>
               <div className="form-row">
-                <select
-                  value={formKegiatan.bulan}
-                  onChange={(e) => setFormKegiatan({ ...formKegiatan, bulan: e.target.value })}
-                >
-                  {daftarBulan.map((b) => (
-                    <option key={b} value={b}>{b}</option>
-                  ))}
+                <select value={formKegiatan.bulan} onChange={(e) => setFormKegiatan({ ...formKegiatan, bulan: e.target.value })}>
+                  {daftarBulan.map((b) => (<option key={b} value={b}>{b}</option>))}
                 </select>
                 <input
                   type="text"
@@ -621,27 +655,25 @@ function ProgramKerja({ user }) {
                   value={formKegiatan.target_anggaran}
                   onChange={(e) => {
                     const angka = e.target.value.replace(/[^\d]/g, '')
-                    const format = angka.replace(/\B(?=(\d{3})+(?!\d))/g, '.')
-                    setFormKegiatan({ ...formKegiatan, target_anggaran: format })
+                    setFormKegiatan({ ...formKegiatan, target_anggaran: angka.replace(/\B(?=(\d{3})+(?!\d))/g, '.') })
                   }}
                 />
                 <input
-                  type="number"
-                  placeholder="Persen (0-100)"
-                  min="0"
-                  max="100"
+                  type="text"
+                  placeholder="Sudah terlaksana (contoh: 500.000)"
                   required
-                  value={formKegiatan.persen_realisasi}
-                  onChange={(e) => setFormKegiatan({ ...formKegiatan, persen_realisasi: e.target.value })}
+                  value={formKegiatan.realisasi}
+                  onChange={(e) => {
+                    const angka = e.target.value.replace(/[^\d]/g, '')
+                    setFormKegiatan({ ...formKegiatan, realisasi: angka.replace(/\B(?=(\d{3})+(?!\d))/g, '.') })
+                  }}
                 />
                 <div style={{ display: 'flex', gap: '6px' }}>
                   <button type="submit" className="btn" style={{ background: editingKegiatan ? '#f59e0b' : undefined }}>
                     {editingKegiatan ? '💾 Update' : '➕ Tambah'}
                   </button>
                   {editingKegiatan && (
-                    <button type="button" className="btn" onClick={batalEdit} style={{ background: '#e2e8f0', color: '#0f172a' }}>
-                      Batal
-                    </button>
+                    <button type="button" className="btn" onClick={batalEdit} style={{ background: '#e2e8f0', color: '#0f172a' }}>Batal</button>
                   )}
                 </div>
               </div>
@@ -654,50 +686,44 @@ function ProgramKerja({ user }) {
                 <tr>
                   <th>Bulan</th>
                   <th>Target Anggaran</th>
-                  <th>Persen Realisasi</th>
+                  <th>Sudah Terlaksana</th>
+                  <th>Selisih</th>
+                  <th>Realisasi</th>
                   <th>Aksi</th>
                 </tr>
               </thead>
               <tbody>
                 {selectedProgram.kegiatan && selectedProgram.kegiatan.length > 0 ? (
-                  selectedProgram.kegiatan.map((k) => (
-                    <tr
-                      key={k.id}
-                      style={{
-                        background: editingKegiatan && editingKegiatan.id === k.id ? '#fef3c7' : undefined,
-                      }}
-                    >
-                      <td><strong>{k.bulan}</strong></td>
-                      <td>{formatRupiah(k.target_anggaran)}</td>
-                      <td>
-                        <span
-                          style={{
-                            fontWeight: 700,
-                            color: warnaPersen(k.persen_realisasi),
-                          }}
-                        >
-                          {k.persen_realisasi}%
-                        </span>
-                      </td>
-                      <td>
-                        {isAdmin && (
-                          <>
-                            <button
-                              className="btn"
-                              onClick={() => mulaiEdit(k)}
-                              style={{ padding: '4px 8px', fontSize: '11px', marginRight: '4px' }}
-                            >
-                              ✏️ Edit
-                            </button>
-                            <button className="btn-danger" onClick={() => hapusKegiatan(k.id)}>🗑</button>
-                          </>
-                        )}
-                      </td>
-                    </tr>
-                  ))
+                  selectedProgram.kegiatan.map((k) => {
+                    const selisih = k.target_anggaran - k.realisasi
+                    const prs = persenKegiatan(k)
+                    return (
+                      <tr key={k.id} style={{ background: editingKegiatan && editingKegiatan.id === k.id ? '#fef3c7' : undefined }}>
+                        <td><strong>{k.bulan}</strong></td>
+                        <td>{formatRupiah(k.target_anggaran)}</td>
+                        <td>{formatRupiah(k.realisasi)}</td>
+                        <td>
+                          <span style={{ color: selisih > 0 ? '#d97706' : '#16a34a', fontWeight: 700 }}>
+                            {formatRupiah(selisih)}
+                          </span>
+                        </td>
+                        <td>
+                          <span style={{ fontWeight: 700, color: warnaPersen(prs) }}>{prs}%</span>
+                        </td>
+                        <td>
+                          {isAdmin && (
+                            <>
+                              <button className="btn" onClick={() => mulaiEdit(k)} style={{ padding: '4px 8px', fontSize: '11px', marginRight: '4px' }}>✏️ Edit</button>
+                              <button className="btn-danger" onClick={() => hapusKegiatan(k.id)}>🗑</button>
+                            </>
+                          )}
+                        </td>
+                      </tr>
+                    )
+                  })
                 ) : (
                   <tr>
-                    <td colSpan="4" style={{ textAlign: 'center', padding: '20px', color: '#94a3b8' }}>
+                    <td colSpan="6" style={{ textAlign: 'center', padding: '20px', color: '#94a3b8' }}>
                       Belum ada kegiatan. Tambahkan kegiatan per bulan di atas!
                     </td>
                   </tr>
@@ -711,6 +737,8 @@ function ProgramKerja({ user }) {
           </button>
         </div>
       )}
+
+      {selectedProgram && <SectionRingkasan />}
     </div>
   )
 }

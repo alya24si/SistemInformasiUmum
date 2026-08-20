@@ -7,7 +7,6 @@ use Illuminate\Support\Facades\DB;
 
 class ProgramKerjaController extends Controller
 {
-    // 1. BACA semua program + kegiatannya
     public function index()
     {
         $programs = DB::table('program_kerja')->orderBy('id')->get();
@@ -21,7 +20,6 @@ class ProgramKerjaController extends Controller
         return response()->json(['success' => true, 'data' => $programs]);
     }
 
-    // 2. TAMBAH program (master)
     public function store(Request $request)
     {
         $request->validate([
@@ -43,7 +41,6 @@ class ProgramKerjaController extends Controller
         return response()->json(['success' => true, 'id' => $id], 201);
     }
 
-        // 2.5. UPDATE program (master)
     public function update(Request $request, $id)
     {
         $request->validate([
@@ -65,53 +62,48 @@ class ProgramKerjaController extends Controller
         return response()->json(['success' => true]);
     }
 
-
-    // 3. TAMBAH kegiatan bulanan
     public function storeKegiatan(Request $request)
     {
         $request->validate([
             'program_kerja_id' => 'required|integer',
             'bulan' => 'required|string',
             'target_anggaran' => 'required|integer|min:0',
-            'persen_realisasi' => 'integer|min:0|max:100',
+            'realisasi' => 'required|integer|min:0',
         ]);
 
         $id = DB::table('kegiatan_program_kerja')->insertGetId([
             'program_kerja_id' => (int) $request->program_kerja_id,
             'bulan' => $request->bulan,
             'target_anggaran' => (int) $request->target_anggaran,
-            'persen_realisasi' => (int) ($request->persen_realisasi ?? 0),
+            'realisasi' => (int) $request->realisasi,
         ]);
 
         return response()->json(['success' => true, 'id' => $id], 201);
     }
 
-    // 4. UPDATE kegiatan bulanan
     public function updateKegiatan(Request $request, $id)
     {
         $request->validate([
             'bulan' => 'required|string',
             'target_anggaran' => 'required|integer|min:0',
-            'persen_realisasi' => 'integer|min:0|max:100',
+            'realisasi' => 'required|integer|min:0',
         ]);
 
         DB::table('kegiatan_program_kerja')->where('id', $id)->update([
             'bulan' => $request->bulan,
             'target_anggaran' => (int) $request->target_anggaran,
-            'persen_realisasi' => (int) ($request->persen_realisasi ?? 0),
+            'realisasi' => (int) $request->realisasi,
         ]);
 
         return response()->json(['success' => true]);
     }
 
-    // 5. HAPUS kegiatan bulanan
     public function destroyKegiatan($id)
     {
         DB::table('kegiatan_program_kerja')->where('id', $id)->delete();
         return response()->json(['success' => true]);
     }
 
-    // 6. HAPUS program (kegiatan ikut terhapus otomatis)
     public function destroy($id)
     {
         DB::table('program_kerja')->where('id', $id)->delete();
