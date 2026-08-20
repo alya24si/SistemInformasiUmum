@@ -1,37 +1,6 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 
-const dataAwal = [
-  {
-    id: 1,
-    nip: '198501012010011001',
-    nama: 'Delita Br Tinambunan',
-    jabatan: 'Staff Sistem Informasi',
-    bagian: 'Umum',
-    noHp: '081234567890',
-    email: 'delita@example.com',
-    status: 'Aktif',
-  },
-  {
-    id: 2,
-    nip: '198602022011021002',
-    nama: 'Alya Deka Danisha',
-    jabatan: 'Staff Administrasi',
-    bagian: 'Kepegawaian',
-    noHp: '081298765432',
-    email: 'alya@example.com',
-    status: 'Aktif',
-  },
-  {
-    id: 3,
-    nip: '198703032012031003',
-    nama: 'Budi Santoso',
-    jabatan: 'Staff Keuangan',
-    bagian: 'Keuangan',
-    noHp: '082112345678',
-    email: 'budi@example.com',
-    status: 'Aktif',
-  },
-]
+const API_URL = 'http://127.0.0.1:8000/api'
 
 const statusPegawai = (status) => {
   if (status === 'Aktif') {
@@ -58,7 +27,9 @@ function DataPegawai() {
   // Halaman Data Pegawai khusus untuk admin
   const isAdmin = true
 
-  const [data, setData] = useState(dataAwal)
+  const [data, setData] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [showForm, setShowForm] = useState(false)
   const [search, setSearch] = useState('')
   const [filterBagian, setFilterBagian] = useState('semua')
   const [filterStatus, setFilterStatus] = useState('semua')
@@ -69,10 +40,29 @@ function DataPegawai() {
     nama: '',
     jabatan: '',
     bagian: '',
-    noHp: '',
+    no_hp: '',
     email: '',
     status: 'Aktif',
   })
+
+  const ambilData = () => {
+    setLoading(true)
+
+    fetch(`${API_URL}/pegawai`)
+      .then((res) => res.json())
+      .then((res) => {
+        setData(res.data || [])
+        setLoading(false)
+      })
+      .catch(() => {
+        alert('Gagal mengambil data pegawai. Pastikan backend (php artisan serve) sudah menyala.')
+        setLoading(false)
+      })
+  }
+
+  useEffect(() => {
+    ambilData()
+  }, [])
 
   const dataFiltered = data.filter((pegawai) => {
     const cocokSearch =
@@ -107,34 +97,42 @@ function DataPegawai() {
   const tambahData = (e) => {
     e.preventDefault()
 
-    const baru = {
-      id: Date.now(),
-      nip: form.nip,
-      nama: form.nama,
-      jabatan: form.jabatan,
-      bagian: form.bagian,
-      noHp: form.noHp,
-      email: form.email,
-      status: form.status,
-    }
-
-    setData([...data, baru])
-
-    setForm({
-      nip: '',
-      nama: '',
-      jabatan: '',
-      bagian: '',
-      noHp: '',
-      email: '',
-      status: 'Aktif',
+    fetch(`${API_URL}/pegawai`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(form),
     })
+      .then((res) => res.json())
+      .then((res) => {
+        if (!res.success) {
+          alert(res.message || 'Gagal menyimpan data pegawai.')
+          return
+        }
+
+        ambilData()
+
+        setForm({
+          nip: '',
+          nama: '',
+          jabatan: '',
+          bagian: '',
+          no_hp: '',
+          email: '',
+          status: 'Aktif',
+        })
+      })
+      .catch(() => alert('Gagal menyimpan data pegawai.'))
   }
 
   const hapusData = (id) => {
-    if (window.confirm('Yakin ingin menghapus data pegawai ini?')) {
-      setData(data.filter((pegawai) => pegawai.id !== id))
+    if (!window.confirm('Yakin ingin menghapus data pegawai ini?')) {
+      return
     }
+
+    fetch(`${API_URL}/pegawai/${id}`, { method: 'DELETE' })
+      .then((res) => res.json())
+      .then(() => ambilData())
+      .catch(() => alert('Gagal menghapus data pegawai.'))
   }
 
   const handleUploadPegawai = () => {
@@ -277,11 +275,12 @@ function DataPegawai() {
             <input
               type="tel"
               placeholder="No. HP"
-              value={form.noHp}
+              required
+              value={form.no_hp}
               onChange={(e) =>
                 setForm({
                   ...form,
-                  noHp: e.target.value,
+                  no_hp: e.target.value,
                 })
               }
             />
@@ -377,59 +376,67 @@ function DataPegawai() {
             </thead>
 
             <tbody>
-              {(() => {
-                const ITEMS_PER_PAGE = 10
-                const totalPages = Math.ceil(dataFiltered.length / ITEMS_PER_PAGE)
-                const startIndex = currentPage * ITEMS_PER_PAGE
-                const endIndex = startIndex + ITEMS_PER_PAGE
-                const dataPaginated = dataFiltered.slice(startIndex, endIndex)
+              {loading ? (
+                <tr>
+                  <td colSpan={isAdmin ? 9 : 8}>
+                    Memuat data...
+                  </td>
+                </tr>
+              ) : (
+                (() => {
+                  const ITEMS_PER_PAGE = 10
+                  const totalPages = Math.ceil(dataFiltered.length / ITEMS_PER_PAGE)
+                  const startIndex = currentPage * ITEMS_PER_PAGE
+                  const endIndex = startIndex + ITEMS_PER_PAGE
+                  const dataPaginated = dataFiltered.slice(startIndex, endIndex)
 
-                return (
-                  <>
-                    {dataPaginated.length > 0 ? (
-                      dataPaginated.map((pegawai, index) => {
-                        const status = statusPegawai(pegawai.status)
+                  return (
+                    <>
+                      {dataPaginated.length > 0 ? (
+                        dataPaginated.map((pegawai, index) => {
+                          const status = statusPegawai(pegawai.status)
 
-                        return (
-                          <tr key={pegawai.id}>
-                            <td>{startIndex + index + 1}</td>
-                            <td>{pegawai.nip}</td>
-                            <td>{pegawai.nama}</td>
-                            <td>{pegawai.jabatan}</td>
-                            <td>{pegawai.bagian}</td>
-                            <td>{pegawai.noHp || '-'}</td>
-                            <td>{pegawai.email || '-'}</td>
-                            <td>
-                              <span
-                                className={`badge ${status.className}`}
-                              >
-                                {status.label}
-                              </span>
-                            </td>
-                            {isAdmin && (
+                          return (
+                            <tr key={pegawai.id}>
+                              <td>{startIndex + index + 1}</td>
+                              <td>{pegawai.nip}</td>
+                              <td>{pegawai.nama}</td>
+                              <td>{pegawai.jabatan}</td>
+                              <td>{pegawai.bagian}</td>
+                              <td>{pegawai.no_hp || '-'}</td>
+                              <td>{pegawai.email || '-'}</td>
                               <td>
-                                <button
-                                  type="button"
-                                  onClick={() => hapusData(pegawai.id)}
-                                  className="btn-danger"
+                                <span
+                                  className={`badge ${status.className}`}
                                 >
-                                  🗑 
-                                </button>
+                                  {status.label}
+                                </span>
                               </td>
-                            )}
-                          </tr>
-                        )
-                      })
-                    ) : (
-                      <tr>
-                        <td colSpan={isAdmin ? 9 : 8}>
-                          Tidak ada data pegawai.
-                        </td>
-                      </tr>
-                    )}
-                  </>
-                )
-              })()}
+                              {isAdmin && (
+                                <td>
+                                  <button
+                                    type="button"
+                                    onClick={() => hapusData(pegawai.id)}
+                                    className="btn-danger"
+                                  >
+                                    🗑
+                                  </button>
+                                </td>
+                              )}
+                            </tr>
+                          )
+                        })
+                      ) : (
+                        <tr>
+                          <td colSpan={isAdmin ? 9 : 8}>
+                            Tidak ada data pegawai.
+                          </td>
+                        </tr>
+                      )}
+                    </>
+                  )
+                })()
+              )}
             </tbody>
           </table>
         </div>

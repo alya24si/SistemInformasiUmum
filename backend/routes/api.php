@@ -1,12 +1,15 @@
 <?php
 
-use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\AbsensiController;
 use App\Http\Controllers\AnggaranController;
-use App\Http\Controllers\ProgramKerjaController;
-use App\Http\Controllers\RuanganController;
 use App\Http\Controllers\BookingRuanganController;
 use App\Http\Controllers\KerusakanRuanganController;
+use App\Http\Controllers\PegawaiController;
 use App\Http\Controllers\PerbaikanRuanganController;
+use App\Http\Controllers\ProgramKerjaController;
+use App\Http\Controllers\RuanganController;
+use Illuminate\Support\Facades\Route;
+
 // use App\Http\Controllers\AuthController; // ⏳ nanti saat login dibangun
 
 // ===== Keuangan =====
@@ -55,3 +58,16 @@ Route::get('/perbaikan_ruangan/belum_diperbaiki', [PerbaikanRuanganController::c
 Route::post('/perbaikan_ruangan', [PerbaikanRuanganController::class, 'store']);
 Route::put('/perbaikan_ruangan/{id}/selesai', [PerbaikanRuanganController::class, 'selesai']);
 Route::delete('/perbaikan_ruangan/{id}', [PerbaikanRuanganController::class, 'destroy']);
+// ===== Kepegawaian =====
+// ===== API PEGAWAI =====
+Route::get('/pegawai', [PegawaiController::class, 'index']);
+Route::post('/pegawai', [PegawaiController::class, 'store']);
+Route::put('/pegawai/{id}', [PegawaiController::class, 'update']);
+Route::delete('/pegawai/{id}', [PegawaiController::class, 'destroy']);
+
+// ===== API ABSENSI =====
+Route::get('/absensi', [AbsensiController::class, 'index']);
+Route::get('/absensi/alpa-berturut', [AbsensiController::class, 'alpaBerturut']);
+Route::post('/absensi', [AbsensiController::class, 'store']);
+Route::put('/absensi/{id}', [AbsensiController::class, 'update']);
+Route::delete('/absensi/{id}', [AbsensiController::class, 'destroy']);

@@ -1,4 +1,6 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
+
+const API_URL = 'http://127.0.0.1:8000/api'
 
 const daftarBulan = [
   'Januari',
@@ -21,105 +23,6 @@ const daftarTahun = Array.from(
   { length: 6 },
   (_, i) => tahunIni - 1 + i
 )
-
-const dataAwal = [
-  {
-    id: 1,
-    nama: 'Delita Br Tinambunan',
-    tanggal: '2026-08-01',
-    jamMasuk: '07:45',
-    jamPulang: '16:00',
-    status: 'Hadir',
-  },
-  {
-    id: 2,
-    nama: 'Delita Br Tinambunan',
-    tanggal: '2026-08-02',
-    jamMasuk: '07:50',
-    jamPulang: '16:05',
-    status: 'Hadir',
-  },
-  {
-    id: 3,
-    nama: 'Delita Br Tinambunan',
-    tanggal: '2026-08-03',
-    jamMasuk: '-',
-    jamPulang: '-',
-    status: 'Alpa',
-  },
-  {
-    id: 4,
-    nama: 'Delita Br Tinambunan',
-    tanggal: '2026-08-04',
-    jamMasuk: '-',
-    jamPulang: '-',
-    status: 'Alpa',
-  },
-  {
-    id: 5,
-    nama: 'Delita Br Tinambunan',
-    tanggal: '2026-08-05',
-    jamMasuk: '-',
-    jamPulang: '-',
-    status: 'Alpa',
-  },
-  {
-    id: 6,
-    nama: 'Alya Deka Danisha',
-    tanggal: '2026-08-01',
-    jamMasuk: '-',
-    jamPulang: '-',
-    status: 'Izin',
-  },
-  {
-    id: 7,
-    nama: 'Alya Deka Danisha',
-    tanggal: '2026-08-02',
-    jamMasuk: '-',
-    jamPulang: '-',
-    status: 'Alpa',
-  },
-  {
-    id: 8,
-    nama: 'Alya Deka Danisha',
-    tanggal: '2026-08-03',
-    jamMasuk: '-',
-    jamPulang: '-',
-    status: 'Sakit',
-  },
-  {
-    id: 9,
-    nama: 'Budi Santoso',
-    tanggal: '2026-08-01',
-    jamMasuk: '-',
-    jamPulang: '-',
-    status: 'Alpa',
-  },
-  {
-    id: 10,
-    nama: 'Budi Santoso',
-    tanggal: '2026-08-02',
-    jamMasuk: '-',
-    jamPulang: '-',
-    status: 'Izin',
-  },
-  {
-    id: 11,
-    nama: 'Budi Santoso',
-    tanggal: '2026-08-03',
-    jamMasuk: '08:10',
-    jamPulang: '16:15',
-    status: 'Hadir',
-  },
-  {
-    id: 12,
-    nama: 'Budi Santoso',
-    tanggal: '2026-08-04',
-    jamMasuk: '-',
-    jamPulang: '-',
-    status: 'Alpa',
-  },
-]
 
 const statusAbsensi = (status) => {
   if (status === 'Hadir') {
@@ -161,13 +64,17 @@ const formatTanggal = (tanggal) => {
 }
 
 function DataAbsensi() {
-  const [data, setData] = useState(dataAwal)
+  const [data, setData] = useState([])
+  const [pegawaiList, setPegawaiList] = useState([])
+  const [alpaList, setAlpaList] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [showForm, setShowForm] = useState(false)
 
   const [form, setForm] = useState({
-    nama: '',
+    pegawai_id: '',
     tanggal: '',
-    jamMasuk: '',
-    jamPulang: '',
+    jam_masuk: '',
+    jam_pulang: '',
     status: 'Hadir',
   })
 
@@ -181,60 +88,42 @@ function DataAbsensi() {
 
   const [currentPage, setCurrentPage] = useState(0)
 
-  const pegawaiProfiles = [
-    {
-      nama: 'Delita Br Tinambunan',
-      noHp: '081234567890',
-    },
-    {
-      nama: 'Alya Deka Danisha',
-      noHp: '081298765432',
-    },
-    {
-      nama: 'Budi Santoso',
-      noHp: '082112345678',
-    },
-  ]
+  const ambilAbsensi = () => {
+    fetch(`${API_URL}/absensi`)
+      .then((res) => res.json())
+      .then((res) => setData(res.data || []))
+      .catch(() => alert('Gagal mengambil data absensi.'))
+  }
+
+  const ambilPegawai = () => {
+    fetch(`${API_URL}/pegawai`)
+      .then((res) => res.json())
+      .then((res) => setPegawaiList(res.data || []))
+      .catch(() => alert('Gagal mengambil data pegawai.'))
+  }
+
+  const ambilAlpaBerturut = () => {
+    fetch(`${API_URL}/absensi/alpa-berturut`)
+      .then((res) => res.json())
+      .then((res) => setAlpaList(res.data || []))
+      .catch(() => alert('Gagal mengambil data pegawai yang alpa.'))
+  }
+
+  useEffect(() => {
+    setLoading(true)
+
+    ambilAbsensi()
+    ambilPegawai()
+    ambilAlpaBerturut()
+
+    setLoading(false)
+  }, [])
 
   const handleUploadAbsensi = () => {
     alert(
+      'File Excel akan dikirim ke backend untuk diproses dan disimpan ke MySQL nanti.'
     )
   }
-
-  const chatWhatsApp = (noHp, nama) => {
-    if (!noHp) {
-      alert('Nomor WhatsApp tidak tersedia untuk pegawai ini.')
-      return
-    }
-
-    const onlyNumbers = noHp
-      .toString()
-      .replace(/[^\d+]/g, '')
-      .replace(/^0/, '62')
-
-    const message = `Halo ${nama},\nKami ingin mengingatkan bahwa Anda sudah tidak hadir selama lebih dari 3 hari.`
-    const url = `https://wa.me/${onlyNumbers}?text=${encodeURIComponent(message)}`
-
-    window.open(url, '_blank')
-  }
-
-  const absenceSummary = data.reduce((summary, record) => {
-    if (record.status !== 'Hadir') {
-      summary[record.nama] = (summary[record.nama] || 0) + 1
-    }
-    return summary
-  }, {})
-
-  const absentEmployees = Object.entries(absenceSummary)
-    .map(([nama, count]) => {
-      const profile = pegawaiProfiles.find((pegawai) => pegawai.nama === nama)
-      return {
-        nama,
-        count,
-        noHp: profile?.noHp || '-',
-      }
-    })
-    .filter((item) => item.count >= 3)
 
   const dataFiltered = data.filter((d) => {
     const tanggal = new Date(`${d.tanggal}T00:00:00`)
@@ -284,36 +173,67 @@ function DataAbsensi() {
   const tambahData = (e) => {
     e.preventDefault()
 
-    const baru = {
-      id: Date.now(),
-      nama: form.nama,
-      tanggal: form.tanggal,
-      jamMasuk: form.jamMasuk || '-',
-      jamPulang: form.jamPulang || '-',
-      status: form.status,
+    if (!form.pegawai_id) {
+      alert('Pilih pegawai terlebih dahulu.')
+      return
     }
 
-    setData([...data, baru])
-
-    setForm({
-      nama: '',
-      tanggal: '',
-      jamMasuk: '',
-      jamPulang: '',
-      status: 'Hadir',
+    fetch(`${API_URL}/absensi`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(form),
     })
+      .then((res) => res.json())
+      .then((res) => {
+        if (!res.success) {
+          alert(
+            res.message ||
+              'Gagal menyimpan data absensi.'
+          )
+
+          return
+        }
+
+        ambilAbsensi()
+        ambilAlpaBerturut()
+
+        setForm({
+          pegawai_id: '',
+          tanggal: '',
+          jam_masuk: '',
+          jam_pulang: '',
+          status: 'Hadir',
+        })
+
+        setShowForm(false)
+      })
+      .catch(() =>
+        alert('Gagal menyimpan data absensi.')
+      )
   }
 
   const hapusData = (id) => {
     if (
-      window.confirm(
+      !window.confirm(
         'Yakin ingin menghapus data absensi ini?'
       )
     ) {
-      setData(
-        data.filter((d) => d.id !== id)
-      )
+      return
     }
+
+    fetch(`${API_URL}/absensi/${id}`, {
+      method: 'DELETE',
+    })
+      .then((res) => res.json())
+      .then(() => {
+        ambilAbsensi()
+        ambilAlpaBerturut()
+      })
+      .catch(() =>
+        alert('Gagal menghapus data absensi.')
+      )
   }
 
   return (
@@ -416,148 +336,243 @@ function DataAbsensi() {
 
       </div>
 
-      {absentEmployees.length > 0 ? (
+      {/* PEGAWAI ALPA 3 HARI BERTURUT */}
+      {alpaList.length > 0 && (
         <div className="card">
+
           <h3>📱 Pegawai Perlu Dihubungi</h3>
 
           <p>
-            Daftar pegawai yang tercatat tidak hadir/absen 3 hari atau lebih.
-            Nomor WA diambil dari data pegawai.
+            Daftar pegawai yang tidak absen 3 hari kerja
+            berturut-turut (Senin-Jumat). Pesan WA sudah
+            otomatis disiapkan, tinggal klik kirim.
           </p>
 
           <div className="table-wrap">
+
             <table className="table">
+
               <thead>
                 <tr>
                   <th>No</th>
                   <th>Nama Pegawai</th>
-                  <th>Jumlah Tidak Hadir</th>
+                  <th>NIP</th>
+                  <th>Tanggal Alpa</th>
                   <th>No. WA</th>
                   <th>Aksi</th>
                 </tr>
               </thead>
+
               <tbody>
-                {absentEmployees.map((item, index) => (
-                  <tr key={item.nama}>
-                    <td>{index + 1}</td>
-                    <td>{item.nama}</td>
-                    <td>{item.count} hari</td>
-                    <td>{item.noHp}</td>
+
+                {alpaList.map((item, index) => (
+                  <tr key={item.pegawai_id}>
+
                     <td>
-                      <button
-                        type="button"
-                        className="btn"
-                        onClick={() => chatWhatsApp(item.noHp, item.nama)}
-                      >
-                        📱 Chat WA
-                      </button>
+                      {index + 1}
                     </td>
+
+                    <td>
+                      {item.nama}
+                    </td>
+
+                    <td>
+                      {item.nip}
+                    </td>
+
+                    <td>
+                      {item.tanggal_alpa
+                        .map((t) =>
+                          formatTanggal(t)
+                        )
+                        .join(', ')}
+                    </td>
+
+                    <td>
+                      {item.no_hp}
+                    </td>
+
+                    <td>
+                      <a
+                        href={item.wa_link}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="btn"
+                      >
+                        📱 Kirim WA
+                      </a>
+                    </td>
+
                   </tr>
                 ))}
+
               </tbody>
+
             </table>
+
           </div>
-        </div>
-      ) : (
-        <div className="card">
-          <p className="text-sm text-slate-500">
-            Belum ada pegawai yang tercatat absen 3 hari atau lebih.
-            Jika ingin menguji fitur ini, tambahkan data absensi absen/izin/sakit pada pegawai yang sama sebanyak 3 hari.
-          </p>
+
         </div>
       )}
 
       {/* TAMBAH DATA */}
       <div className="card">
 
-        <h3>➕ Tambah Data Absensi</h3>
-
-        <form
-          onSubmit={tambahData}
-          className="form-row"
+        <div
+          style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'flex-start',
+            gap: '20px',
+          }}
         >
 
-          <input
-            type="text"
-            placeholder="Nama Pegawai"
-            required
-            value={form.nama}
-            onChange={(e) =>
-              setForm({
-                ...form,
-                nama: e.target.value,
-              })
-            }
-          />
+          <div>
 
-          <input
-            type="date"
-            required
-            value={form.tanggal}
-            onChange={(e) =>
-              setForm({
-                ...form,
-                tanggal: e.target.value,
-              })
-            }
-          />
+            <h3>➕ Tambah Data Absensi</h3>
 
-          <input
-            type="time"
-            value={form.jamMasuk}
-            onChange={(e) =>
-              setForm({
-                ...form,
-                jamMasuk: e.target.value,
-              })
-            }
-          />
+            <p
+              style={{
+                margin: '5px 0 0',
+                color: '#64748b',
+                fontSize: '13px',
+              }}
+            >
+              Isi data kehadiran pegawai untuk tanggal tertentu.
+            </p>
 
-          <input
-            type="time"
-            value={form.jamPulang}
-            onChange={(e) =>
-              setForm({
-                ...form,
-                jamPulang: e.target.value,
-              })
-            }
-          />
-
-          <select
-            value={form.status}
-            onChange={(e) =>
-              setForm({
-                ...form,
-                status: e.target.value,
-              })
-            }
-          >
-            <option value="Hadir">
-              Hadir
-            </option>
-
-            <option value="Izin">
-              Izin
-            </option>
-
-            <option value="Sakit">
-              Sakit
-            </option>
-
-            <option value="Alpa">
-              Alpa
-            </option>
-          </select>
+          </div>
 
           <button
-            type="submit"
+            type="button"
             className="btn"
+            onClick={() => {
+              setShowForm(!showForm)
+
+              if (!showForm) {
+                setForm({
+                  pegawai_id: '',
+                  tanggal: '',
+                  jam_masuk: '',
+                  jam_pulang: '',
+                  status: 'Hadir',
+                })
+              }
+            }}
           >
-            Simpan
+            {showForm
+              ? 'Tutup'
+              : '+ Tambah Data Absensi'}
           </button>
 
-        </form>
+        </div>
+
+        {showForm && (
+          <form
+            onSubmit={tambahData}
+            className="form-row"
+            style={{
+              marginTop: '20px',
+              paddingTop: '20px',
+              borderTop: '1px solid #e2e8f0',
+            }}
+          >
+
+            <select
+              required
+              value={form.pegawai_id}
+              onChange={(e) =>
+                setForm({
+                  ...form,
+                  pegawai_id: e.target.value,
+                })
+              }
+            >
+              <option value="">
+                Pilih Pegawai
+              </option>
+
+              {pegawaiList.map((p) => (
+                <option
+                  key={p.id}
+                  value={p.id}
+                >
+                  {p.nama}
+                </option>
+              ))}
+            </select>
+
+            <input
+              type="date"
+              required
+              value={form.tanggal}
+              onChange={(e) =>
+                setForm({
+                  ...form,
+                  tanggal: e.target.value,
+                })
+              }
+            />
+
+            <input
+              type="time"
+              value={form.jam_masuk}
+              onChange={(e) =>
+                setForm({
+                  ...form,
+                  jam_masuk: e.target.value,
+                })
+              }
+            />
+
+            <input
+              type="time"
+              value={form.jam_pulang}
+              onChange={(e) =>
+                setForm({
+                  ...form,
+                  jam_pulang: e.target.value,
+                })
+              }
+            />
+
+            <select
+              value={form.status}
+              onChange={(e) =>
+                setForm({
+                  ...form,
+                  status: e.target.value,
+                })
+              }
+            >
+
+              <option value="Hadir">
+                Hadir
+              </option>
+
+              <option value="Izin">
+                Izin
+              </option>
+
+              <option value="Sakit">
+                Sakit
+              </option>
+
+              <option value="Alpa">
+                Alpa
+              </option>
+
+            </select>
+
+            <button
+              type="submit"
+              className="btn"
+            >
+              Simpan
+            </button>
+
+          </form>
+        )}
 
       </div>
 
@@ -583,6 +598,7 @@ function DataAbsensi() {
               setFilterTahun(e.target.value)
             }
           >
+
             <option value="semua">
               Semua Tahun
             </option>
@@ -595,6 +611,7 @@ function DataAbsensi() {
                 Tahun {t}
               </option>
             ))}
+
           </select>
 
           <select
@@ -603,6 +620,7 @@ function DataAbsensi() {
               setFilterBulan(e.target.value)
             }
           >
+
             <option value="semua">
               Semua Bulan
             </option>
@@ -618,6 +636,7 @@ function DataAbsensi() {
                 {b}
               </option>
             ))}
+
           </select>
 
         </div>
@@ -632,6 +651,7 @@ function DataAbsensi() {
           <table className="table">
 
             <thead>
+
               <tr>
                 <th>No</th>
                 <th>Nama Pegawai</th>
@@ -641,95 +661,148 @@ function DataAbsensi() {
                 <th>Status</th>
                 <th>Aksi</th>
               </tr>
+
             </thead>
 
             <tbody>
 
-              {(() => {
-                const ITEMS_PER_PAGE = 10
-                const totalPages = Math.ceil(dataFiltered.length / ITEMS_PER_PAGE)
-                const startIndex = currentPage * ITEMS_PER_PAGE
-                const endIndex = startIndex + ITEMS_PER_PAGE
-                const dataPaginated = dataFiltered.slice(startIndex, endIndex)
+              {loading ? (
 
-                return (
-                  <>
-                    {dataPaginated.length > 0 ? (
+                <tr>
 
-                      dataPaginated.map((d, index) => {
+                  <td
+                    colSpan={7}
+                    style={{
+                      textAlign: 'center',
+                      padding: '30px',
+                    }}
+                  >
+                    Memuat data...
+                  </td>
 
-                        const st =
-                          statusAbsensi(d.status)
+                </tr>
 
-                        return (
-                          <tr key={d.id}>
+              ) : (
 
-                            <td>
-                              {startIndex + index + 1}
-                            </td>
+                (() => {
 
-                            <td>
-                              <div className="cell-main">
-                                {d.nama}
-                              </div>
-                            </td>
+                  const ITEMS_PER_PAGE = 10
 
-                            <td>
-                              {formatTanggal(
-                                d.tanggal
-                              )}
-                            </td>
+                  const totalPages =
+                    Math.ceil(
+                      dataFiltered.length /
+                        ITEMS_PER_PAGE
+                    )
 
-                            <td>
-                              {d.jamMasuk}
-                            </td>
+                  const startIndex =
+                    currentPage *
+                    ITEMS_PER_PAGE
 
-                            <td>
-                              {d.jamPulang}
-                            </td>
+                  const endIndex =
+                    startIndex +
+                    ITEMS_PER_PAGE
 
-                            <td>
-                              <span
-                                className={`badge ${st.cls}`}
-                              >
-                                {st.label}
-                              </span>
-                            </td>
+                  const dataPaginated =
+                    dataFiltered.slice(
+                      startIndex,
+                      endIndex
+                    )
 
-                            <td>
-                              <button
-                                type="button"
-                                className="btn-danger"
-                                onClick={() =>
-                                  hapusData(d.id)
-                                }
-                              >
-                                🗑
-                              </button>
-                            </td>
+                  return (
+                    <>
+                      {dataPaginated.length > 0 ? (
 
-                          </tr>
+                        dataPaginated.map(
+                          (d, index) => {
+
+                            const st =
+                              statusAbsensi(
+                                d.status
+                              )
+
+                            return (
+                              <tr key={d.id}>
+
+                                <td>
+                                  {startIndex +
+                                    index +
+                                    1}
+                                </td>
+
+                                <td>
+                                  <div className="cell-main">
+                                    {d.nama}
+                                  </div>
+                                </td>
+
+                                <td>
+                                  {formatTanggal(
+                                    d.tanggal
+                                  )}
+                                </td>
+
+                                <td>
+                                  {d.jam_masuk ||
+                                    '-'}
+                                </td>
+
+                                <td>
+                                  {d.jam_pulang ||
+                                    '-'}
+                                </td>
+
+                                <td>
+                                  <span
+                                    className={`badge ${st.cls}`}
+                                  >
+                                    {st.label}
+                                  </span>
+                                </td>
+
+                                <td>
+                                  <button
+                                    type="button"
+                                    className="btn-danger"
+                                    onClick={() =>
+                                      hapusData(
+                                        d.id
+                                      )
+                                    }
+                                  >
+                                    🗑
+                                  </button>
+                                </td>
+
+                              </tr>
+                            )
+                          }
                         )
-                      })
 
-                    ) : (
+                      ) : (
 
-                      <tr>
-                        <td
-                          colSpan={7}
-                          style={{
-                            textAlign: 'center',
-                            padding: '30px',
-                          }}
-                        >
-                          Tidak ada data absensi.
-                        </td>
-                      </tr>
+                        <tr>
 
-                    )}
-                  </>
-                )
-              })()}
+                          <td
+                            colSpan={7}
+                            style={{
+                              textAlign:
+                                'center',
+                              padding:
+                                '30px',
+                            }}
+                          >
+                            Tidak ada data absensi.
+                          </td>
+
+                        </tr>
+
+                      )}
+                    </>
+                  )
+
+                })()
+
+              )}
 
             </tbody>
 
@@ -738,29 +811,115 @@ function DataAbsensi() {
         </div>
 
         {(() => {
+
           const ITEMS_PER_PAGE = 10
-          const totalPages = Math.ceil(dataFiltered.length / ITEMS_PER_PAGE)
+
+          const totalPages =
+            Math.ceil(
+              dataFiltered.length /
+                ITEMS_PER_PAGE
+            )
+
           return (
-            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px', marginTop: '16px', alignItems: 'center' }}>
+            <div
+              style={{
+                display: 'flex',
+                justifyContent:
+                  'flex-end',
+                gap: '8px',
+                marginTop: '16px',
+                alignItems: 'center',
+              }}
+            >
+
               <button
-                onClick={() => setCurrentPage(prev => Math.max(0, prev - 1))}
-                disabled={currentPage === 0}
-                style={{ padding: '6px 10px', borderRadius: '6px', border: '1px solid #cbd5e1', backgroundColor: '#fff', cursor: currentPage === 0 ? 'not-allowed' : 'pointer', opacity: currentPage === 0 ? 0.5 : 1, fontSize: '11px', fontWeight: 600 }}
+                onClick={() =>
+                  setCurrentPage(
+                    (prev) =>
+                      Math.max(
+                        0,
+                        prev - 1
+                      )
+                  )
+                }
+                disabled={
+                  currentPage === 0
+                }
+                style={{
+                  padding: '6px 10px',
+                  borderRadius: '6px',
+                  border:
+                    '1px solid #cbd5e1',
+                  backgroundColor: '#fff',
+                  cursor:
+                    currentPage === 0
+                      ? 'not-allowed'
+                      : 'pointer',
+                  opacity:
+                    currentPage === 0
+                      ? 0.5
+                      : 1,
+                  fontSize: '11px',
+                  fontWeight: 600,
+                }}
               >
                 Back
               </button>
-              <span style={{ fontSize: '11px', fontWeight: '500', color: '#64748b' }}>
-                {currentPage + 1} / {Math.max(1, totalPages)}
+
+              <span
+                style={{
+                  fontSize: '11px',
+                  fontWeight: '500',
+                  color: '#64748b',
+                }}
+              >
+                {currentPage + 1} /{' '}
+                {Math.max(
+                  1,
+                  totalPages
+                )}
               </span>
+
               <button
-                onClick={() => setCurrentPage(prev => (prev + 1 < totalPages ? prev + 1 : prev))}
-                disabled={currentPage + 1 >= totalPages}
-                style={{ padding: '6px 10px', borderRadius: '6px', border: '1px solid #cbd5e1', backgroundColor: '#fff', cursor: currentPage + 1 >= totalPages ? 'not-allowed' : 'pointer', opacity: currentPage + 1 >= totalPages ? 0.5 : 1, fontSize: '11px', fontWeight: 600 }}
+                onClick={() =>
+                  setCurrentPage(
+                    (prev) =>
+                      prev + 1 <
+                      totalPages
+                        ? prev + 1
+                        : prev
+                  )
+                }
+                disabled={
+                  currentPage + 1 >=
+                  totalPages
+                }
+                style={{
+                  padding: '6px 10px',
+                  borderRadius: '6px',
+                  border:
+                    '1px solid #cbd5e1',
+                  backgroundColor: '#fff',
+                  cursor:
+                    currentPage + 1 >=
+                    totalPages
+                      ? 'not-allowed'
+                      : 'pointer',
+                  opacity:
+                    currentPage + 1 >=
+                    totalPages
+                      ? 0.5
+                      : 1,
+                  fontSize: '11px',
+                  fontWeight: 600,
+                }}
               >
                 Next
               </button>
+
             </div>
           )
+
         })()}
 
       </div>
