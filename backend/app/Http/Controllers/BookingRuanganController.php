@@ -26,7 +26,6 @@ class BookingRuanganController extends Controller
             'pemesan'    => 'required|string',
             'bagian'     => 'required|string',
             'kegiatan'   => 'required|string',
-            'jenis_pertemuan' => 'required|in:Online,Offline',
             'deskripsi'  => 'nullable|string',
             'tanggal'    => 'required|date',
             'mulai'      => 'required',
@@ -36,7 +35,7 @@ class BookingRuanganController extends Controller
         if ($this->cekBentrok($request->ruangan_id, $request->tanggal, $request->mulai, $request->selesai)) {
             return response()->json([
                 'success' => false,
-                'message' => 'Ruangan sudah memiliki booking pada waktu tersebut.',
+                'message' => 'Permintaan anda ditolak karena ruangan sudah digunakan, silahkan hubungi admin.',
             ], 422);
         }
 
@@ -45,7 +44,6 @@ class BookingRuanganController extends Controller
             'pemesan'    => $request->pemesan,
             'bagian'     => $request->bagian,
             'kegiatan'   => $request->kegiatan,
-            'jenis_pertemuan' => $request->jenis_pertemuan,
             'deskripsi'  => $request->deskripsi,
             'tanggal'    => $request->tanggal,
             'mulai'      => $request->mulai,

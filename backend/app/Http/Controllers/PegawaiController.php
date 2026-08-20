@@ -77,4 +77,60 @@ class PegawaiController extends Controller
         DB::table('pegawai')->where('id', $id)->delete();
         return response()->json(['success' => true]);
     }
+
+    // 5. IMPORT dari Excel (frontend sudah parse file ke JSON, di sini tinggal disimpan)
+    //    NIP yang sama -> data pegawai di-update, NIP baru -> ditambahkan
+    public function import(Request $request)
+    {
+        $request->validate([
+            'data'               => 'required|array|min:1',
+            'data.*.nip'         => 'required|string',
+            'data.*.nama'        => 'required|string',
+            'data.*.jabatan'     => 'nullable|string',
+            'data.*.bagian'      => 'nullable|string',
+            'data.*.no_hp'       => 'nullable|string',
+            'data.*.email'       => 'nullable|email',
+            'data.*.status'      => 'nullable|in:Aktif,Cuti,Tidak Aktif',
+        ]);
+
+        $ditambah = 0;
+        $diupdate = 0;
+        $dilewati = [];
+
+        foreach ($request->data as $baris) {
+            $nip = trim((string) $baris['nip']);
+
+            if ($nip === '' || empty($baris['nama'])) {
+                $dilewati[] = $baris;
+                continue;
+            }
+
+            $payload = [
+                'nip'     => $nip,
+                'nama'    => $baris['nama'],
+                'jabatan' => $baris['jabatan'] ?? '-',
+                'bagian'  => $baris['bagian'] ?? '-',
+                'no_hp'   => $baris['no_hp'] ?? '-',
+                'email'   => $baris['email'] ?? null,
+                'status'  => $baris['status'] ?? 'Aktif',
+            ];
+
+            $sudahAda = DB::table('pegawai')->where('nip', $nip)->first();
+
+            if ($sudahAda) {
+                DB::table('pegawai')->where('nip', $nip)->update($payload);
+                $diupdate++;
+            } else {
+                DB::table('pegawai')->insert($payload);
+                $ditambah++;
+            }
+        }
+
+        return response()->json([
+            'success'  => true,
+            'ditambah' => $ditambah,
+            'diupdate' => $diupdate,
+            'dilewati' => count($dilewati),
+        ]);
+    }
 }

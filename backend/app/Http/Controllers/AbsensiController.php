@@ -144,4 +144,68 @@ class AbsensiController extends Controller
 
         return $noHp;
     }
+
+    // 6. IMPORT dari Excel (frontend sudah parse file ke JSON, di sini tinggal disimpan)
+    //    Pegawai diidentifikasi lewat NIP. 1 pegawai + 1 tanggal yang sama -> di-update,
+    //    kombinasi baru -> ditambahkan.
+    public function import(Request $request)
+    {
+        $request->validate([
+            'data'           => 'required|array|min:1',
+            'data.*.nip'     => 'required|string',
+            'data.*.tanggal' => 'required|date',
+            'data.*.status'  => 'nullable|in:Hadir,Izin,Sakit,Alpa',
+        ]);
+
+        $ditambah = 0;
+        $diupdate = 0;
+        $dilewati = 0;
+
+        foreach ($request->data as $baris) {
+            $nip     = trim((string) $baris['nip']);
+            $tanggal = $baris['tanggal'] ?? null;
+
+            if ($nip === '' || ! $tanggal) {
+                $dilewati++;
+                continue;
+            }
+
+            $pegawai = DB::table('pegawai')->where('nip', $nip)->first();
+
+            if (! $pegawai) {
+                $dilewati++;
+                continue;
+            }
+
+            $payload = [
+                'pegawai_id' => $pegawai->id,
+                'tanggal'    => $tanggal,
+                'jam_masuk'  => $baris['jam_masuk'] ?? null,
+                'jam_pulang' => $baris['jam_pulang'] ?? null,
+                'status'     => $baris['status'] ?? 'Hadir',
+            ];
+
+            $sudahAda = DB::table('absensi')
+                ->where('pegawai_id', $pegawai->id)
+                ->where('tanggal', $tanggal)
+                ->first();
+
+            if ($sudahAda) {
+                DB::table('absensi')
+                    ->where('id', $sudahAda->id)
+                    ->update($payload);
+                $diupdate++;
+            } else {
+                DB::table('absensi')->insert($payload);
+                $ditambah++;
+            }
+        }
+
+        return response()->json([
+            'success'  => true,
+            'ditambah' => $ditambah,
+            'diupdate' => $diupdate,
+            'dilewati' => $dilewati,
+        ]);
+    }
 }

@@ -2,6 +2,12 @@ import { useEffect, useState } from 'react'
 
 const API = 'http://localhost:8000/api'
 
+// Nomor WA Admin Rumah Tangga (format internasional, tanpa + atau spasi)
+const WA_ADMIN_RT = '6282387398764'
+
+const buatLinkWA = (pesan) =>
+  `https://wa.me/${WA_ADMIN_RT}?text=${encodeURIComponent(pesan)}`
+
 const formatTanggal = (tanggal) => {
   if (!tanggal) return '-'
 
@@ -59,6 +65,9 @@ function BookingRuangan({ user }) {
 
   const [showForm, setShowForm] = useState(false)
   const [currentPage, setCurrentPage] = useState(0)
+
+  // Info penolakan booking (dipakai buat banner + tombol WA, gantiin alert())
+  const [tolakInfo, setTolakInfo] = useState(null)
 
   const [kataKunci, setKataKunci] = useState('')
   const [filterStatus, setFilterStatus] = useState('Semua')
@@ -143,6 +152,8 @@ function BookingRuangan({ user }) {
       ...form,
       [name]: value,
     })
+
+    if (tolakInfo) setTolakInfo(null)
   }
 
   const resetForm = () => {
@@ -155,6 +166,8 @@ function BookingRuangan({ user }) {
       mulai: '',
       selesai: '',
     })
+
+    setTolakInfo(null)
   }
 
   const tambahBooking = async (e) => {
@@ -168,6 +181,7 @@ function BookingRuangan({ user }) {
     }
 
     setSubmitting(true)
+    setTolakInfo(null)
 
     const payload = {
       ruangan_id: form.ruangan_id,
@@ -191,10 +205,20 @@ function BookingRuangan({ user }) {
       const json = await res.json()
 
       if (!res.ok) {
-        alert(
-          json.message ||
-            'Ruangan sudah memiliki booking pada waktu tersebut.'
-        )
+        const namaRuangan =
+          daftarRuangan.find(
+            (r) => String(r.id) === String(form.ruangan_id)
+          )?.nama || 'ruangan tersebut'
+
+        setTolakInfo({
+          message:
+            json.message ||
+            'Ruangan sudah memiliki booking pada waktu tersebut.',
+          ruangan: namaRuangan,
+          tanggal: form.tanggal,
+          mulai: form.mulai,
+          selesai: form.selesai,
+        })
         return
       }
 
@@ -930,6 +954,55 @@ function BookingRuangan({ user }) {
               </div>
 
             </div>
+
+            {/* BANNER PENOLAKAN + TOMBOL WA */}
+            {tolakInfo && (
+              <div
+                style={{
+                  padding: '14px 16px',
+                  marginBottom: '20px',
+                  borderRadius: '8px',
+                  backgroundColor: '#fef2f2',
+                  border: '1px solid #fecaca',
+                  color: '#991b1b',
+                }}
+              >
+                <div
+                  style={{
+                    display: 'flex',
+                    alignItems: 'flex-start',
+                    gap: '8px',
+                    fontSize: '13px',
+                    marginBottom: '10px',
+                  }}
+                >
+                  <span>⚠️</span>
+                  <span>{tolakInfo.message}</span>
+                </div>
+
+                <a
+                  href={buatLinkWA(
+                    `Halo Admin RT, saya ${user.nama} (${user.bidang}) ingin bertanya soal pengajuan booking ruangan yang ditolak.\n\nRuangan: ${tolakInfo.ruangan}\nTanggal: ${formatTanggal(tolakInfo.tanggal)}\nJam: ${tolakInfo.mulai}–${tolakInfo.selesai}\n\nMohon informasinya, terima kasih.`
+                  )}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    padding: '8px 14px',
+                    borderRadius: '6px',
+                    backgroundColor: '#22c55e',
+                    color: '#fff',
+                    fontSize: '13px',
+                    fontWeight: 600,
+                    textDecoration: 'none',
+                  }}
+                >
+                  💬 Hubungi Admin via WhatsApp
+                </a>
+              </div>
+            )}
 
             {/* CATATAN STATUS */}
             <div

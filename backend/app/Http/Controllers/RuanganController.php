@@ -1,15 +1,39 @@
 <?php
 namespace App\Http\Controllers;
 
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
 class RuanganController extends Controller
 {
-    // 1. BACA semua data
+    // 1. BACA semua data (status Digunakan/Tersedia dihitung real-time dari jadwal booking)
     public function index()
     {
-        $data = DB::table('ruangan')->orderBy('id')->get();
+        $sekarang       = Carbon::now();
+        $tanggalHariIni = $sekarang->toDateString();
+        $jamSekarang    = $sekarang->format('H:i:s');
+
+        // ambil semua ruangan_id yang HARI INI, JAM INI lagi ada booking Disetujui yang berlangsung
+        $sedangDipakai = DB::table('booking_ruangan')
+            ->where('status', 'Disetujui')
+            ->where('tanggal', $tanggalHariIni)
+            ->where('mulai', '<=', $jamSekarang)
+            ->where('selesai', '>', $jamSekarang)
+            ->pluck('ruangan_id')
+            ->all();
+
+        $data = DB::table('ruangan')->orderBy('id')->get()->map(function ($ruangan) use ($sedangDipakai) {
+            // Maintenance itu keputusan manual admin, jangan ditimpa oleh perhitungan jadwal
+            if ($ruangan->status === 'Maintenance') {
+                return $ruangan;
+            }
+
+            $ruangan->status = in_array($ruangan->id, $sedangDipakai) ? 'Digunakan' : 'Tersedia';
+
+            return $ruangan;
+        });
+
         return response()->json(['success' => true, 'data' => $data]);
     }
 

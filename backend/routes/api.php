@@ -21,15 +21,12 @@ Route::post('/anggaran/{id}/realisasi', [AnggaranController::class, 'tambahReali
 Route::delete('/anggaran/{id}', [AnggaranController::class, 'destroy']);
 Route::get('/anggaran/{id}/realisasi', [AnggaranController::class, 'riwayatRealisasi']);
 
-
 // ===== API PROGRAM KERJA =====
 Route::get('/program_kerja', [ProgramKerjaController::class, 'index']);
 Route::post('/program_kerja', [ProgramKerjaController::class, 'store']);
+Route::put('/program_kerja/{id}/realisasi', [ProgramKerjaController::class, 'updateRealisasi']);
 Route::delete('/program_kerja/{id}', [ProgramKerjaController::class, 'destroy']);
-Route::post('/kegiatan_program', [ProgramKerjaController::class, 'storeKegiatan']);
-Route::put('/kegiatan_program/{id}', [ProgramKerjaController::class, 'updateKegiatan']);
-Route::delete('/kegiatan_program/{id}', [ProgramKerjaController::class, 'destroyKegiatan']);
-Route::put('/program_kerja/{id}', [ProgramKerjaController::class, 'update']);
+
 // NANTI, kalau login sudah dibangun, tambahkan baris ini:
 // Route::post('/login', [AuthController::class, 'login']);
 
@@ -61,10 +58,12 @@ Route::get('/perbaikan_ruangan/belum_diperbaiki', [PerbaikanRuanganController::c
 Route::post('/perbaikan_ruangan', [PerbaikanRuanganController::class, 'store']);
 Route::put('/perbaikan_ruangan/{id}/selesai', [PerbaikanRuanganController::class, 'selesai']);
 Route::delete('/perbaikan_ruangan/{id}', [PerbaikanRuanganController::class, 'destroy']);
+
 // ===== Kepegawaian =====
 // ===== API PEGAWAI =====
 Route::get('/pegawai', [PegawaiController::class, 'index']);
 Route::post('/pegawai', [PegawaiController::class, 'store']);
+Route::post('/pegawai/import', [PegawaiController::class, 'import']);
 Route::put('/pegawai/{id}', [PegawaiController::class, 'update']);
 Route::delete('/pegawai/{id}', [PegawaiController::class, 'destroy']);
 
@@ -72,5 +71,6 @@ Route::delete('/pegawai/{id}', [PegawaiController::class, 'destroy']);
 Route::get('/absensi', [AbsensiController::class, 'index']);
 Route::get('/absensi/alpa-berturut', [AbsensiController::class, 'alpaBerturut']);
 Route::post('/absensi', [AbsensiController::class, 'store']);
+Route::post('/absensi/import', [AbsensiController::class, 'import']);
 Route::put('/absensi/{id}', [AbsensiController::class, 'update']);
 Route::delete('/absensi/{id}', [AbsensiController::class, 'destroy']);

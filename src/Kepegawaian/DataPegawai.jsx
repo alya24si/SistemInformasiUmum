@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import * as XLSX from 'xlsx'
 
 const API_URL = 'http://127.0.0.1:8000/api'
 
@@ -135,10 +136,85 @@ function DataPegawai() {
       .catch(() => alert('Gagal menghapus data pegawai.'))
   }
 
-  const handleUploadPegawai = () => {
-    alert(
-      'File Excel akan dikirim ke backend untuk diproses dan disimpan ke MySQL nanti.'
-    )
+  const [importing, setImporting] = useState(false)
+  const [importInfo, setImportInfo] = useState('')
+
+  const handleUploadPegawai = (e) => {
+    const file = e.target.files[0]
+    if (!file) return
+
+    setImporting(true)
+    setImportInfo('')
+
+    const reader = new FileReader()
+
+    reader.onload = (ev) => {
+      try {
+        const wb = XLSX.read(ev.target.result, { type: 'array' })
+        const ws = wb.Sheets[wb.SheetNames[0]]
+        const rows = XLSX.utils.sheet_to_json(ws)
+
+        if (rows.length === 0) {
+          setImportInfo('❌ File kosong atau tidak terbaca. Pastikan ada data di baris kedua ke bawah.')
+          setImporting(false)
+          e.target.value = ''
+          return
+        }
+
+        // Normalisasi nama kolom: terima variasi huruf besar/kecil & spasi
+        // Kolom yang didukung: NIP, Nama, Jabatan, Bagian, No HP / No_HP, Email, Status
+        const dataSiapKirim = rows.map((baris) => {
+          const cari = (kunciList) => {
+            for (const key of Object.keys(baris)) {
+              const bersih = key.trim().toLowerCase().replace(/[\s_]/g, '')
+              if (kunciList.includes(bersih)) return baris[key]
+            }
+            return undefined
+          }
+
+          return {
+            nip: String(cari(['nip']) ?? '').trim(),
+            nama: String(cari(['nama']) ?? '').trim(),
+            jabatan: String(cari(['jabatan']) ?? '').trim(),
+            bagian: String(cari(['bagian']) ?? '').trim(),
+            no_hp: String(cari(['nohp', 'hp', 'notelepon', 'telepon']) ?? '').trim(),
+            email: String(cari(['email']) ?? '').trim() || null,
+            status: String(cari(['status']) ?? '').trim() || 'Aktif',
+          }
+        })
+
+        fetch(`${API_URL}/pegawai/import`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ data: dataSiapKirim }),
+        })
+          .then((res) => res.json())
+          .then((res) => {
+            if (res.success) {
+              setImportInfo(
+                `✅ Import selesai — ${res.ditambah} pegawai baru ditambahkan, ${res.diupdate} pegawai diperbarui` +
+                  (res.dilewati > 0 ? `, ${res.dilewati} baris dilewati (NIP/Nama kosong).` : '.')
+              )
+              ambilData()
+            } else {
+              setImportInfo('❌ ' + (res.message || 'Gagal mengimpor data. Periksa format kolom pada file Excel.'))
+            }
+          })
+          .catch(() => {
+            setImportInfo('❌ Gagal terhubung ke server. Pastikan backend (php artisan serve) sudah menyala.')
+          })
+          .finally(() => {
+            setImporting(false)
+            e.target.value = ''
+          })
+      } catch (err) {
+        setImportInfo('❌ Gagal membaca file. Pastikan formatnya .xlsx atau .xls yang valid.')
+        setImporting(false)
+        e.target.value = ''
+      }
+    }
+
+    reader.readAsArrayBuffer(file)
   }
 
   return (
@@ -206,8 +282,21 @@ function DataPegawai() {
               type="file"
               accept=".xlsx,.xls"
               onChange={handleUploadPegawai}
+              disabled={importing}
             />
           </div>
+
+          {importing && (
+            <p style={{ fontSize: '13px', color: '#0b72e7', marginTop: '10px' }}>
+              ⏳ Memproses file...
+            </p>
+          )}
+
+          {!importing && importInfo && (
+            <p style={{ fontSize: '13px', color: '#334155', marginTop: '10px' }}>
+              {importInfo}
+            </p>
+          )}
         </div>
       )}
 
