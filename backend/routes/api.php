@@ -21,12 +21,15 @@ Route::post('/anggaran/{id}/realisasi', [AnggaranController::class, 'tambahReali
 Route::delete('/anggaran/{id}', [AnggaranController::class, 'destroy']);
 Route::get('/anggaran/{id}/realisasi', [AnggaranController::class, 'riwayatRealisasi']);
 
+
 // ===== API PROGRAM KERJA =====
 Route::get('/program_kerja', [ProgramKerjaController::class, 'index']);
 Route::post('/program_kerja', [ProgramKerjaController::class, 'store']);
-Route::put('/program_kerja/{id}/realisasi', [ProgramKerjaController::class, 'updateRealisasi']);
 Route::delete('/program_kerja/{id}', [ProgramKerjaController::class, 'destroy']);
-
+Route::post('/kegiatan_program', [ProgramKerjaController::class, 'storeKegiatan']);
+Route::put('/kegiatan_program/{id}', [ProgramKerjaController::class, 'updateKegiatan']);
+Route::delete('/kegiatan_program/{id}', [ProgramKerjaController::class, 'destroyKegiatan']);
+Route::put('/program_kerja/{id}', [ProgramKerjaController::class, 'update']);
 // NANTI, kalau login sudah dibangun, tambahkan baris ini:
 // Route::post('/login', [AuthController::class, 'login']);
 
