@@ -42,7 +42,7 @@ function App() {
   const halamanAwal = () => {
     if (isAdminKepegawaian && !isSuperAdmin) return '/data-absensi'
     if (user.role === 'admin_keuangan') return '/program-kerja'
-    if (user.role === 'admin_rumahtangga') return '/data-ruangan'
+if (user.role === 'admin_rumah_tangga') return '/data-ruangan'
     if (isPegawaiBiasa) return '/pelanggaran'
     return '/program-kerja'
   }

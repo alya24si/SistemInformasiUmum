@@ -9,8 +9,10 @@ use App\Http\Controllers\PerbaikanRuanganController;
 use App\Http\Controllers\ProgramKerjaController;
 use App\Http\Controllers\RuanganController;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\PelanggaranController;
+use App\Http\Controllers\AuthController;
 
-// use App\Http\Controllers\AuthController; // ⏳ nanti saat login dibangun
+
 
 // ===== Keuangan =====
 // ===== API ANGGARAN =====
@@ -74,3 +76,14 @@ Route::post('/absensi', [AbsensiController::class, 'store']);
 Route::post('/absensi/import', [AbsensiController::class, 'import']);
 Route::put('/absensi/{id}', [AbsensiController::class, 'update']);
 Route::delete('/absensi/{id}', [AbsensiController::class, 'destroy']);
+
+// ===== API pelanggaran =====
+Route::get('/pelanggaran', [PelanggaranController::class, 'index']);
+Route::post('/pelanggaran/import', [PelanggaranController::class, 'import']);
+Route::delete('/pelanggaran/{id}', [PelanggaranController::class, 'destroy']);
+Route::post('/pelanggaran/tambah-pegawai', [PelanggaranController::class, 'tambahPegawai']);
+
+
+
+// ===== Login =====
+Route::post('/login', [AuthController::class, 'login']);
