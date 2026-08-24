@@ -17,23 +17,23 @@ class PegawaiController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'nip'     => 'required|string|unique:pegawai,nip',
-            'nama'    => 'required|string',
-            'jabatan' => 'required|string',
-            'bagian'  => 'required|string',
-            'no_hp'   => 'required|string',
-            'email'   => 'nullable|email',
-            'status'  => 'nullable|in:Aktif,Cuti,Tidak Aktif',
+            'nip'        => 'required|string|unique:pegawai,nip',
+            'nama'       => 'required|string',
+            'pangkat'    => 'nullable|string',
+            'jabatan'    => 'required|string',
+            'eselon_iii' => 'nullable|string',
+            'bagian'     => 'required|string',
+            'no_hp'      => 'required|string',
         ]);
 
         $id = DB::table('pegawai')->insertGetId([
-            'nip'     => $request->nip,
-            'nama'    => $request->nama,
-            'jabatan' => $request->jabatan,
-            'bagian'  => $request->bagian,
-            'no_hp'   => $request->no_hp,
-            'email'   => $request->email,
-            'status'  => $request->status ?? 'Aktif',
+            'nip'        => $request->nip,
+            'nama'       => $request->nama,
+            'pangkat'    => $request->pangkat,
+            'jabatan'    => $request->jabatan,
+            'eselon_iii' => $request->eselon_iii,
+            'bagian'     => $request->bagian,
+            'no_hp'      => $request->no_hp,
         ]);
 
         return response()->json(['success' => true, 'id' => $id], 201);
@@ -43,13 +43,13 @@ class PegawaiController extends Controller
     public function update(Request $request, $id)
     {
         $request->validate([
-            'nip'     => 'required|string|unique:pegawai,nip,' . $id,
-            'nama'    => 'required|string',
-            'jabatan' => 'required|string',
-            'bagian'  => 'required|string',
-            'no_hp'   => 'required|string',
-            'email'   => 'nullable|email',
-            'status'  => 'required|in:Aktif,Cuti,Tidak Aktif',
+            'nip'        => 'required|string|unique:pegawai,nip,' . $id,
+            'nama'       => 'required|string',
+            'pangkat'    => 'nullable|string',
+            'jabatan'    => 'required|string',
+            'eselon_iii' => 'nullable|string',
+            'bagian'     => 'required|string',
+            'no_hp'      => 'required|string',
         ]);
 
         $row = DB::table('pegawai')->where('id', $id)->first();
@@ -59,13 +59,13 @@ class PegawaiController extends Controller
         }
 
         DB::table('pegawai')->where('id', $id)->update([
-            'nip'     => $request->nip,
-            'nama'    => $request->nama,
-            'jabatan' => $request->jabatan,
-            'bagian'  => $request->bagian,
-            'no_hp'   => $request->no_hp,
-            'email'   => $request->email,
-            'status'  => $request->status,
+            'nip'        => $request->nip,
+            'nama'       => $request->nama,
+            'pangkat'    => $request->pangkat,
+            'jabatan'    => $request->jabatan,
+            'eselon_iii' => $request->eselon_iii,
+            'bagian'     => $request->bagian,
+            'no_hp'      => $request->no_hp,
         ]);
 
         return response()->json(['success' => true]);
@@ -83,14 +83,14 @@ class PegawaiController extends Controller
     public function import(Request $request)
     {
         $request->validate([
-            'data'               => 'required|array|min:1',
-            'data.*.nip'         => 'required|string',
-            'data.*.nama'        => 'required|string',
-            'data.*.jabatan'     => 'nullable|string',
-            'data.*.bagian'      => 'nullable|string',
-            'data.*.no_hp'       => 'nullable|string',
-            'data.*.email'       => 'nullable|email',
-            'data.*.status'      => 'nullable|in:Aktif,Cuti,Tidak Aktif',
+            'data'              => 'required|array|min:1',
+            'data.*.nip'        => 'required|string',
+            'data.*.nama'       => 'required|string',
+            'data.*.pangkat'    => 'nullable|string',
+            'data.*.jabatan'    => 'nullable|string',
+            'data.*.eselon_iii' => 'nullable|string',
+            'data.*.bagian'     => 'nullable|string',
+            'data.*.no_hp'      => 'nullable|string',
         ]);
 
         $ditambah = 0;
@@ -106,13 +106,13 @@ class PegawaiController extends Controller
             }
 
             $payload = [
-                'nip'     => $nip,
-                'nama'    => $baris['nama'],
-                'jabatan' => $baris['jabatan'] ?? '-',
-                'bagian'  => $baris['bagian'] ?? '-',
-                'no_hp'   => $baris['no_hp'] ?? '-',
-                'email'   => $baris['email'] ?? null,
-                'status'  => $baris['status'] ?? 'Aktif',
+                'nip'        => $nip,
+                'nama'       => $baris['nama'],
+                'pangkat'    => $baris['pangkat'] ?? null,
+                'jabatan'    => $baris['jabatan'] ?? '-',
+                'eselon_iii' => $baris['eselon_iii'] ?? null,
+                'bagian'     => $baris['bagian'] ?? '-',
+                'no_hp'      => $baris['no_hp'] ?? '-',
             ];
 
             $sudahAda = DB::table('pegawai')->where('nip', $nip)->first();
