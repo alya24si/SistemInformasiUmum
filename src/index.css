@@ -581,7 +581,9 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(135deg, #001f45, #004080);
+  background:
+    linear-gradient(135deg, rgba(0, 31, 69, 0.82), rgba(0, 64, 128, 0.72)),
+    url('/images/bc.jpg') center/cover no-repeat fixed;
 }
 
 .login-card {
@@ -701,4 +703,37 @@ body {
 @keyframes pulseGlow2 {
   0%, 100% { box-shadow: 0 0 0 4px rgba(220,38,38,0.4), 0 25px 60px rgba(0,0,0,0.6), 0 0 40px rgba(220,38,38,0.9); }
   50% { box-shadow: 0 0 0 10px rgba(220,38,38,0.15), 0 25px 60px rgba(0,0,0,0.6), 0 0 80px rgba(220,38,38,1); }
+}
+/* ===== TOMBOL SHOW/HIDE PASSWORD (model menyatu di dalam input) ===== */
+.password-wrap {
+  position: relative;
+  width: 100%;
+  display: flex;
+}
+
+.password-wrap input {
+  width: 100%;
+  flex: 1;
+  padding-right: 14px !important;
+  border-radius: 10px 0 0 10px !important;
+}
+
+.pw-toggle {
+  flex: none;
+  width: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #eef2f8;
+  border: 1.5px solid #d7e1ee;
+  border-left: none;
+  border-radius: 0 10px 10px 0;
+  color: #005ca9;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s;
+}
+
+.pw-toggle:hover {
+  background: #e0e9f5;
+  color: #0072ce;
 }
