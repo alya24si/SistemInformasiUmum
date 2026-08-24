@@ -1,31 +1,21 @@
 import { useEffect, useState } from 'react'
 import * as XLSX from 'xlsx'
+import {
+  Users,
+  CheckCircle2,
+  Clock,
+  AlertTriangle,
+  Upload,
+  Plus,
+  Pencil,
+  Search,
+  Trash2,
+  XCircle,
+} from 'lucide-react'
 
 const API_URL = 'http://127.0.0.1:8000/api'
 
-const statusPegawai = (status) => {
-  if (status === 'Aktif') {
-    return {
-      label: 'Aktif',
-      className: 'bg-green-100 text-green-700',
-    }
-  }
-
-  if (status === 'Cuti') {
-    return {
-      label: 'Cuti',
-      className: 'bg-yellow-100 text-yellow-700',
-    }
-  }
-
-  return {
-    label: 'Tidak Aktif',
-    className: 'bg-red-100 text-red-700',
-  }
-}
-
 function DataPegawai() {
-  // Halaman Data Pegawai khusus untuk admin
   const isAdmin = true
 
   const [data, setData] = useState([])
@@ -33,17 +23,17 @@ function DataPegawai() {
   const [showForm, setShowForm] = useState(false)
   const [search, setSearch] = useState('')
   const [filterBagian, setFilterBagian] = useState('semua')
-  const [filterStatus, setFilterStatus] = useState('semua')
   const [currentPage, setCurrentPage] = useState(0)
+  const [editId, setEditId] = useState(null)
 
   const [form, setForm] = useState({
     nip: '',
     nama: '',
+    pangkat: '',
     jabatan: '',
+    eselon_iii: '',
     bagian: '',
     no_hp: '',
-    email: '',
-    status: 'Aktif',
   })
 
   const ambilData = () => {
@@ -56,7 +46,7 @@ function DataPegawai() {
         setLoading(false)
       })
       .catch(() => {
-        alert('Gagal mengambil data pegawai. Pastikan backend (php artisan serve) sudah menyala.')
+        alert('Gagal mengambil data pegawai.')
         setLoading(false)
       })
   }
@@ -65,6 +55,19 @@ function DataPegawai() {
     ambilData()
   }, [])
 
+  // Normalisasi teks "bagian": hilangkan spasi berlebih & abaikan besar/kecil huruf.
+  // Ini supaya nilai hasil import Excel seperti "Bagian Umum ", "BAGIAN UMUM",
+  // atau "bagian   umum" tetap dihitung sebagai "Bagian Umum", bukan dianggap
+  // berbeda (yang tadinya bikin kartu ringkasan selalu menampilkan 0).
+  const normalisasiBagian = (teks) =>
+    String(teks || '')
+      .trim()
+      .toLowerCase()
+      .replace(/\s+/g, ' ')
+
+  const cocokkanBagian = (bagianData, bagianTarget) =>
+    normalisasiBagian(bagianData) === normalisasiBagian(bagianTarget)
+
   const dataFiltered = data.filter((pegawai) => {
     const cocokSearch =
       pegawai.nama.toLowerCase().includes(search.toLowerCase()) ||
@@ -72,57 +75,99 @@ function DataPegawai() {
 
     const cocokBagian =
       filterBagian === 'semua' ||
-      pegawai.bagian === filterBagian
+      cocokkanBagian(pegawai.bagian, filterBagian)
 
-    const cocokStatus =
-      filterStatus === 'semua' ||
-      pegawai.status === filterStatus
-
-    return cocokSearch && cocokBagian && cocokStatus
+    return cocokSearch && cocokBagian
   })
 
   const totalPegawai = data.length
 
-  const totalAktif = data.filter(
-    (pegawai) => pegawai.status === 'Aktif'
+  const totalBagianUmum = data.filter((pegawai) =>
+    cocokkanBagian(pegawai.bagian, 'Bagian Umum')
   ).length
 
-  const totalCuti = data.filter(
-    (pegawai) => pegawai.status === 'Cuti'
+  const totalPenindakan = data.filter((pegawai) =>
+    cocokkanBagian(pegawai.bagian, 'Bidang Penindakan dan Penyidikan')
   ).length
 
-  const totalTidakAktif = data.filter(
-    (pegawai) => pegawai.status === 'Tidak Aktif'
+  const totalKepabeanan = data.filter((pegawai) =>
+    cocokkanBagian(pegawai.bagian, 'Bidang Kepabeanan dan Cukai')
   ).length
 
-  const tambahData = (e) => {
+  const totalKepatuhan = data.filter((pegawai) =>
+    cocokkanBagian(pegawai.bagian, 'Bidang Kepatuhan Internal')
+  ).length
+
+  const totalFasilitas = data.filter((pegawai) =>
+    cocokkanBagian(pegawai.bagian, 'Bidang Fasilitas Kepabeanan dan Cukai')
+  ).length
+
+  const formKosong = {
+    nip: '',
+    nama: '',
+    pangkat: '',
+    jabatan: '',
+    eselon_iii: '',
+    bagian: '',
+    no_hp: '',
+  }
+
+  const simpanData = (e) => {
     e.preventDefault()
 
-    fetch(`${API_URL}/pegawai`, {
-      method: 'POST',
+    const isEdit = editId !== null
+
+    const url = isEdit
+      ? `${API_URL}/pegawai/${editId}`
+      : `${API_URL}/pegawai`
+
+    const method = isEdit ? 'PUT' : 'POST'
+
+    fetch(url, {
+      method,
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(form),
     })
       .then((res) => res.json())
       .then((res) => {
         if (!res.success) {
-          alert(res.message || 'Gagal menyimpan data pegawai.')
+          alert(
+            res.message ||
+              `Gagal ${isEdit ? 'memperbarui' : 'menyimpan'} data pegawai.`
+          )
           return
         }
 
         ambilData()
-
-        setForm({
-          nip: '',
-          nama: '',
-          jabatan: '',
-          bagian: '',
-          no_hp: '',
-          email: '',
-          status: 'Aktif',
-        })
+        setForm(formKosong)
+        setEditId(null)
+        setShowForm(false)
       })
-      .catch(() => alert('Gagal menyimpan data pegawai.'))
+      .catch(() =>
+        alert(
+          `Gagal ${isEdit ? 'memperbarui' : 'menyimpan'} data pegawai.`
+        )
+      )
+  }
+
+  const mulaiEdit = (pegawai) => {
+    setForm({
+      nip: pegawai.nip,
+      nama: pegawai.nama,
+      pangkat: pegawai.pangkat || '',
+      jabatan: pegawai.jabatan,
+      eselon_iii: pegawai.eselon_iii || '',
+      bagian: pegawai.bagian,
+      no_hp: pegawai.no_hp || '',
+    })
+    setEditId(pegawai.id)
+    setShowForm(true)
+  }
+
+  const batalEdit = () => {
+    setForm(formKosong)
+    setEditId(null)
+    setShowForm(false)
   }
 
   const hapusData = (id) => {
@@ -137,14 +182,14 @@ function DataPegawai() {
   }
 
   const [importing, setImporting] = useState(false)
-  const [importInfo, setImportInfo] = useState('')
+  const [importInfo, setImportInfo] = useState(null)
 
   const handleUploadPegawai = (e) => {
     const file = e.target.files[0]
     if (!file) return
 
     setImporting(true)
-    setImportInfo('')
+    setImportInfo(null)
 
     const reader = new FileReader()
 
@@ -155,14 +200,17 @@ function DataPegawai() {
         const rows = XLSX.utils.sheet_to_json(ws)
 
         if (rows.length === 0) {
-          setImportInfo('❌ File kosong atau tidak terbaca. Pastikan ada data di baris kedua ke bawah.')
+          setImportInfo({ type: 'error', text: 'File kosong atau tidak terbaca. Pastikan ada data di baris kedua ke bawah.' })
           setImporting(false)
           e.target.value = ''
           return
         }
 
-        // Normalisasi nama kolom: terima variasi huruf besar/kecil & spasi
-        // Kolom yang didukung: NIP, Nama, Jabatan, Bagian, No HP / No_HP, Email, Status
+        // Kolom yang didukung: NIP, Nama, Pangkat, Jabatan, Eselon III, Bagian, No HP
+        // Catatan: kalau file Excel gak punya kolom "Bagian" tersendiri (kayak file
+        // Kanwil), kolom "Eselon III" dipakai juga sebagai sumber Bagian — karena di
+        // data aslinya kolom itu isinya nama unit kerja (Bagian Umum / Bidang ...),
+        // bukan kode eselon.
         const dataSiapKirim = rows.map((baris) => {
           const cari = (kunciList) => {
             for (const key of Object.keys(baris)) {
@@ -172,14 +220,17 @@ function DataPegawai() {
             return undefined
           }
 
+          const eselonIii = String(cari(['eseloniii', 'eselon3', 'eselon']) ?? '').trim()
+          const bagianEksplisit = String(cari(['bagian']) ?? '').trim()
+
           return {
             nip: String(cari(['nip']) ?? '').trim(),
             nama: String(cari(['nama']) ?? '').trim(),
+            pangkat: String(cari(['pangkat']) ?? '').trim() || null,
             jabatan: String(cari(['jabatan']) ?? '').trim(),
-            bagian: String(cari(['bagian']) ?? '').trim(),
+            eselon_iii: eselonIii || null,
+            bagian: bagianEksplisit || eselonIii,
             no_hp: String(cari(['nohp', 'hp', 'notelepon', 'telepon']) ?? '').trim(),
-            email: String(cari(['email']) ?? '').trim() || null,
-            status: String(cari(['status']) ?? '').trim() || 'Aktif',
           }
         })
 
@@ -191,24 +242,29 @@ function DataPegawai() {
           .then((res) => res.json())
           .then((res) => {
             if (res.success) {
-              setImportInfo(
-                `✅ Import selesai — ${res.ditambah} pegawai baru ditambahkan, ${res.diupdate} pegawai diperbarui` +
-                  (res.dilewati > 0 ? `, ${res.dilewati} baris dilewati (NIP/Nama kosong).` : '.')
-              )
+              setImportInfo({
+                type: 'success',
+                text:
+                  `Import selesai — ${res.ditambah} pegawai baru ditambahkan, ${res.diupdate} pegawai diperbarui` +
+                  (res.dilewati > 0 ? `, ${res.dilewati} baris dilewati (NIP/Nama kosong).` : '.'),
+              })
               ambilData()
             } else {
-              setImportInfo('❌ ' + (res.message || 'Gagal mengimpor data. Periksa format kolom pada file Excel.'))
+              setImportInfo({
+                type: 'error',
+                text: res.message || 'Gagal mengimpor data. Periksa format kolom pada file Excel.',
+              })
             }
           })
           .catch(() => {
-            setImportInfo('❌ Gagal terhubung ke server. Pastikan backend (php artisan serve) sudah menyala.')
+            setImportInfo({ type: 'error', text: 'Gagal terhubung ke server.' })
           })
           .finally(() => {
             setImporting(false)
             e.target.value = ''
           })
       } catch (err) {
-        setImportInfo('❌ Gagal membaca file. Pastikan formatnya .xlsx atau .xls yang valid.')
+        setImportInfo({ type: 'error', text: 'Gagal membaca file. Pastikan formatnya .xlsx atau .xls yang valid.' })
         setImporting(false)
         e.target.value = ''
       }
@@ -220,19 +276,43 @@ function DataPegawai() {
   return (
     <div className="page">
 
-      <div className="page-title">
-        <h1>👥 Data Pegawai</h1>
+      {/* Grid kartu ringkasan khusus halaman Data Pegawai (6 kartu),
+          supaya selalu rapi 3 kolom x 2 baris dan tidak ada kartu
+          yang nyempil sendirian di baris terakhir seperti sebelumnya. */}
+      <style>{`
+        .pegawai-stats-grid {
+          display: grid !important;
+          grid-template-columns: repeat(3, 1fr) !important;
+          gap: 16px !important;
+        }
+        @media (max-width: 900px) {
+          .pegawai-stats-grid {
+            grid-template-columns: repeat(2, 1fr) !important;
+          }
+        }
+        @media (max-width: 560px) {
+          .pegawai-stats-grid {
+            grid-template-columns: 1fr !important;
+          }
+        }
+        .pegawai-stats-grid .stat-card {
+          width: auto !important;
+          min-width: 0 !important;
+        }
+      `}</style>
 
-        <p>
-          Mengelola dan memantau data pegawai pada bagian
-          kepegawaian.
-        </p>
+      <div className="page-title">
+        <h1 style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <Users size={22} /> Data Pegawai
+        </h1>
+
+        <p>Kelola data pegawai kepegawaian.</p>
       </div>
 
-      <div className="stats-grid">
+      <div className="stats-grid pegawai-stats-grid">
 
         <div className="stat-card">
-          <div className="stat-icon">👥</div>
+          <div className="stat-icon"><Users size={20} /></div>
 
           <div className="stat-info">
             <h4>Total Pegawai</h4>
@@ -242,32 +322,52 @@ function DataPegawai() {
         </div>
 
         <div className="stat-card green">
-          <div className="stat-icon">✅</div>
+          <div className="stat-icon"><CheckCircle2 size={20} /></div>
 
           <div className="stat-info">
-            <h4>Pegawai Aktif</h4>
-            <div className="stat-value">{totalAktif}</div>
-            <div className="stat-desc">Pegawai aktif</div>
+            <h4>Bagian Umum</h4>
+            <div className="stat-value">{totalBagianUmum}</div>
+            <div className="stat-desc">Bagian Umum</div>
           </div>
         </div>
 
         <div className="stat-card gold">
-          <div className="stat-icon">📝</div>
+          <div className="stat-icon"><Clock size={20} /></div>
 
           <div className="stat-info">
-            <h4>Sedang Cuti</h4>
-            <div className="stat-value">{totalCuti}</div>
-            <div className="stat-desc">Pegawai cuti</div>
+            <h4>Penindakan</h4>
+            <div className="stat-value">{totalPenindakan}</div>
+            <div className="stat-desc">Bidang Penindakan dan Penyidikan</div>
           </div>
         </div>
 
         <div className="stat-card">
-          <div className="stat-icon">⚠️</div>
+          <div className="stat-icon"><AlertTriangle size={20} /></div>
 
           <div className="stat-info">
-            <h4>Tidak Aktif</h4>
-            <div className="stat-value">{totalTidakAktif}</div>
-            <div className="stat-desc">Pegawai tidak aktif</div>
+            <h4>Kepabeanan</h4>
+            <div className="stat-value">{totalKepabeanan}</div>
+            <div className="stat-desc">Bidang Kepabeanan dan Cukai</div>
+          </div>
+        </div>
+
+        <div className="stat-card">
+          <div className="stat-icon"><AlertTriangle size={20} /></div>
+
+          <div className="stat-info">
+            <h4>Kepatuhan Internal</h4>
+            <div className="stat-value">{totalKepatuhan}</div>
+            <div className="stat-desc">Bidang Kepatuhan Internal</div>
+          </div>
+        </div>
+
+        <div className="stat-card">
+          <div className="stat-icon"><AlertTriangle size={20} /></div>
+
+          <div className="stat-info">
+            <h4>Fasilitas</h4>
+            <div className="stat-value">{totalFasilitas}</div>
+            <div className="stat-desc">Bidang Fasilitas Kepabeanan dan Cukai</div>
           </div>
         </div>
 
@@ -275,7 +375,9 @@ function DataPegawai() {
 
       {isAdmin && (
         <div className="card">
-          <h3>📥 Import Data Pegawai</h3>
+          <h3 style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <Upload size={18} /> Import Data Pegawai
+          </h3>
 
           <div className="form-row">
             <input
@@ -287,14 +389,28 @@ function DataPegawai() {
           </div>
 
           {importing && (
-            <p style={{ fontSize: '13px', color: '#0b72e7', marginTop: '10px' }}>
-              ⏳ Memproses file...
+            <p style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px', color: '#0b72e7', marginTop: '10px' }}>
+              <Clock size={14} /> Memproses file...
             </p>
           )}
 
           {!importing && importInfo && (
-            <p style={{ fontSize: '13px', color: '#334155', marginTop: '10px' }}>
-              {importInfo}
+            <p
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+                fontSize: '13px',
+                color: importInfo.type === 'success' ? '#15803d' : '#dc2626',
+                marginTop: '10px',
+              }}
+            >
+              {importInfo.type === 'success' ? (
+                <CheckCircle2 size={14} />
+              ) : (
+                <XCircle size={14} />
+              )}
+              {importInfo.text}
             </p>
           )}
         </div>
@@ -302,9 +418,65 @@ function DataPegawai() {
 
       {isAdmin && (
         <div className="card">
-          <h3>➕ Tambah Data Pegawai</h3>
 
-          <form onSubmit={tambahData} className="form-row">
+          <div
+            style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'flex-start',
+              gap: '20px',
+            }}
+          >
+
+            <div>
+              <h3 style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                {editId !== null
+                  ? (<><Pencil size={18} /> Edit Data Pegawai</>)
+                  : (<><Plus size={18} /> Tambah Data Pegawai</>)}
+              </h3>
+
+              <p
+                style={{
+                  margin: '5px 0 0',
+                  color: '#64748b',
+                  fontSize: '13px',
+                }}
+              >
+                Kelola data identitas pegawai.
+              </p>
+            </div>
+
+            <button
+              type="button"
+              className="btn"
+              onClick={() => {
+                if (showForm) {
+                  batalEdit()
+                } else {
+                  setShowForm(true)
+                }
+              }}
+              style={{ display: 'flex', alignItems: 'center', gap: '6px' }}
+            >
+              {showForm ? (
+                'Tutup'
+              ) : (
+                <><Plus size={16} /> Tambah Data Pegawai</>
+              )}
+            </button>
+
+          </div>
+
+          {showForm && (
+          <form
+            onSubmit={simpanData}
+            className="form-row"
+            style={{
+              marginTop: '20px',
+              paddingTop: '20px',
+              borderTop: '1px solid #e2e8f0',
+            }}
+          >
             <input
               type="text"
               placeholder="NIP"
@@ -333,6 +505,18 @@ function DataPegawai() {
 
             <input
               type="text"
+              placeholder="Pangkat"
+              value={form.pangkat}
+              onChange={(e) =>
+                setForm({
+                  ...form,
+                  pangkat: e.target.value,
+                })
+              }
+            />
+
+            <input
+              type="text"
               placeholder="Jabatan"
               required
               value={form.jabatan}
@@ -340,6 +524,18 @@ function DataPegawai() {
                 setForm({
                   ...form,
                   jabatan: e.target.value,
+                })
+              }
+            />
+
+            <input
+              type="text"
+              placeholder="Eselon III"
+              value={form.eselon_iii}
+              onChange={(e) =>
+                setForm({
+                  ...form,
+                  eselon_iii: e.target.value,
                 })
               }
             />
@@ -355,10 +551,11 @@ function DataPegawai() {
               }
             >
               <option value="">Pilih Bagian</option>
-              <option value="Keuangan">Keuangan</option>
-              <option value="Kepegawaian">Kepegawaian</option>
-              <option value="Umum">Umum</option>
-              <option value="Rumah Tangga">Rumah Tangga</option>
+              <option value="Bagian Umum">Bagian Umum</option>
+              <option value="Bidang Penindakan dan Penyidikan">Bidang Penindakan dan Penyidikan</option>
+              <option value="Bidang Kepabeanan dan Cukai">Bidang Kepabeanan dan Cukai</option>
+              <option value="Bidang Kepatuhan Internal">Bidang Kepatuhan Internal</option>
+              <option value="Bidang Fasilitas Kepabeanan dan Cukai">Bidang Fasilitas Kepabeanan dan Cukai</option>
             </select>
 
             <input
@@ -374,41 +571,36 @@ function DataPegawai() {
               }
             />
 
-            <input
-              type="email"
-              placeholder="Email"
-              value={form.email}
-              onChange={(e) =>
-                setForm({
-                  ...form,
-                  email: e.target.value,
-                })
-              }
-            />
+            <div style={{ display: 'flex', gap: '8px' }}>
+              <button type="submit" className="btn">
+                {editId !== null
+                  ? 'Simpan Perubahan'
+                  : 'Simpan Data Pegawai'}
+              </button>
 
-            <select
-              value={form.status}
-              onChange={(e) =>
-                setForm({
-                  ...form,
-                  status: e.target.value,
-                })
-              }
-            >
-              <option value="Aktif">Aktif</option>
-              <option value="Cuti">Cuti</option>
-              <option value="Tidak Aktif">Tidak Aktif</option>
-            </select>
-
-            <button type="submit" className="btn">
-              Simpan Data Pegawai
-            </button>
+              {editId !== null && (
+                <button
+                  type="button"
+                  onClick={batalEdit}
+                  className="btn"
+                  style={{
+                    backgroundColor: '#e2e8f0',
+                    color: '#334155',
+                  }}
+                >
+                  Batal
+                </button>
+              )}
+            </div>
           </form>
+          )}
         </div>
       )}
 
       <div className="card">
-        <h3>🔎 Daftar Pegawai</h3>
+        <h3 style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <Search size={18} /> Daftar Pegawai
+        </h3>
 
         <div className="filter-row">
           <input
@@ -425,22 +617,11 @@ function DataPegawai() {
             }
           >
             <option value="semua">Semua Bagian</option>
-            <option value="Keuangan">Keuangan</option>
-            <option value="Kepegawaian">Kepegawaian</option>
-            <option value="Umum">Umum</option>
-            <option value="Rumah Tangga">Rumah Tangga</option>
-          </select>
-
-          <select
-            value={filterStatus}
-            onChange={(e) =>
-              setFilterStatus(e.target.value)
-            }
-          >
-            <option value="semua">Semua Status</option>
-            <option value="Aktif">Aktif</option>
-            <option value="Cuti">Cuti</option>
-            <option value="Tidak Aktif">Tidak Aktif</option>
+            <option value="Bagian Umum">Bagian Umum</option>
+            <option value="Bidang Penindakan dan Penyidikan">Bidang Penindakan dan Penyidikan</option>
+            <option value="Bidang Kepabeanan dan Cukai">Bidang Kepabeanan dan Cukai</option>
+            <option value="Bidang Kepatuhan Internal">Bidang Kepatuhan Internal</option>
+            <option value="Bidang Fasilitas Kepabeanan dan Cukai">Bidang Fasilitas Kepabeanan dan Cukai</option>
           </select>
         </div>
 
@@ -455,11 +636,11 @@ function DataPegawai() {
                 <th>No</th>
                 <th>NIP</th>
                 <th>Nama Pegawai</th>
+                <th>Pangkat</th>
                 <th>Jabatan</th>
+                <th>Eselon III</th>
                 <th>Bagian</th>
                 <th>No. HP</th>
-                <th>Email</th>
-                <th>Status</th>
                 {isAdmin && <th>Aksi</th>}
               </tr>
             </thead>
@@ -467,7 +648,13 @@ function DataPegawai() {
             <tbody>
               {loading ? (
                 <tr>
-                  <td colSpan={isAdmin ? 9 : 8}>
+                  <td
+                    colSpan={isAdmin ? 9 : 8}
+                    style={{
+                      textAlign: 'center',
+                      padding: '30px',
+                    }}
+                  >
                     Memuat data...
                   </td>
                 </tr>
@@ -483,33 +670,56 @@ function DataPegawai() {
                     <>
                       {dataPaginated.length > 0 ? (
                         dataPaginated.map((pegawai, index) => {
-                          const status = statusPegawai(pegawai.status)
-
                           return (
                             <tr key={pegawai.id}>
                               <td>{startIndex + index + 1}</td>
                               <td>{pegawai.nip}</td>
                               <td>{pegawai.nama}</td>
+                              <td>{pegawai.pangkat || '-'}</td>
                               <td>{pegawai.jabatan}</td>
+                              <td>{pegawai.eselon_iii || '-'}</td>
                               <td>{pegawai.bagian}</td>
                               <td>{pegawai.no_hp || '-'}</td>
-                              <td>{pegawai.email || '-'}</td>
-                              <td>
-                                <span
-                                  className={`badge ${status.className}`}
-                                >
-                                  {status.label}
-                                </span>
-                              </td>
                               {isAdmin && (
                                 <td>
-                                  <button
-                                    type="button"
-                                    onClick={() => hapusData(pegawai.id)}
-                                    className="btn-danger"
-                                  >
-                                    🗑
-                                  </button>
+                                  <div style={{ display: 'flex', gap: '6px' }}>
+                                    <button
+                                      type="button"
+                                      onClick={() => mulaiEdit(pegawai)}
+                                      style={{
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        width: '30px',
+                                        height: '30px',
+                                        padding: 0,
+                                        backgroundColor: '#eff6ff',
+                                        border: '1px solid #bfdbfe',
+                                        borderRadius: '6px',
+                                        cursor: 'pointer',
+                                      }}
+                                    >
+                                      <Pencil size={14} color="#0b72e7" />
+                                    </button>
+                                    <button
+                                      type="button"
+                                      onClick={() => hapusData(pegawai.id)}
+                                      style={{
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        width: '30px',
+                                        height: '30px',
+                                        padding: 0,
+                                        backgroundColor: '#fef2f2',
+                                        border: '1px solid #fecaca',
+                                        borderRadius: '6px',
+                                        cursor: 'pointer',
+                                      }}
+                                    >
+                                      <Trash2 size={14} color="#dc2626" />
+                                    </button>
+                                  </div>
                                 </td>
                               )}
                             </tr>
@@ -517,7 +727,13 @@ function DataPegawai() {
                         })
                       ) : (
                         <tr>
-                          <td colSpan={isAdmin ? 9 : 8}>
+                          <td
+                            colSpan={isAdmin ? 9 : 8}
+                            style={{
+                              textAlign: 'center',
+                              padding: '30px',
+                            }}
+                          >
                             Tidak ada data pegawai.
                           </td>
                         </tr>

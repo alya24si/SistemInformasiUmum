@@ -7,6 +7,14 @@ use Illuminate\Support\Facades\DB;
 
 class AbsensiController extends Controller
 {
+    // status "tidak absen" (dipakai sebagai default kalau kolom status kosong saat import)
+    private const STATUS_TIDAK_HADIR = 'Tanpa Keterangan';
+
+    // status presensi yang dianggap AMAN / tidak perlu ditindaklanjuti WA.
+    // Selain daftar ini (apapun status penugasannya: WFO, WFH, ST, Penugasan Lainnya, dll),
+    // dianggap bermasalah dan langsung masuk daftar perlu WA walau cuma 1 hari kejadian.
+    private const STATUS_PRESENSI_AMAN = ['Hadir Normal', 'Cuti Tahunan', 'ST'];
+
     // 1. BACA semua data (ikut nama pegawai)
     public function index()
     {
@@ -23,11 +31,12 @@ class AbsensiController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'pegawai_id' => 'required|exists:pegawai,id',
-            'tanggal'    => 'required|date',
-            'jam_masuk'  => 'nullable',
-            'jam_pulang' => 'nullable',
-            'status'     => 'required|in:Hadir,Izin,Sakit,Alpa',
+            'pegawai_id'       => 'required|exists:pegawai,id',
+            'tanggal'          => 'required|date',
+            'jam_masuk'        => 'nullable',
+            'jam_pulang'       => 'nullable',
+            'status_penugasan' => 'nullable|string',
+            'status'           => 'required|string',
         ]);
 
         $sudahAda = DB::table('absensi')
@@ -43,11 +52,12 @@ class AbsensiController extends Controller
         }
 
         $id = DB::table('absensi')->insertGetId([
-            'pegawai_id' => $request->pegawai_id,
-            'tanggal'    => $request->tanggal,
-            'jam_masuk'  => $request->jam_masuk,
-            'jam_pulang' => $request->jam_pulang,
-            'status'     => $request->status,
+            'pegawai_id'       => $request->pegawai_id,
+            'tanggal'          => $request->tanggal,
+            'jam_masuk'        => $request->jam_masuk,
+            'jam_pulang'       => $request->jam_pulang,
+            'status_penugasan' => $request->status_penugasan,
+            'status'           => $request->status,
         ]);
 
         return response()->json(['success' => true, 'id' => $id], 201);
@@ -57,15 +67,17 @@ class AbsensiController extends Controller
     public function update(Request $request, $id)
     {
         $request->validate([
-            'jam_masuk'  => 'nullable',
-            'jam_pulang' => 'nullable',
-            'status'     => 'required|in:Hadir,Izin,Sakit,Alpa',
+            'jam_masuk'        => 'nullable',
+            'jam_pulang'       => 'nullable',
+            'status_penugasan' => 'nullable|string',
+            'status'           => 'required|string',
         ]);
 
         DB::table('absensi')->where('id', $id)->update([
-            'jam_masuk'  => $request->jam_masuk,
-            'jam_pulang' => $request->jam_pulang,
-            'status'     => $request->status,
+            'jam_masuk'        => $request->jam_masuk,
+            'jam_pulang'       => $request->jam_pulang,
+            'status_penugasan' => $request->status_penugasan,
+            'status'           => $request->status,
         ]);
 
         return response()->json(['success' => true]);
@@ -78,55 +90,85 @@ class AbsensiController extends Controller
         return response()->json(['success' => true]);
     }
 
-    // 5. DETEKSI pegawai yang Alpa 3 hari KERJA berturut-turut (Senin-Jumat saja)
-    //    Balikin nama, NIP, no HP, tanggal alpa, pesan siap kirim, dan link wa.me
+    // 5. DETEKSI pegawai yang presensinya bermasalah (bukan cuma "Tanpa Keterangan", tapi
+    //    status apapun di luar STATUS_PRESENSI_AMAN, berlaku di semua status penugasan).
+    //    Langsung masuk daftar walau cuma 1 hari kejadian (gak perlu berturut-turut).
+    //    Balikin nama, NIP, no HP, daftar tanggal bermasalah, pesan siap kirim, dan link wa.me
     public function alpaBerturut()
     {
-        $pegawaiAktif = DB::table('pegawai')->where('status', 'Aktif')->get();
+        $semuaPegawai = DB::table('pegawai')->get();
         $hasil        = [];
 
-        foreach ($pegawaiAktif as $pegawai) {
-            // ambil riwayat absensi pegawai ini, urut dari yang PALING BARU,
-            // tapi cuma yang tanggalnya jatuh di hari Senin-Jumat
-            $riwayat = DB::table('absensi')
+        foreach ($semuaPegawai as $pegawai) {
+            $bermasalah = DB::table('absensi')
                 ->where('pegawai_id', $pegawai->id)
-                ->orderBy('tanggal', 'desc')
-                ->get()
-                ->filter(function ($row) {
-                    $hari = Carbon::parse($row->tanggal)->dayOfWeekIso; // 1=Senin ... 7=Minggu
-                    return $hari >= 1 && $hari <= 5;
-                })
-                ->take(3)
-                ->values();
+                ->whereNotIn('status', self::STATUS_PRESENSI_AMAN)
+                ->orderBy('tanggal')
+                ->get();
 
-            // kalau riwayat hari kerjanya belum sampai 3, skip dulu (belum cukup data)
-            if ($riwayat->count() < 3) {
+            // gak ada satupun hari bermasalah -> skip, gak perlu WA
+            if ($bermasalah->isEmpty()) {
                 continue;
             }
 
-            // cek: apakah 3-3 nya berstatus Alpa
-            $semuaAlpa = $riwayat->every(fn($row) => $row->status === 'Alpa');
+            $tanggalUrut = $bermasalah->pluck('tanggal')->values();
 
-            if (! $semuaAlpa) {
-                continue;
+            // detail per tanggal: [{tanggal, status}, ...] biar keliatan
+            // status persisnya (Tanpa Keterangan / TL3 / PSW4 / dst), bukan cuma tanggalnya
+            $detailAlpa = $bermasalah->map(function ($b) {
+                return [
+                    'tanggal' => $b->tanggal,
+                    'status'  => $b->status,
+                ];
+            })->values();
+
+            // kumpulan status unik yang bermasalah, misal "Tanpa Keterangan, TL3, PSW4"
+            $daftarStatus = $bermasalah->pluck('status')->unique()->implode(', ');
+
+            // cek apakah ada rentetan 3 hari kalender berturut-turut di antara
+            // tanggal-tanggal bermasalah (gak harus semua tanggal, cukup 1 rentetan aja)
+            $tigaHariBerturut = false;
+            $streak           = 1;
+
+            for ($i = 1; $i < $tanggalUrut->count(); $i++) {
+                $sebelum = Carbon::parse($tanggalUrut[$i - 1]);
+                $sekarang = Carbon::parse($tanggalUrut[$i]);
+
+                if ($sebelum->diffInDays($sekarang) === 1) {
+                    $streak++;
+                } else {
+                    $streak = 1;
+                }
+
+                if ($streak >= 3) {
+                    $tigaHariBerturut = true;
+                    break;
+                }
             }
 
-            $tanggalUrut  = $riwayat->pluck('tanggal')->sort()->values();
             $tanggalMulai = Carbon::parse($tanggalUrut->first())->translatedFormat('d F Y');
             $tanggalAkhir = Carbon::parse($tanggalUrut->last())->translatedFormat('d F Y');
 
-            $pesan = "Kepada {$pegawai->nama} dengan NIP {$pegawai->nip}, "
-                . "kamu sudah tidak melakukan absensi dari tanggal {$tanggalMulai} "
-                . "sampai {$tanggalAkhir}. Segera lakukan absensi atau akan menerima konsekuensi.";
+            $pesan = $tanggalUrut->count() > 1
+                ? "Kepada {$pegawai->nama} dengan NIP {$pegawai->nip}, "
+                    . "tercatat ada masalah presensi ({$daftarStatus}) pada beberapa tanggal "
+                    . "dari {$tanggalMulai} sampai {$tanggalAkhir}. Segera lakukan konfirmasi "
+                    . "atau akan menerima konsekuensi."
+                : "Kepada {$pegawai->nama} dengan NIP {$pegawai->nip}, "
+                    . "tercatat ada masalah presensi ({$daftarStatus}) pada tanggal {$tanggalMulai}. "
+                    . "Segera lakukan konfirmasi atau akan menerima konsekuensi.";
 
             $hasil[] = [
-                'pegawai_id'   => $pegawai->id,
-                'nama'         => $pegawai->nama,
-                'nip'          => $pegawai->nip,
-                'no_hp'        => $pegawai->no_hp,
-                'tanggal_alpa' => $tanggalUrut,
-                'pesan'        => $pesan,
-                'wa_link'      => 'https://wa.me/' . $this->formatNoHp($pegawai->no_hp) . '?text=' . urlencode($pesan),
+                'pegawai_id'         => $pegawai->id,
+                'nama'               => $pegawai->nama,
+                'nip'                => $pegawai->nip,
+                'no_hp'              => $pegawai->no_hp,
+                'tanggal_alpa'       => $tanggalUrut,
+                'detail_alpa'        => $detailAlpa,
+                'daftar_status'      => $daftarStatus,
+                'tiga_hari_berturut' => $tigaHariBerturut,
+                'pesan'              => $pesan,
+                'wa_link'            => 'https://wa.me/' . $this->formatNoHp($pegawai->no_hp) . '?text=' . urlencode($pesan),
             ];
         }
 
@@ -146,15 +188,16 @@ class AbsensiController extends Controller
     }
 
     // 6. IMPORT dari Excel (frontend sudah parse file ke JSON, di sini tinggal disimpan)
-    //    Pegawai diidentifikasi lewat NIP. 1 pegawai + 1 tanggal yang sama -> di-update,
-    //    kombinasi baru -> ditambahkan.
+    //    Pegawai diidentifikasi lewat NIP. Kalau NIP tidak ada di tabel pegawai, baris dilewati.
+    //    1 pegawai + 1 tanggal yang sama -> di-update, kombinasi baru -> ditambahkan.
     public function import(Request $request)
     {
         $request->validate([
-            'data'           => 'required|array|min:1',
-            'data.*.nip'     => 'required|string',
-            'data.*.tanggal' => 'required|date',
-            'data.*.status'  => 'nullable|in:Hadir,Izin,Sakit,Alpa',
+            'data'                    => 'required|array|min:1',
+            'data.*.nip'              => 'required|string',
+            'data.*.tanggal'          => 'required|date',
+            'data.*.status_penugasan' => 'nullable|string',
+            'data.*.status'           => 'nullable|string',
         ]);
 
         $ditambah = 0;
@@ -170,6 +213,7 @@ class AbsensiController extends Controller
                 continue;
             }
 
+            // kalau NIP tidak cocok dengan data pegawai manapun, baris ini dilewati
             $pegawai = DB::table('pegawai')->where('nip', $nip)->first();
 
             if (! $pegawai) {
@@ -178,11 +222,12 @@ class AbsensiController extends Controller
             }
 
             $payload = [
-                'pegawai_id' => $pegawai->id,
-                'tanggal'    => $tanggal,
-                'jam_masuk'  => $baris['jam_masuk'] ?? null,
-                'jam_pulang' => $baris['jam_pulang'] ?? null,
-                'status'     => $baris['status'] ?? 'Hadir',
+                'pegawai_id'       => $pegawai->id,
+                'tanggal'          => $tanggal,
+                'jam_masuk'        => $baris['jam_masuk'] ?? null,
+                'jam_pulang'       => $baris['jam_pulang'] ?? null,
+                'status_penugasan' => $baris['status_penugasan'] ?? null,
+                'status'           => $baris['status'] ?? self::STATUS_TIDAK_HADIR,
             ];
 
             $sudahAda = DB::table('absensi')
@@ -191,9 +236,7 @@ class AbsensiController extends Controller
                 ->first();
 
             if ($sudahAda) {
-                DB::table('absensi')
-                    ->where('id', $sudahAda->id)
-                    ->update($payload);
+                DB::table('absensi')->where('id', $sudahAda->id)->update($payload);
                 $diupdate++;
             } else {
                 DB::table('absensi')->insert($payload);

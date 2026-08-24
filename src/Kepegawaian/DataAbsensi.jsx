@@ -1,5 +1,20 @@
 import { useEffect, useState } from 'react'
 import * as XLSX from 'xlsx'
+import {
+  ClipboardList,
+  Users,
+  CheckCircle2,
+  FileText,
+  AlertTriangle,
+  Upload,
+  MessageCircle,
+  Plus,
+  Pencil,
+  Search,
+  Trash2,
+  XCircle,
+  Clock,
+} from 'lucide-react'
 
 const API_URL = 'http://127.0.0.1:8000/api'
 
@@ -25,30 +40,30 @@ const daftarTahun = Array.from(
   (_, i) => tahunIni - 1 + i
 )
 
+// nama bulan (Indonesia & Inggris disingkat) -> angka bulan, buat parsing teks tanggal
+// yang bukan format Excel-date beneran (misal: "19 Aug 2026")
+const namaBulanKeAngka = {
+  jan: '01', feb: '02', mar: '03', apr: '04',
+  mei: '05', may: '05', jun: '06', jul: '07',
+  agu: '08', aug: '08', sep: '09',
+  okt: '10', oct: '10', nov: '11',
+  des: '12', dec: '12',
+}
+
+// Status presensi yang dianggap AMAN (samain sama backend STATUS_PRESENSI_AMAN)
+const STATUS_PRESENSI_AMAN = ['Hadir Normal', 'Cuti Tahunan', 'ST']
+
 const statusAbsensi = (status) => {
-  if (status === 'Hadir') {
+  if (STATUS_PRESENSI_AMAN.includes(status)) {
     return {
-      label: 'Hadir',
+      label: status,
       cls: 'green',
     }
   }
 
-  if (status === 'Izin') {
-    return {
-      label: 'Izin',
-      cls: 'yellow',
-    }
-  }
-
-  if (status === 'Sakit') {
-    return {
-      label: 'Sakit',
-      cls: 'blue',
-    }
-  }
-
+  // apapun di luar status aman (Tanpa Keterangan, PSW1-4, TL1-3, kombinasi, dst) = bermasalah
   return {
-    label: 'Alpa',
+    label: status || 'Tanpa Keterangan',
     cls: 'red',
   }
 }
@@ -76,6 +91,7 @@ function DataAbsensi() {
     tanggal: '',
     jam_masuk: '',
     jam_pulang: '',
+    status_penugasan: '',
     status: 'Hadir',
   })
 
@@ -88,6 +104,8 @@ function DataAbsensi() {
   const [search, setSearch] = useState('')
 
   const [currentPage, setCurrentPage] = useState(0)
+  const [editId, setEditId] = useState(null)
+  const [alpaPage, setAlpaPage] = useState(0)
 
   const ambilAbsensi = () => {
     fetch(`${API_URL}/absensi`)
@@ -121,19 +139,45 @@ function DataAbsensi() {
   }, [])
 
   const [importing, setImporting] = useState(false)
-  const [importInfo, setImportInfo] = useState('')
+  const [importInfo, setImportInfo] = useState(null)
 
-  // Excel kadang nyimpen tanggal/jam sebagai object Date (karena cellDates: true),
-  // kadang sebagai teks biasa. Dua fungsi ini nyamain jadi format yang backend butuhkan.
+  // Excel kadang nyimpen tanggal/jam sebagai object Date, kadang teks biasa
+  // (contoh dari sistem absensi kantor: "19 Aug 2026" — teks murni, bukan Excel-date)
   const keFormatTanggalISO = (nilai) => {
     if (!nilai) return ''
+
     if (nilai instanceof Date) {
       const y = nilai.getFullYear()
       const m = String(nilai.getMonth() + 1).padStart(2, '0')
       const d = String(nilai.getDate()).padStart(2, '0')
       return `${y}-${m}-${d}`
     }
-    return String(nilai).trim()
+
+    const teks = String(nilai).trim()
+
+    // sudah format ISO (yyyy-mm-dd)
+    if (/^\d{4}-\d{2}-\d{2}$/.test(teks)) return teks
+
+    // format "19 Aug 2026" / "19 Agustus 2026"
+    const cocokNamaBulan = teks.match(/^(\d{1,2})\s+([A-Za-z]+)\s+(\d{4})$/)
+    if (cocokNamaBulan) {
+      const [, tgl, bulanTeks, tahun] = cocokNamaBulan
+      const kunciBulan = bulanTeks.trim().toLowerCase().slice(0, 3)
+      const bulan = namaBulanKeAngka[kunciBulan]
+      if (bulan) {
+        return `${tahun}-${bulan}-${String(tgl).padStart(2, '0')}`
+      }
+    }
+
+    // format dd/mm/yyyy atau dd-mm-yyyy
+    const cocokAngka = teks.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/)
+    if (cocokAngka) {
+      const [, tgl, bulan, tahun] = cocokAngka
+      return `${tahun}-${String(bulan).padStart(2, '0')}-${String(tgl).padStart(2, '0')}`
+    }
+
+    // gak dikenali formatnya, kirim apa adanya (biar kelihatan salah di importInfo)
+    return teks
   }
 
   const keFormatJam = (nilai) => {
@@ -151,7 +195,7 @@ function DataAbsensi() {
     if (!file) return
 
     setImporting(true)
-    setImportInfo('')
+    setImportInfo(null)
 
     const reader = new FileReader()
 
@@ -165,15 +209,16 @@ function DataAbsensi() {
         const rows = XLSX.utils.sheet_to_json(ws)
 
         if (rows.length === 0) {
-          setImportInfo(
-            '❌ File kosong atau tidak terbaca. Pastikan ada data di baris kedua ke bawah.'
-          )
+          setImportInfo({
+            type: 'error',
+            text: 'File kosong atau tidak terbaca. Pastikan ada data di baris kedua ke bawah.',
+          })
           setImporting(false)
           e.target.value = ''
           return
         }
 
-        // Kolom yang didukung: NIP, Tanggal, Jam Masuk, Jam Pulang, Status
+        // Kolom yang didukung: NIP, Tanggal, Jam Masuk, Jam Pulang, Status Penugasan, Status
         const dataSiapKirim = rows.map((baris) => {
           const cari = (kunciList) => {
             for (const key of Object.keys(baris)) {
@@ -195,9 +240,14 @@ function DataAbsensi() {
             jam_pulang: keFormatJam(
               cari(['jampulang', 'pulang'])
             ),
+            status_penugasan:
+              String(
+                cari(['statuspenugasan', 'penugasan']) ?? ''
+              ).trim() || null,
             status:
-              String(cari(['status']) ?? '').trim() ||
-              'Hadir',
+              String(
+                cari(['status', 'statuspresensi', 'presensi']) ?? ''
+              ).trim() || 'Hadir',
           }
         })
 
@@ -209,35 +259,32 @@ function DataAbsensi() {
           .then((res) => res.json())
           .then((res) => {
             if (res.success) {
-              setImportInfo(
-                `✅ Import selesai — ${res.ditambah} data baru ditambahkan, ${res.diupdate} data diperbarui` +
+              setImportInfo({
+                type: 'success',
+                text:
+                  `Import selesai — ${res.ditambah} data baru ditambahkan, ${res.diupdate} data diperbarui` +
                   (res.dilewati > 0
                     ? `, ${res.dilewati} baris dilewati (NIP tidak ditemukan atau tanggal kosong).`
-                    : '.')
-              )
+                    : '.'),
+              })
               ambilAbsensi()
               ambilAlpaBerturut()
             } else {
-              setImportInfo(
-                '❌ ' +
-                  (res.message ||
-                    'Gagal mengimpor data. Periksa format kolom pada file Excel.')
-              )
+              setImportInfo({
+                type: 'error',
+                text: res.message || 'Gagal mengimpor data. Periksa format kolom pada file Excel.',
+              })
             }
           })
           .catch(() => {
-            setImportInfo(
-              '❌ Gagal terhubung ke server. Pastikan backend (php artisan serve) sudah menyala.'
-            )
+            setImportInfo({ type: 'error', text: 'Gagal terhubung ke server.' })
           })
           .finally(() => {
             setImporting(false)
             e.target.value = ''
           })
       } catch (err) {
-        setImportInfo(
-          '❌ Gagal membaca file. Pastikan formatnya .xlsx atau .xls yang valid.'
-        )
+        setImportInfo({ type: 'error', text: 'Gagal membaca file. Pastikan formatnya .xlsx atau .xls yang valid.' })
         setImporting(false)
         e.target.value = ''
       }
@@ -275,23 +322,28 @@ function DataAbsensi() {
     )
   })
 
-  const totalHadir = dataFiltered.filter(
-    (d) => d.status === 'Hadir'
+  const totalAman = dataFiltered.filter((d) =>
+    STATUS_PRESENSI_AMAN.includes(d.status)
   ).length
 
-  const totalIzin = dataFiltered.filter(
-    (d) => d.status === 'Izin'
-  ).length
-
-  const totalSakit = dataFiltered.filter(
-    (d) => d.status === 'Sakit'
+  const totalBermasalah = dataFiltered.filter(
+    (d) => !STATUS_PRESENSI_AMAN.includes(d.status)
   ).length
 
   const totalAlpa = dataFiltered.filter(
-    (d) => d.status === 'Alpa'
+    (d) => d.status === 'Tanpa Keterangan'
   ).length
 
-  const tambahData = (e) => {
+  const formKosong = {
+    pegawai_id: '',
+    tanggal: '',
+    jam_masuk: '',
+    jam_pulang: '',
+    status_penugasan: '',
+    status: 'Hadir',
+  }
+
+  const simpanData = (e) => {
     e.preventDefault()
 
     if (!form.pegawai_id) {
@@ -299,8 +351,16 @@ function DataAbsensi() {
       return
     }
 
-    fetch(`${API_URL}/absensi`, {
-      method: 'POST',
+    const isEdit = editId !== null
+
+    const url = isEdit
+      ? `${API_URL}/absensi/${editId}`
+      : `${API_URL}/absensi`
+
+    const method = isEdit ? 'PUT' : 'POST'
+
+    fetch(url, {
+      method,
       headers: {
         'Content-Type': 'application/json',
       },
@@ -311,7 +371,7 @@ function DataAbsensi() {
         if (!res.success) {
           alert(
             res.message ||
-              'Gagal menyimpan data absensi.'
+              `Gagal ${isEdit ? 'memperbarui' : 'menyimpan'} data absensi.`
           )
 
           return
@@ -320,19 +380,34 @@ function DataAbsensi() {
         ambilAbsensi()
         ambilAlpaBerturut()
 
-        setForm({
-          pegawai_id: '',
-          tanggal: '',
-          jam_masuk: '',
-          jam_pulang: '',
-          status: 'Hadir',
-        })
-
+        setForm(formKosong)
+        setEditId(null)
         setShowForm(false)
       })
       .catch(() =>
-        alert('Gagal menyimpan data absensi.')
+        alert(
+          `Gagal ${isEdit ? 'memperbarui' : 'menyimpan'} data absensi.`
+        )
       )
+  }
+
+  const mulaiEdit = (absensi) => {
+    setForm({
+      pegawai_id: String(absensi.pegawai_id),
+      tanggal: absensi.tanggal,
+      jam_masuk: absensi.jam_masuk || '',
+      jam_pulang: absensi.jam_pulang || '',
+      status_penugasan: absensi.status_penugasan || '',
+      status: absensi.status,
+    })
+    setEditId(absensi.id)
+    setShowForm(true)
+  }
+
+  const batalEdit = () => {
+    setForm(formKosong)
+    setEditId(null)
+    setShowForm(false)
   }
 
   const hapusData = (id) => {
@@ -362,20 +437,18 @@ function DataAbsensi() {
 
       {/* HEADER */}
       <div className="page-title">
-        <h1>📋 Data Absensi</h1>
+        <h1 style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <ClipboardList size={22} /> Data Absensi
+        </h1>
 
-        <p>
-          Mengelola dan memantau data kehadiran pegawai.
-          Data absensi dapat digunakan untuk membuat rekap
-          kehadiran pegawai.
-        </p>
+        <p>Kelola data kehadiran pegawai.</p>
       </div>
 
       {/* STATISTIK */}
       <div className="stats-grid">
 
         <div className="stat-card">
-          <div className="stat-icon">👥</div>
+          <div className="stat-icon"><Users size={20} /></div>
 
           <div className="stat-info">
             <h4>Total Data</h4>
@@ -391,42 +464,42 @@ function DataAbsensi() {
         </div>
 
         <div className="stat-card green">
-          <div className="stat-icon">✅</div>
+          <div className="stat-icon"><CheckCircle2 size={20} /></div>
 
           <div className="stat-info">
-            <h4>Hadir</h4>
+            <h4>Presensi Aman</h4>
 
             <div className="stat-value">
-              {totalHadir}
+              {totalAman}
             </div>
 
             <div className="stat-desc">
-              Pegawai hadir
+              Hadir Normal / Cuti Tahunan / ST
             </div>
           </div>
         </div>
 
         <div className="stat-card gold">
-          <div className="stat-icon">📝</div>
+          <div className="stat-icon"><FileText size={20} /></div>
 
           <div className="stat-info">
-            <h4>Izin / Sakit</h4>
+            <h4>Bermasalah</h4>
 
             <div className="stat-value">
-              {totalIzin + totalSakit}
+              {totalBermasalah}
             </div>
 
             <div className="stat-desc">
-              Tidak hadir dengan keterangan
+              Perlu ditindaklanjuti (WA)
             </div>
           </div>
         </div>
 
         <div className="stat-card">
-          <div className="stat-icon">⚠️</div>
+          <div className="stat-icon"><AlertTriangle size={20} /></div>
 
           <div className="stat-info">
-            <h4>Alpa</h4>
+            <h4>Tanpa Keterangan</h4>
 
             <div className="stat-value">
               {totalAlpa}
@@ -443,7 +516,9 @@ function DataAbsensi() {
       {/* IMPORT EXCEL */}
       <div className="card">
 
-        <h3>📥 Import Data Absensi</h3>
+        <h3 style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <Upload size={18} /> Import Data Absensi
+        </h3>
 
         <div className="form-row">
 
@@ -457,14 +532,28 @@ function DataAbsensi() {
         </div>
 
         {importing && (
-          <p style={{ fontSize: '13px', color: '#0b72e7', marginTop: '10px' }}>
-            ⏳ Memproses file...
+          <p style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px', color: '#0b72e7', marginTop: '10px' }}>
+            <Clock size={14} /> Memproses file...
           </p>
         )}
 
         {!importing && importInfo && (
-          <p style={{ fontSize: '13px', color: '#334155', marginTop: '10px' }}>
-            {importInfo}
+          <p
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              fontSize: '13px',
+              color: importInfo.type === 'success' ? '#15803d' : '#dc2626',
+              marginTop: '10px',
+            }}
+          >
+            {importInfo.type === 'success' ? (
+              <CheckCircle2 size={14} />
+            ) : (
+              <XCircle size={14} />
+            )}
+            {importInfo.text}
           </p>
         )}
 
@@ -474,13 +563,9 @@ function DataAbsensi() {
       {alpaList.length > 0 && (
         <div className="card">
 
-          <h3>📱 Pegawai Perlu Dihubungi</h3>
-
-          <p>
-            Daftar pegawai yang tidak absen 3 hari kerja
-            berturut-turut (Senin-Jumat). Pesan WA sudah
-            otomatis disiapkan, tinggal klik kirim.
-          </p>
+          <h3 style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <MessageCircle size={18} /> Pegawai Perlu Dihubungi
+          </h3>
 
           <div className="table-wrap">
 
@@ -491,7 +576,7 @@ function DataAbsensi() {
                   <th>No</th>
                   <th>Nama Pegawai</th>
                   <th>NIP</th>
-                  <th>Tanggal Alpa</th>
+                  <th>Tanggal & Status Bermasalah</th>
                   <th>No. WA</th>
                   <th>Aksi</th>
                 </tr>
@@ -499,15 +584,42 @@ function DataAbsensi() {
 
               <tbody>
 
-                {alpaList.map((item, index) => (
-                  <tr key={item.pegawai_id}>
+                {alpaList
+                  .slice(
+                    alpaPage * 10,
+                    alpaPage * 10 + 10
+                  )
+                  .map((item, index) => (
+                  <tr
+                    key={item.pegawai_id}
+                    style={
+                      item.tiga_hari_berturut
+                        ? {
+                            backgroundColor: '#fff7ed',
+                            borderLeft: '4px solid #f97316',
+                          }
+                        : undefined
+                    }
+                  >
 
                     <td>
-                      {index + 1}
+                      {alpaPage * 10 + index + 1}
                     </td>
 
                     <td>
                       {item.nama}
+
+                      {item.tiga_hari_berturut && (
+                        <span
+                          className="badge red"
+                          style={{
+                            marginLeft: '8px',
+                            fontSize: '10px',
+                          }}
+                        >
+                          3 Hari Berturut
+                        </span>
+                      )}
                     </td>
 
                     <td>
@@ -515,11 +627,32 @@ function DataAbsensi() {
                     </td>
 
                     <td>
-                      {item.tanggal_alpa
-                        .map((t) =>
-                          formatTanggal(t)
-                        )
-                        .join(', ')}
+                      {(item.detail_alpa || []).map((d, i) => (
+                        <div
+                          key={i}
+                          style={{
+                            whiteSpace: 'nowrap',
+                            marginBottom:
+                              i < item.detail_alpa.length - 1
+                                ? '4px'
+                                : 0,
+                          }}
+                        >
+                          {formatTanggal(d.tanggal)}
+                          {' — '}
+                          <span
+                            style={{
+                              fontWeight: 600,
+                              color:
+                                d.status === 'Tanpa Keterangan'
+                                  ? '#dc2626'
+                                  : '#b45309',
+                            }}
+                          >
+                            {d.status}
+                          </span>
+                        </div>
+                      ))}
                     </td>
 
                     <td>
@@ -532,8 +665,9 @@ function DataAbsensi() {
                         target="_blank"
                         rel="noreferrer"
                         className="btn"
+                        style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}
                       >
-                        📱 Kirim WA
+                        <MessageCircle size={14} /> Kirim WA
                       </a>
                     </td>
 
@@ -543,6 +677,89 @@ function DataAbsensi() {
               </tbody>
 
             </table>
+
+          </div>
+
+          <div
+            style={{
+              display: 'flex',
+              justifyContent: 'flex-end',
+              gap: '8px',
+              marginTop: '16px',
+              alignItems: 'center',
+            }}
+          >
+
+            <button
+              onClick={() =>
+                setAlpaPage((prev) =>
+                  Math.max(0, prev - 1)
+                )
+              }
+              disabled={alpaPage === 0}
+              className="btn"
+              style={{
+                padding: '6px 10px',
+                borderRadius: '6px',
+                border: '1px solid #cbd5e1',
+                backgroundColor: '#fff',
+                cursor:
+                  alpaPage === 0
+                    ? 'not-allowed'
+                    : 'pointer',
+                opacity: alpaPage === 0 ? 0.5 : 1,
+                fontSize: '11px',
+                fontWeight: 600,
+              }}
+            >
+              Back
+            </button>
+
+            <span
+              style={{
+                fontSize: '11px',
+                fontWeight: '500',
+                color: '#64748b',
+              }}
+            >
+              {alpaPage + 1} /{' '}
+              {Math.max(
+                1,
+                Math.ceil(alpaList.length / 10)
+              )}
+            </span>
+
+            <button
+              onClick={() =>
+                setAlpaPage((prev) =>
+                  (prev + 1) * 10 < alpaList.length
+                    ? prev + 1
+                    : prev
+                )
+              }
+              disabled={
+                (alpaPage + 1) * 10 >= alpaList.length
+              }
+              className="btn"
+              style={{
+                padding: '6px 10px',
+                borderRadius: '6px',
+                border: '1px solid #cbd5e1',
+                backgroundColor: '#fff',
+                cursor:
+                  (alpaPage + 1) * 10 >= alpaList.length
+                    ? 'not-allowed'
+                    : 'pointer',
+                opacity:
+                  (alpaPage + 1) * 10 >= alpaList.length
+                    ? 0.5
+                    : 1,
+                fontSize: '11px',
+                fontWeight: 600,
+              }}
+            >
+              Next
+            </button>
 
           </div>
 
@@ -563,7 +780,11 @@ function DataAbsensi() {
 
           <div>
 
-            <h3>➕ Tambah Data Absensi</h3>
+            <h3 style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              {editId !== null
+                ? (<><Pencil size={18} /> Edit Data Absensi</>)
+                : (<><Plus size={18} /> Tambah Data Absensi</>)}
+            </h3>
 
             <p
               style={{
@@ -581,29 +802,26 @@ function DataAbsensi() {
             type="button"
             className="btn"
             onClick={() => {
-              setShowForm(!showForm)
-
-              if (!showForm) {
-                setForm({
-                  pegawai_id: '',
-                  tanggal: '',
-                  jam_masuk: '',
-                  jam_pulang: '',
-                  status: 'Hadir',
-                })
+              if (showForm) {
+                batalEdit()
+              } else {
+                setShowForm(true)
               }
             }}
+            style={{ display: 'flex', alignItems: 'center', gap: '6px' }}
           >
-            {showForm
-              ? 'Tutup'
-              : '+ Tambah Data Absensi'}
+            {showForm ? (
+              'Tutup'
+            ) : (
+              <><Plus size={16} /> Tambah Data Absensi</>
+            )}
           </button>
 
         </div>
 
         {showForm && (
           <form
-            onSubmit={tambahData}
+            onSubmit={simpanData}
             className="form-row"
             style={{
               marginTop: '20px',
@@ -670,6 +888,18 @@ function DataAbsensi() {
               }
             />
 
+            <input
+              type="text"
+              placeholder="Status Penugasan (opsional)"
+              value={form.status_penugasan}
+              onChange={(e) =>
+                setForm({
+                  ...form,
+                  status_penugasan: e.target.value,
+                })
+              }
+            />
+
             <select
               value={form.status}
               onChange={(e) =>
@@ -692,18 +922,34 @@ function DataAbsensi() {
                 Sakit
               </option>
 
-              <option value="Alpa">
-                Alpa
+              <option value="Tanpa Keterangan">
+                Tanpa Keterangan (Alpa)
               </option>
 
             </select>
 
-            <button
-              type="submit"
-              className="btn"
-            >
-              Simpan
-            </button>
+            <div style={{ display: 'flex', gap: '8px' }}>
+              <button
+                type="submit"
+                className="btn"
+              >
+                {editId !== null ? 'Simpan Perubahan' : 'Simpan'}
+              </button>
+
+              {editId !== null && (
+                <button
+                  type="button"
+                  onClick={batalEdit}
+                  className="btn"
+                  style={{
+                    backgroundColor: '#e2e8f0',
+                    color: '#334155',
+                  }}
+                >
+                  Batal
+                </button>
+              )}
+            </div>
 
           </form>
         )}
@@ -713,7 +959,9 @@ function DataAbsensi() {
       {/* DAFTAR ABSENSI */}
       <div className="card">
 
-        <h3>🔎 Daftar Absensi</h3>
+        <h3 style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <Search size={18} /> Daftar Absensi
+        </h3>
 
         <div className="filter-row">
 
@@ -792,6 +1040,7 @@ function DataAbsensi() {
                 <th>Tanggal</th>
                 <th>Jam Masuk</th>
                 <th>Jam Pulang</th>
+                <th>Penugasan</th>
                 <th>Status</th>
                 <th>Aksi</th>
               </tr>
@@ -805,7 +1054,7 @@ function DataAbsensi() {
                 <tr>
 
                   <td
-                    colSpan={7}
+                    colSpan={8}
                     style={{
                       textAlign: 'center',
                       padding: '30px',
@@ -886,6 +1135,11 @@ function DataAbsensi() {
                                 </td>
 
                                 <td>
+                                  {d.status_penugasan ||
+                                    '-'}
+                                </td>
+
+                                <td>
                                   <span
                                     className={`badge ${st.cls}`}
                                   >
@@ -894,17 +1148,50 @@ function DataAbsensi() {
                                 </td>
 
                                 <td>
-                                  <button
-                                    type="button"
-                                    className="btn-danger"
-                                    onClick={() =>
-                                      hapusData(
-                                        d.id
-                                      )
-                                    }
-                                  >
-                                    🗑
-                                  </button>
+                                  <div style={{ display: 'flex', gap: '6px' }}>
+                                    <button
+                                      type="button"
+                                      style={{
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        width: '30px',
+                                        height: '30px',
+                                        padding: 0,
+                                        backgroundColor: '#eff6ff',
+                                        border: '1px solid #bfdbfe',
+                                        borderRadius: '6px',
+                                        cursor: 'pointer',
+                                      }}
+                                      onClick={() =>
+                                        mulaiEdit(d)
+                                      }
+                                    >
+                                      <Pencil size={14} color="#0b72e7" />
+                                    </button>
+                                    <button
+                                      type="button"
+                                      style={{
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        width: '30px',
+                                        height: '30px',
+                                        padding: 0,
+                                        backgroundColor: '#fef2f2',
+                                        border: '1px solid #fecaca',
+                                        borderRadius: '6px',
+                                        cursor: 'pointer',
+                                      }}
+                                      onClick={() =>
+                                        hapusData(
+                                          d.id
+                                        )
+                                      }
+                                    >
+                                      <Trash2 size={14} color="#dc2626" />
+                                    </button>
+                                  </div>
                                 </td>
 
                               </tr>
@@ -917,7 +1204,7 @@ function DataAbsensi() {
                         <tr>
 
                           <td
-                            colSpan={7}
+                            colSpan={8}
                             style={{
                               textAlign:
                                 'center',

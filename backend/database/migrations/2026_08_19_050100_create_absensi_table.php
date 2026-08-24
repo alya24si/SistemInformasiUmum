@@ -14,7 +14,8 @@ return new class extends Migration
             $table->date('tanggal');
             $table->time('jam_masuk')->nullable();
             $table->time('jam_pulang')->nullable();
-            $table->enum('status', ['Hadir', 'Izin', 'Sakit', 'Alpa'])->default('Alpa');
+            $table->string('status_penugasan')->nullable();
+            $table->string('status')->default('Tanpa Keterangan');
             $table->timestamps();
 
             $table->unique(['pegawai_id', 'tanggal']);

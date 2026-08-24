@@ -12,12 +12,11 @@ return new class extends Migration
             $table->id();
             $table->string('nip')->unique();
             $table->string('nama');
+            $table->string('pangkat')->nullable();
             $table->string('jabatan');
+            $table->string('eselon_iii')->nullable();
             $table->string('bagian');
-            $table->string('no_hp');
-            $table->string('email')->nullable();
-            $table->enum('status', ['Aktif', 'Cuti', 'Tidak Aktif'])->default('Aktif');
-            $table->timestamps();
+            $table->string('no_hp'); $table->timestamps();
         });
     }
 
