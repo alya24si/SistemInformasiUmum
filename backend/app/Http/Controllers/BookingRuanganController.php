@@ -24,7 +24,7 @@ class BookingRuanganController extends Controller
         $request->validate([
             'ruangan_id' => 'required|exists:ruangan,id',
             'pemesan'    => 'required|string',
-            'bagian'     => 'required|string',
+            'bagian'     => 'nullable|string',
             'kegiatan'   => 'required|string',
             'deskripsi'  => 'nullable|string',
             'tanggal'    => 'required|date',
@@ -32,7 +32,11 @@ class BookingRuanganController extends Controller
             'selesai'    => 'required|after:mulai',
         ]);
 
-        if ($this->cekBentrok($request->ruangan_id, $request->tanggal, $request->mulai, $request->selesai)) {
+        // Cek bentrok cuma terhadap booking yang SUDAH disetujui admin.
+        // Booking lain yang masih "Menunggu" gak dianggap bentrok, karena belum
+        // tentu ruangannya beneran dipakai — biar admin yang memutuskan mana yang
+        // di-ACC kalau ada beberapa pengajuan bertumpuk di jam yang sama.
+        if ($this->cekBentrok($request->ruangan_id, $request->tanggal, $request->mulai, $request->selesai, null, 'Disetujui')) {
             return response()->json([
                 'success' => false,
                 'message' => 'Permintaan anda ditolak karena ruangan sudah digunakan, silahkan hubungi admin.',
@@ -42,7 +46,9 @@ class BookingRuanganController extends Controller
         $id = DB::table('booking_ruangan')->insertGetId([
             'ruangan_id' => $request->ruangan_id,
             'pemesan'    => $request->pemesan,
-            'bagian'     => $request->bagian,
+            // Kalau bagian gak dikirim / null (misal superadmin yang gak
+            // punya bidang), fallback ke "-" biar gak kena error NOT NULL.
+            'bagian'     => $request->bagian ?: '-',
             'kegiatan'   => $request->kegiatan,
             'deskripsi'  => $request->deskripsi,
             'tanggal'    => $request->tanggal,

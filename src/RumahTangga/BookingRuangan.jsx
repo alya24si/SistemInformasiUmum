@@ -1,4 +1,10 @@
 import { useEffect, useState } from 'react'
+import {
+  Building2,
+  Plus,
+  CheckCircle2,
+  XCircle,
+} from 'lucide-react'
 
 const API = 'http://localhost:8000/api'
 
@@ -332,7 +338,9 @@ function BookingRuangan({ user }) {
 
       {/* HEADER */}
       <div className="page-title">
-        <h1>🏢 Booking Ruangan</h1>
+        <h1 style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <Building2 size={22} /> Booking Ruangan
+        </h1>
 
         <p>
           Mengelola pengajuan pemesanan ruangan
@@ -473,8 +481,8 @@ function BookingRuangan({ user }) {
         >
 
           <div>
-            <h3>
-              ➕ Ajukan Booking Ruangan
+            <h3 style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <Plus size={18} /> Ajukan Booking Ruangan
             </h3>
 
             <p
@@ -499,10 +507,11 @@ function BookingRuangan({ user }) {
                 resetForm()
               }
             }}
+            style={{ display: 'flex', alignItems: 'center', gap: '6px' }}
           >
             {showForm
               ? 'Tutup'
-              : '+ Ajukan Booking'}
+              : (<><Plus size={16} /> Ajukan Booking</>)}
           </button>
 
         </div>
@@ -1274,7 +1283,6 @@ function BookingRuangan({ user }) {
 
                                   <button
                                     type="button"
-                                    className="btn"
                                     title="Setujui booking"
                                     onClick={() =>
                                       handleSetujui(
@@ -1282,18 +1290,23 @@ function BookingRuangan({ user }) {
                                       )
                                     }
                                     style={{
-                                      padding:
-                                        '5px 8px',
-                                      fontSize:
-                                        '12px',
+                                      display: 'flex',
+                                      alignItems: 'center',
+                                      justifyContent: 'center',
+                                      width: '30px',
+                                      height: '30px',
+                                      padding: 0,
+                                      backgroundColor: '#f0fdf4',
+                                      border: '1px solid #bbf7d0',
+                                      borderRadius: '6px',
+                                      cursor: 'pointer',
                                     }}
                                   >
-                                    ✓
+                                    <CheckCircle2 size={14} color="#16a34a" />
                                   </button>
 
                                   <button
                                     type="button"
-                                    className="btn-danger"
                                     title="Tolak booking"
                                     onClick={() =>
                                       handleTolak(
@@ -1301,13 +1314,19 @@ function BookingRuangan({ user }) {
                                       )
                                     }
                                     style={{
-                                      padding:
-                                        '5px 8px',
-                                      fontSize:
-                                        '12px',
+                                      display: 'flex',
+                                      alignItems: 'center',
+                                      justifyContent: 'center',
+                                      width: '30px',
+                                      height: '30px',
+                                      padding: 0,
+                                      backgroundColor: '#fef2f2',
+                                      border: '1px solid #fecaca',
+                                      borderRadius: '6px',
+                                      cursor: 'pointer',
                                     }}
                                   >
-                                    ✕
+                                    <XCircle size={14} color="#dc2626" />
                                   </button>
 
                                 </>
@@ -1321,7 +1340,6 @@ function BookingRuangan({ user }) {
                                 user.nama && (
                                 <button
                                   type="button"
-                                  className="btn-danger"
                                   title="Batalkan booking"
                                   onClick={() =>
                                     handleBatal(
@@ -1329,13 +1347,19 @@ function BookingRuangan({ user }) {
                                     )
                                   }
                                   style={{
-                                    padding:
-                                      '5px 8px',
-                                    fontSize:
-                                      '12px',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    width: '30px',
+                                    height: '30px',
+                                    padding: 0,
+                                    backgroundColor: '#fef2f2',
+                                    border: '1px solid #fecaca',
+                                    borderRadius: '6px',
+                                    cursor: 'pointer',
                                   }}
                                 >
-                                  ✕
+                                  <XCircle size={14} color="#dc2626" />
                                 </button>
                               )}
 

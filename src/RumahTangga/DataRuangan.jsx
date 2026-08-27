@@ -1,4 +1,11 @@
 import { useEffect, useState } from 'react'
+import {
+  Building2,
+  Plus,
+  Pencil,
+  Trash2,
+  Search,
+} from 'lucide-react'
 
 const API = 'http://localhost:8000/api'
 
@@ -205,7 +212,9 @@ function DataRuangan({ user }) {
 
       {/* HEADER */}
       <div className="page-title">
-        <h1>🏢 Data Ruangan</h1>
+        <h1 style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <Building2 size={22} /> Data Ruangan
+        </h1>
 
         <p>
           Mengelola dan memantau informasi ruangan,
@@ -249,7 +258,7 @@ function DataRuangan({ user }) {
       <div className="stats-grid">
 
         <div className="stat-card">
-          <div className="stat-icon">🏢</div>
+          <div className="stat-icon"><Building2 size={20} /></div>
 
           <div className="stat-info">
             <h4>Total Ruangan</h4>
@@ -318,10 +327,10 @@ function DataRuangan({ user }) {
       {isAdminRT && showForm && (
         <div className="card">
 
-          <h3>
+          <h3 style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             {editId
-              ? '✏️ Edit Data Ruangan'
-              : '➕ Tambah Data Ruangan'}
+              ? (<><Pencil size={18} /> Edit Data Ruangan</>)
+              : (<><Plus size={18} /> Tambah Data Ruangan</>)}
           </h3>
 
           <form
@@ -446,7 +455,9 @@ function DataRuangan({ user }) {
         >
 
           <div>
-            <h3>🏢 Daftar Ruangan</h3>
+            <h3 style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <Search size={18} /> Daftar Ruangan
+            </h3>
 
             <p>
               Menampilkan {dataFiltered.length} dari{' '}
@@ -459,8 +470,9 @@ function DataRuangan({ user }) {
               type="button"
               className="btn"
               onClick={bukaTambah}
+              style={{ display: 'flex', alignItems: 'center', gap: '6px' }}
             >
-              + Tambah Ruangan
+              <Plus size={16} /> Tambah Ruangan
             </button>
           )}
 
@@ -635,30 +647,52 @@ function DataRuangan({ user }) {
                                   <div
                                     style={{
                                       display: 'flex',
-                                      gap: '5px',
+                                      gap: '6px',
                                     }}
                                   >
 
                                     <button
                                       type="button"
-                                      className="btn"
                                       onClick={() =>
                                         bukaEdit(d)
                                       }
+                                      style={{
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        width: '30px',
+                                        height: '30px',
+                                        padding: 0,
+                                        backgroundColor: '#eff6ff',
+                                        border: '1px solid #bfdbfe',
+                                        borderRadius: '6px',
+                                        cursor: 'pointer',
+                                      }}
                                     >
-                                      Edit
+                                      <Pencil size={14} color="#0b72e7" />
                                     </button>
 
                                     <button
                                       type="button"
-                                      className="btn-danger"
                                       onClick={() =>
                                         hapusData(
                                           d.id
                                         )
                                       }
+                                      style={{
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        width: '30px',
+                                        height: '30px',
+                                        padding: 0,
+                                        backgroundColor: '#fef2f2',
+                                        border: '1px solid #fecaca',
+                                        borderRadius: '6px',
+                                        cursor: 'pointer',
+                                      }}
                                     >
-                                      🗑
+                                      <Trash2 size={14} color="#dc2626" />
                                     </button>
 
                                   </div>
