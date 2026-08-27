@@ -49,7 +49,7 @@ const statusBooking = (status) => {
 
 function BookingRuangan({ user }) {
   const isAdminRT =
-    user.role === 'admin_rumahtangga' ||
+    user.role === 'admin_rumah_tangga' ||
     user.role === 'superadmin'
 
   const [booking, setBooking] = useState([])

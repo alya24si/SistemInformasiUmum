@@ -6,7 +6,6 @@ use Illuminate\Support\Facades\DB;
 
 class BookingRuanganController extends Controller
 {
-    // 1. BACA semua data (ikut nama ruangan)
     public function index()
     {
         $data = DB::table('booking_ruangan as b')
@@ -22,14 +21,15 @@ class BookingRuanganController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'ruangan_id' => 'required|exists:ruangan,id',
-            'pemesan'    => 'required|string',
-            'bagian'     => 'nullable|string',
-            'kegiatan'   => 'required|string',
-            'deskripsi'  => 'nullable|string',
-            'tanggal'    => 'required|date',
-            'mulai'      => 'required',
-            'selesai'    => 'required|after:mulai',
+            'ruangan_id'      => 'required|exists:ruangan,id',
+            'pemesan'         => 'required|string',
+            'bagian'          => 'nullable|string',
+            'kegiatan'        => 'required|string',
+            'jenis_pertemuan' => 'nullable|in:Online,Offline',
+            'deskripsi'       => 'nullable|string',
+            'tanggal'         => 'required|date',
+            'mulai'           => 'required',
+            'selesai'         => 'required|after:mulai',
         ]);
 
         // Cek bentrok cuma terhadap booking yang SUDAH disetujui admin.
@@ -50,6 +50,7 @@ class BookingRuanganController extends Controller
             // punya bidang), fallback ke "-" biar gak kena error NOT NULL.
             'bagian'     => $request->bagian ?: '-',
             'kegiatan'   => $request->kegiatan,
+            'jenis_pertemuan' => $request->jenis_pertemuan ?: 'Offline',
             'deskripsi'  => $request->deskripsi,
             'tanggal'    => $request->tanggal,
             'mulai'      => $request->mulai,

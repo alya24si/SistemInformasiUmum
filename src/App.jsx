@@ -67,7 +67,7 @@ if (user.role === 'admin_rumah_tangga') return '/data-ruangan'
             <Route path="/perbaikan-ruangan" element={<PerbaikanRuangan user={user} />} />
 
             <Route path="/data-pegawai" element={isAdminKepegawaian ? <DataPegawai user={user} /> : <Navigate to="/" />} />
-            <Route path="/data-absensi" element={isAdminKepegawaian ? <DataAbsensi /> : <Navigate to="/" />} />
+            <Route path="/data-absensi" element={isAdminKepegawaian || isPegawaiBiasa ? <DataAbsensi user={user} /> : <Navigate to="/" />} />
             <Route path="/pelanggaran" element={isAdminKepegawaian || isPegawaiBiasa ? <Pelanggaran user={user} /> : <Navigate to="/" />} />
           </Routes>
         </main>

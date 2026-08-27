@@ -13,7 +13,7 @@ const STORAGE_URL = 'http://localhost:8000/storage'
 
 function KerusakanRuangan({ user }) {
   const isAdmin =
-    user.role === 'admin_rumahtangga' ||
+    user.role === 'admin_rumah_tangga' ||
     user.role === 'superadmin'
 
   const [laporan, setLaporan] = useState([])

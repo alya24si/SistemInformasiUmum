@@ -12,7 +12,7 @@ const API = 'http://localhost:8000/api'
 
 function PerbaikanRuangan({ user }) {
   const isAdmin =
-    user.role === 'admin_rumahtangga' ||
+    user.role === 'admin_rumah_tangga' ||
     user.role === 'superadmin'
 
   const [kerusakanBelumDiperbaiki, setKerusakanBelumDiperbaiki] =
