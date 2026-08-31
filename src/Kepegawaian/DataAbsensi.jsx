@@ -109,6 +109,7 @@ function DataAbsensi({ user }) {
 
   const [currentPage, setCurrentPage] = useState(0)
   const [editId, setEditId] = useState(null)
+  const [alpaPage, setAlpaPage] = useState(0)
 
   const ambilAbsensi = () => {
     fetch(`${API_URL}/absensi`)
@@ -586,13 +587,6 @@ function DataAbsensi({ user }) {
             <MessageCircle size={18} /> Pegawai Perlu Dihubungi
           </h3>
 
-          <p>
-            Daftar pegawai yang presensinya bermasalah (di luar
-            Hadir Normal / Cuti Tahunan / ST) — langsung muncul
-            walau cuma 1 hari kejadian. Pesan WA sudah otomatis
-            disiapkan, tinggal klik kirim.
-          </p>
-
           <div className="table-wrap">
 
             <table className="table">
@@ -602,7 +596,7 @@ function DataAbsensi({ user }) {
                   <th>No</th>
                   <th>Nama Pegawai</th>
                   <th>NIP</th>
-                  <th>Tanggal Alpa</th>
+                  <th>Tanggal & Status Bermasalah</th>
                   <th>No. WA</th>
                   <th>Aksi</th>
                 </tr>
@@ -610,15 +604,39 @@ function DataAbsensi({ user }) {
 
               <tbody>
 
-                {alpaList.map((item, index) => (
-                  <tr key={item.pegawai_id}>
+                {alpaList
+                  .slice(alpaPage * 10, alpaPage * 10 + 10)
+                  .map((item, index) => (
+                  <tr
+                    key={item.pegawai_id}
+                    style={
+                      item.tiga_hari_berturut
+                        ? {
+                            backgroundColor: '#fff7ed',
+                            borderLeft: '4px solid #f97316',
+                          }
+                        : undefined
+                    }
+                  >
 
                     <td>
-                      {index + 1}
+                      {alpaPage * 10 + index + 1}
                     </td>
 
                     <td>
                       {item.nama}
+
+                      {item.tiga_hari_berturut && (
+                        <span
+                          className="badge red"
+                          style={{
+                            marginLeft: '8px',
+                            fontSize: '10px',
+                          }}
+                        >
+                          3 Hari Berturut
+                        </span>
+                      )}
                     </td>
 
                     <td>
@@ -626,11 +644,32 @@ function DataAbsensi({ user }) {
                     </td>
 
                     <td>
-                      {item.tanggal_alpa
-                        .map((t) =>
-                          formatTanggal(t)
-                        )
-                        .join(', ')}
+                      {(item.detail_alpa || []).map((d, i) => (
+                        <div
+                          key={i}
+                          style={{
+                            whiteSpace: 'nowrap',
+                            marginBottom:
+                              i < item.detail_alpa.length - 1
+                                ? '4px'
+                                : 0,
+                          }}
+                        >
+                          {formatTanggal(d.tanggal)}
+                          {' — '}
+                          <span
+                            style={{
+                              fontWeight: 600,
+                              color:
+                                d.status === 'Tanpa Keterangan'
+                                  ? '#dc2626'
+                                  : '#b45309',
+                            }}
+                          >
+                            {d.status}
+                          </span>
+                        </div>
+                      ))}
                     </td>
 
                     <td>
@@ -655,6 +694,75 @@ function DataAbsensi({ user }) {
               </tbody>
 
             </table>
+
+          </div>
+
+          <div
+            style={{
+              display: 'flex',
+              justifyContent: 'flex-end',
+              gap: '8px',
+              marginTop: '16px',
+              alignItems: 'center',
+            }}
+          >
+
+            <button
+              onClick={() =>
+                setAlpaPage((prev) => Math.max(0, prev - 1))
+              }
+              disabled={alpaPage === 0}
+              className="btn"
+              style={{
+                padding: '6px 10px',
+                borderRadius: '6px',
+                border: '1px solid #cbd5e1',
+                backgroundColor: '#fff',
+                cursor: alpaPage === 0 ? 'not-allowed' : 'pointer',
+                opacity: alpaPage === 0 ? 0.5 : 1,
+                fontSize: '11px',
+                fontWeight: 600,
+              }}
+            >
+              Back
+            </button>
+
+            <span
+              style={{
+                fontSize: '11px',
+                fontWeight: '500',
+                color: '#64748b',
+              }}
+            >
+              {alpaPage + 1} /{' '}
+              {Math.max(1, Math.ceil(alpaList.length / 10))}
+            </span>
+
+            <button
+              onClick={() =>
+                setAlpaPage((prev) =>
+                  (prev + 1) * 10 < alpaList.length ? prev + 1 : prev
+                )
+              }
+              disabled={(alpaPage + 1) * 10 >= alpaList.length}
+              className="btn"
+              style={{
+                padding: '6px 10px',
+                borderRadius: '6px',
+                border: '1px solid #cbd5e1',
+                backgroundColor: '#fff',
+                cursor:
+                  (alpaPage + 1) * 10 >= alpaList.length
+                    ? 'not-allowed'
+                    : 'pointer',
+                opacity:
+                  (alpaPage + 1) * 10 >= alpaList.length ? 0.5 : 1,
+                fontSize: '11px',
+                fontWeight: 600,
+              }}
+            >
+              Next
+            </button>
 
           </div>
 
@@ -838,8 +946,8 @@ function DataAbsensi({ user }) {
                     onClick={batalEdit}
                     className="btn"
                     style={{
-                      backgroundColor: '#e2e8f0',
-                      color: '#334155',
+                      backgroundColor: '#94a3b8',
+                      color: '#fff',
                     }}
                   >
                     Batal

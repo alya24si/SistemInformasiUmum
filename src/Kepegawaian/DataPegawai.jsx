@@ -584,8 +584,8 @@ function DataPegawai() {
                   onClick={batalEdit}
                   className="btn"
                   style={{
-                    backgroundColor: '#e2e8f0',
-                    color: '#334155',
+                    backgroundColor: '#94a3b8',
+                    color: '#fff',
                   }}
                 >
                   Batal
