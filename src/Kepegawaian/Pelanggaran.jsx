@@ -25,7 +25,6 @@ function Pelanggaran({ user }) {
   const [currentPagePelanggaran, setCurrentPagePelanggaran] = useState(0)
   const [currentPageRiwayat, setCurrentPageRiwayat] = useState(0)
 
-  // ✨ STATE BARU untuk form tambah pegawai
   const [showFormPegawai, setShowFormPegawai] = useState(false)
   const [formPegawai, setFormPegawai] = useState({ nama: '', nip: '', password: '' })
   const [loadingTambah, setLoadingTambah] = useState(false)
@@ -96,7 +95,6 @@ function Pelanggaran({ user }) {
         const psw2 = Number(cariKolom(r, 'PSW2', 'PSW 2')) || 0
         const psw3 = Number(cariKolom(r, 'PSW3', 'PSW 3')) || 0
         const psw4 = Number(cariKolom(r, 'PSW4', 'PSW 4')) || 0
-        // ✨ Total sekarang termasuk TK (Tanpa Keterangan)
         const total = tk + tl1 + tl2 + tl3 + psw1 + psw2 + psw3 + psw4
 
         if (!nip) return
@@ -129,7 +127,21 @@ function Pelanggaran({ user }) {
     e.target.value = ''
   }
 
-  // ✨ FUNCTION BARU: Tambah pegawai baru
+  // ✨ BARU: Admin update jumlah pelanggaran manual
+  const updateJumlah = (id, nilai) => {
+    const angka = Number(nilai) || 0
+    setDataPelanggaran(
+      dataPelanggaran.map((d) =>
+        d.id === id ? { ...d, total: angka } : d
+      )
+    )
+    fetch(API + '/pelanggaran/' + id + '/jumlah', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ jumlah: angka }),
+    })
+  }
+
   const tambahPegawai = async (e) => {
     e.preventDefault()
     setErrorTambah('')
@@ -145,7 +157,7 @@ function Pelanggaran({ user }) {
       const json = await res.json()
 
       if (json.success) {
-        setInfoTambah(`✅ ${formPegawai.nama} (NIP: ${formPegawai.nip}) berhasil didaftarkan! Sekarang bisa diinput lewat Excel.`)
+        setInfoTambah(`✅ ${formPegawai.nama} (NIP: ${formPegawai.nip}) berhasil didaftarkan!`)
         setFormPegawai({ nama: '', nip: '', password: '' })
       } else {
         setErrorTambah(json.message || 'Gagal menambahkan pegawai.')
@@ -211,7 +223,9 @@ function Pelanggaran({ user }) {
         <div>
           <h1 style={titleStyle}>Pelanggaran</h1>
           <p style={subtitleStyle}>
-            {isAdmin ? 'Upload Excel rekap pelanggaran (TK, TL, PSW) per pegawai.' : 'Data pelanggaran kehadiran pribadi Anda.'}
+            {isAdmin
+              ? 'Upload Excel rekap pelanggaran, lalu edit "Jumlah Pelanggaran" sesuai keputusan admin.'
+              : 'Data pelanggaran kehadiran pribadi Anda.'}
           </p>
         </div>
       </div>
@@ -220,7 +234,6 @@ function Pelanggaran({ user }) {
         <div style={privacyNote}>🔒 Data bersifat pribadi — hanya Anda yang dapat melihat catatan ini.</div>
       )}
 
-      {/* ===== UPLOAD EXCEL + TOMBOL TAMBAH PEGAWAI ===== */}
       {isAdmin && (
         <div style={cardStyle}>
           <div style={sectionHeader}>
@@ -229,7 +242,7 @@ function Pelanggaran({ user }) {
                 <h2 style={sectionTitle}>📥 Upload Excel Pelanggaran</h2>
                 <p style={sectionSubtitle}>
                   Format kolom: <b>NAMA | NIP | TK | TL 1 | TL 2 | TL 3 | PSW 1 | PSW 2 | PSW 3 | PSW 4</b>.
-                  Pegawai yang total pelanggarannya = 0 otomatis tidak masuk daftar.
+                  Setelah upload, edit kolom <b>Jumlah Pelanggaran</b> di tabel bawah untuk nilai final.
                 </p>
               </div>
               <button
@@ -241,48 +254,25 @@ function Pelanggaran({ user }) {
             </div>
           </div>
 
-          {/* ===== FORM TAMBAH PEGAWAI BARU ===== */}
           {showFormPegawai && (
             <form onSubmit={tambahPegawai} style={{ padding: '20px', backgroundColor: '#fef9e7', borderBottom: '1px solid #fde68a' }}>
               <h3 style={{ margin: '0 0 14px 0', fontSize: '15px', color: '#92400e' }}>
-                👤 Daftarkan Pegawai Baru (untuk bisa login & diinput lewat Excel)
+                👤 Daftarkan Pegawai Baru
               </h3>
               {errorTambah && <div style={errorStyle}>{errorTambah}</div>}
               {infoTambah && <div style={infoStyle}>{infoTambah}</div>}
               <div style={formGrid}>
                 <div>
                   <label style={labelStyle}>Nama Lengkap</label>
-                  <input
-                    type="text"
-                    value={formPegawai.nama}
-                    onChange={(e) => setFormPegawai({ ...formPegawai, nama: e.target.value })}
-                    required
-                    placeholder="Contoh: Budi Santoso"
-                    style={inputStyle}
-                  />
+                  <input type="text" value={formPegawai.nama} onChange={(e) => setFormPegawai({ ...formPegawai, nama: e.target.value })} required placeholder="Contoh: Budi Santoso" style={inputStyle} />
                 </div>
                 <div>
                   <label style={labelStyle}>NIP (jadi username login)</label>
-                  <input
-                    type="text"
-                    value={formPegawai.nip}
-                    onChange={(e) => setFormPegawai({ ...formPegawai, nip: e.target.value })}
-                    required
-                    placeholder="18 digit angka"
-                    style={inputStyle}
-                  />
+                  <input type="text" value={formPegawai.nip} onChange={(e) => setFormPegawai({ ...formPegawai, nip: e.target.value })} required placeholder="18 digit angka" style={inputStyle} />
                 </div>
                 <div>
                   <label style={labelStyle}>Password Awal</label>
-                  <input
-                    type="text"
-                    value={formPegawai.password}
-                    onChange={(e) => setFormPegawai({ ...formPegawai, password: e.target.value })}
-                    required
-                    minLength={6}
-                    placeholder="Min 6 karakter"
-                    style={inputStyle}
-                  />
+                  <input type="text" value={formPegawai.password} onChange={(e) => setFormPegawai({ ...formPegawai, password: e.target.value })} required minLength={6} placeholder="Min 6 karakter" style={inputStyle} />
                 </div>
               </div>
               <div style={{ display: 'flex', gap: '8px', marginTop: '16px' }}>
@@ -306,7 +296,7 @@ function Pelanggaran({ user }) {
       <div style={summaryGrid}>
         {isAdmin && <SummaryCard title="Pegawai Terdeteksi" value={dataPelanggaran.length} />}
         <SummaryCard
-          title={isAdmin ? 'Total Pelanggaran' : 'Total Pelanggaran Anda'}
+          title={isAdmin ? 'Total Jumlah Pelanggaran' : 'Jumlah Pelanggaran Anda'}
           value={isAdmin ? totalPelanggaranSemua : (catatanku ? catatanku.total : 0)}
         />
         {isAdmin && <SummaryCard title="Pegawai WARNING 1" value={jumlahWarning1} />}
@@ -319,7 +309,7 @@ function Pelanggaran({ user }) {
           <div>
             <h2 style={sectionTitle}>{isAdmin ? 'Daftar Pegawai yang Melakukan Pelanggaran' : 'Riwayat Pelanggaran Saya'}</h2>
             <p style={sectionSubtitle}>
-              {isAdmin ? 'Hanya pegawai dengan pelanggaran yang ditampilkan.' : 'Rincian pelanggaran Anda dari setiap upload.'}
+              {isAdmin ? 'Klik kolom "Jumlah Pelanggaran" untuk mengedit nilai final.' : 'Rincian pelanggaran Anda dari setiap upload.'}
             </p>
           </div>
         </div>
@@ -340,7 +330,7 @@ function Pelanggaran({ user }) {
                     <th style={{ ...thStyle, textAlign: 'center' }}>PSW 2</th>
                     <th style={{ ...thStyle, textAlign: 'center' }}>PSW 3</th>
                     <th style={{ ...thStyle, textAlign: 'center' }}>PSW 4</th>
-                    <th style={{ ...thStyle, textAlign: 'center' }}>Total</th>
+                    <th style={{ ...thStyle, textAlign: 'center' }}>Jumlah Pelanggaran</th>
                     <th style={thStyle}>Status</th>
                     <th style={thStyle}>Aksi</th>
                   </tr>
@@ -378,7 +368,26 @@ function Pelanggaran({ user }) {
                               <td style={{ ...tdStyle, textAlign: 'center', color: d.psw2 > 0 ? '#dc2626' : '#94a3b8', fontWeight: d.psw2 > 0 ? 700 : 400 }}>{d.psw2}</td>
                               <td style={{ ...tdStyle, textAlign: 'center', color: d.psw3 > 0 ? '#dc2626' : '#94a3b8', fontWeight: d.psw3 > 0 ? 700 : 400 }}>{d.psw3}</td>
                               <td style={{ ...tdStyle, textAlign: 'center', color: d.psw4 > 0 ? '#dc2626' : '#94a3b8', fontWeight: d.psw4 > 0 ? 700 : 400 }}>{d.psw4}</td>
-                              <td style={{ ...tdStyle, textAlign: 'center', fontWeight: 700, color: '#dc2626' }}>{d.total}</td>
+                              <td style={{ ...tdStyle, textAlign: 'center', padding: '8px' }}>
+                                <input
+                                  type="number"
+                                  min="0"
+                                  value={d.total}
+                                  onChange={(e) => updateJumlah(d.id, e.target.value)}
+                                  style={{
+                                    width: '90px',
+                                    padding: '8px 10px',
+                                    border: '2px solid #3b82f6',
+                                    borderRadius: '8px',
+                                    fontWeight: 700,
+                                    fontSize: '14px',
+                                    color: '#dc2626',
+                                    textAlign: 'center',
+                                    backgroundColor: '#eff6ff',
+                                    outline: 'none',
+                                  }}
+                                />
+                              </td>
                               <td style={tdStyle}><span style={{ ...badgeStyle, ...st }}>{st.label}</span></td>
                               <td style={tdStyle}><button style={btnHapus} onClick={() => hapus(d.id)}>🗑 Hapus</button></td>
                             </tr>
@@ -411,12 +420,25 @@ function Pelanggaran({ user }) {
             </>
           ) : catatanku ? (
             <>
+              {/* ✨ INFO: Jumlah Pelanggaran Final (yang sudah di-update admin) */}
+              <div style={{ padding: '16px 20px', backgroundColor: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: '10px', marginBottom: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
+                <div>
+                  <div style={{ fontSize: '12px', color: '#1e40af', fontWeight: 600, marginBottom: '4px' }}>JUMLAH PELANGGARAN AKHIR ANDA</div>
+                  <div style={{ fontSize: '28px', fontWeight: 800, color: '#dc2626' }}>{catatanku.total}</div>
+                </div>
+                <div>
+                  <span style={{ ...badgeStyle, ...statusBadge(catatanku.total), fontSize: '13px', padding: '8px 14px' }}>
+                    {statusBadge(catatanku.total).label}
+                  </span>
+                </div>
+              </div>
+
               <table style={tableStyle}>
                 <thead>
                   <tr>
                     <th style={thStyle}>No</th>
                     <th style={thStyle}>Waktu</th>
-                    <th style={{ ...thStyle, textAlign: 'center' }}>TK</th> 
+                    <th style={{ ...thStyle, textAlign: 'center' }}>TK</th>
                     <th style={{ ...thStyle, textAlign: 'center' }}>TL 1</th>
                     <th style={{ ...thStyle, textAlign: 'center' }}>TL 2</th>
                     <th style={{ ...thStyle, textAlign: 'center' }}>TL 3</th>
@@ -424,7 +446,7 @@ function Pelanggaran({ user }) {
                     <th style={{ ...thStyle, textAlign: 'center' }}>PSW 2</th>
                     <th style={{ ...thStyle, textAlign: 'center' }}>PSW 3</th>
                     <th style={{ ...thStyle, textAlign: 'center' }}>PSW 4</th>
-                    <th style={{ ...thStyle, textAlign: 'center' }}>Total</th>
+                    <th style={{ ...thStyle, textAlign: 'center' }}>Jumlah Pelanggaran</th>
                     <th style={thStyle}>Sumber</th>
                   </tr>
                 </thead>
@@ -518,8 +540,6 @@ const tdStyle = { padding: '15px', color: '#64748b', fontSize: '13px', borderBot
 const badgeStyle = { display: 'inline-block', padding: '6px 10px', borderRadius: '20px', fontSize: '11px', fontWeight: 700 }
 const emptyStyle = { padding: '50px', textAlign: 'center', color: '#94a3b8' }
 const btnHapus = { padding: '6px 10px', borderRadius: '8px', border: '1px solid #f5c2c2', backgroundColor: '#fdecec', color: '#b91c1c', fontSize: '12px', fontWeight: 700, cursor: 'pointer' }
-
-// ✨ STYLE BARU untuk fitur tambah pegawai
 const btnTambah = { padding: '10px 16px', borderRadius: '8px', border: 'none', backgroundColor: '#16a34a', color: '#fff', fontSize: '13px', fontWeight: 700, cursor: 'pointer', boxShadow: '0 2px 4px rgba(22,163,74,.2)', whiteSpace: 'nowrap' }
 const btnSimpanPegawai = { padding: '10px 18px', borderRadius: '8px', border: 'none', backgroundColor: '#2563eb', color: '#fff', fontSize: '13px', fontWeight: 700, cursor: 'pointer' }
 const btnBatalPegawai = { padding: '10px 18px', borderRadius: '8px', border: '1px solid #cbd5e1', backgroundColor: '#fff', color: '#334155', fontSize: '13px', fontWeight: 600, cursor: 'pointer' }

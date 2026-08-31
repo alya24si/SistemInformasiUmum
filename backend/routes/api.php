@@ -68,6 +68,7 @@ Route::post('/pegawai', [PegawaiController::class, 'store']);
 Route::post('/pegawai/import', [PegawaiController::class, 'import']);
 Route::put('/pegawai/{id}', [PegawaiController::class, 'update']);
 Route::delete('/pegawai/{id}', [PegawaiController::class, 'destroy']);
+Route::put('/pelanggaran/{id}/jumlah', [PelanggaranController::class, 'updateJumlah']);
 
 // ===== API ABSENSI =====
 Route::get('/absensi', [AbsensiController::class, 'index']);

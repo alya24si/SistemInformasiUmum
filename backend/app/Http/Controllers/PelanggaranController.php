@@ -107,6 +107,20 @@ class PelanggaranController extends Controller
         ], 201);
     }
 
+    // ✨ BARU: Admin update "Jumlah Pelanggaran" manual
+public function updateJumlah(Request $request, $id)
+{
+    $request->validate([
+        'jumlah' => 'required|integer|min:0',
+    ]);
+
+    DB::table('pelanggaran')
+        ->where('id', $id)
+        ->update(['total' => $request->jumlah]);
+
+    return response()->json(['success' => true]);
+}
+
     public function destroy($id)
     {
         DB::table('pelanggaran')->where('id', $id)->delete();
