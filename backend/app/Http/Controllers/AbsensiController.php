@@ -154,7 +154,7 @@ class AbsensiController extends Controller
                 . "Anda tercatat {$daftarStatus} pada tanggal {$daftarTanggal}.\n\n"
                 . "Mohon segera melakukan konfirmasi maksimal 3 Hari Kerja (HK) setelah menerima pesan ini.\n\n"
                 . "Abaikan pesan ini apabila ketidakhadiran tersebut disebabkan oleh penugasan dinas, "
-                . "Surat Tugas (ST), cuti, atau alasan lain yang telah disetujui.\n\n"
+                . "Surat Tugas (ST)/cuti.\n\n"
                 . "Terima kasih atas perhatian dan kerja samanya.\n\n"
                 . "Pesan ini dikirim secara otomatis oleh boot sistem.";
 
