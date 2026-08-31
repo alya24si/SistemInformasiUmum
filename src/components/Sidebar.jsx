@@ -12,7 +12,7 @@ function Sidebar({ user }) {
   const bolehKeuangan = isAdminKeuangan || isGuest
   const bolehDataPegawai = isAdminKepegawaian
   const bolehPelanggaran = isAdminKepegawaian || isPegawaiBiasa
-  const bolehDataAbsensi = isAdminKepegawaian
+  const bolehDataAbsensi = isAdminKepegawaian || isPegawaiBiasa
 
   const aktif = ({ isActive }) => 'menu-item' + (isActive ? ' active' : '')
 

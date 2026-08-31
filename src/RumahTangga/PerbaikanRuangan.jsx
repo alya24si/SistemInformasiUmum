@@ -1096,6 +1096,7 @@ function PerbaikanRuangan({ user }) {
               color:
                 '#64748b',
             }}
+            
           >
             {currentPage + 1} /{' '}
             {Math.max(
