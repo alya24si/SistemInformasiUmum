@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { AlertTriangle, Clock, CalendarDays } from "lucide-react";
 
 const API = 'http://localhost:8000/api'
 
@@ -33,7 +34,7 @@ const buatGridBulan = (tahun, bulan) => {
 };
 
 function KalenderRuangan({ user }) {
-  const isAdminRT = user.role === 'admin_rumahtangga' || user.role === 'superadmin';
+  const isAdminRT = user.role === 'admin_rumah_tangga' || user.role === 'superadmin';
 
   const [bookingDisetujui, setBookingDisetujui] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -97,7 +98,7 @@ function KalenderRuangan({ user }) {
   return (
     <div style={{ padding: "32px", minHeight: "100%", backgroundColor: "#f5f8fc", fontFamily: "Inter, ui-sans-serif, system-ui, sans-serif" }}>
       <div style={{ marginBottom: "24px" }}>
-        <h1 style={{ margin: 0, fontSize: "30px", fontWeight: 700, color: "#102a43" }}>Kalender Ruangan</h1>
+        <h1 style={{ margin: 0, fontSize: "30px", fontWeight: 700, color: "#102a43", display: "flex", alignItems: "center", gap: "10px" }}><CalendarDays size={26} /> Kalender Ruangan</h1>
         <p style={{ margin: "7px 0 0", color: "#64748b", fontSize: "15px" }}>Lihat jadwal penggunaan ruangan yang telah disetujui.</p>
       </div>
 
@@ -110,8 +111,8 @@ function KalenderRuangan({ user }) {
       </div>
 
       {errorMsg && (
-        <div style={{ padding: "12px 16px", marginBottom: "16px", borderRadius: "8px", backgroundColor: "#fee2e2", color: "#991b1b", fontSize: "13px" }}>
-          ⚠️ {errorMsg}
+        <div style={{ padding: "12px 16px", marginBottom: "16px", borderRadius: "8px", backgroundColor: "#fee2e2", color: "#991b1b", fontSize: "13px", display: "flex", alignItems: "center", gap: "6px" }}>
+          <AlertTriangle size={14} /> {errorMsg}
         </div>
       )}
 
@@ -189,7 +190,7 @@ function KalenderRuangan({ user }) {
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "12px", marginBottom: "18px", paddingLeft: "5px" }}>
                 <div>
                   <h3 style={{ margin: 0, fontSize: "17px", fontWeight: 650, color: "#172b4d" }}>{item.ruangan}</h3>
-                  <div style={{ display: "inline-flex", alignItems: "center", gap: "6px", marginTop: "9px", backgroundColor: "#eff6ff", color: "#0b72e7", padding: "6px 10px", borderRadius: "7px", fontSize: "12px", fontWeight: 700 }}>🕐 {item.mulai} - {item.selesai}</div>
+                  <div style={{ display: "inline-flex", alignItems: "center", gap: "6px", marginTop: "9px", backgroundColor: "#eff6ff", color: "#0b72e7", padding: "6px 10px", borderRadius: "7px", fontSize: "12px", fontWeight: 700 }}><Clock size={13} /> {item.mulai} - {item.selesai}</div>
                 </div>
                 <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: "6px" }}>
                   <span style={{ backgroundColor: "#dcfce7", color: "#166534", padding: "5px 10px", borderRadius: "20px", fontSize: "11px", fontWeight: 600 }}>Disetujui</span>
@@ -206,7 +207,7 @@ function KalenderRuangan({ user }) {
         </div>
       ) : (
         <div style={{ backgroundColor: "#fff", border: "1px solid #e2e8f0", borderRadius: "12px", padding: "55px 20px", textAlign: "center" }}>
-          <div style={{ width: "60px", height: "60px", margin: "0 auto 15px", borderRadius: "50%", backgroundColor: "#f1f5f9", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "26px" }}>📅</div>
+          <div style={{ width: "60px", height: "60px", margin: "0 auto 15px", borderRadius: "50%", backgroundColor: "#f1f5f9", display: "flex", alignItems: "center", justifyContent: "center" }}><CalendarDays size={26} color="#94a3b8" /></div>
           <h3 style={{ margin: 0, color: "#334155", fontSize: "17px", fontWeight: 650 }}>Tidak ada booking</h3>
           <p style={{ margin: "7px 0 0", color: "#94a3b8", fontSize: "14px" }}>Tidak ada ruangan yang digunakan pada tanggal ini.</p>
         </div>

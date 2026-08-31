@@ -79,7 +79,11 @@ const formatTanggal = (tanggal) => {
   )
 }
 
-function DataAbsensi() {
+function DataAbsensi({ user }) {
+  // pegawai biasa cuma boleh liat absensi miliknya sendiri (read-only),
+  // admin_kepegawaian & superadmin tetap full akses seperti biasa
+  const isAdmin = user.role === 'admin_kepegawaian' || user.role === 'superadmin'
+
   const [data, setData] = useState([])
   const [pegawaiList, setPegawaiList] = useState([])
   const [alpaList, setAlpaList] = useState([])
@@ -294,6 +298,9 @@ function DataAbsensi() {
   }
 
   const dataFiltered = data.filter((d) => {
+    // non-admin (role pegawai) cuma boleh lihat baris absensi miliknya sendiri
+    if (!isAdmin && d.nip !== user.nip) return false
+
     const tanggal = new Date(`${d.tanggal}T00:00:00`)
 
     const tahun = String(tanggal.getFullYear())
@@ -441,7 +448,7 @@ function DataAbsensi() {
           <ClipboardList size={22} /> Data Absensi
         </h1>
 
-        <p>Kelola data kehadiran pegawai.</p>
+        <p>{isAdmin ? 'Kelola data kehadiran pegawai.' : 'Riwayat kehadiran Anda.'}</p>
       </div>
 
       {/* STATISTIK */}
@@ -513,7 +520,8 @@ function DataAbsensi() {
 
       </div>
 
-      {/* IMPORT EXCEL */}
+      {/* IMPORT EXCEL — khusus admin */}
+      {isAdmin && (
       <div className="card">
 
         <h3 style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -558,9 +566,10 @@ function DataAbsensi() {
         )}
 
       </div>
+      )}
 
-      {/* PEGAWAI ALPA 3 HARI BERTURUT */}
-      {alpaList.length > 0 && (
+      {/* PEGAWAI ALPA 3 HARI BERTURUT — khusus admin */}
+      {isAdmin && alpaList.length > 0 && (
         <div className="card">
 
           <h3 style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -766,7 +775,8 @@ function DataAbsensi() {
         </div>
       )}
 
-      {/* TAMBAH DATA */}
+      {/* TAMBAH DATA — khusus admin */}
+      {isAdmin && (
       <div className="card">
 
         <div
@@ -955,6 +965,7 @@ function DataAbsensi() {
         )}
 
       </div>
+      )}
 
       {/* DAFTAR ABSENSI */}
       <div className="card">
@@ -1042,7 +1053,7 @@ function DataAbsensi() {
                 <th>Jam Pulang</th>
                 <th>Penugasan</th>
                 <th>Status</th>
-                <th>Aksi</th>
+                {isAdmin && <th>Aksi</th>}
               </tr>
 
             </thead>
@@ -1054,7 +1065,7 @@ function DataAbsensi() {
                 <tr>
 
                   <td
-                    colSpan={8}
+                    colSpan={isAdmin ? 8 : 7}
                     style={{
                       textAlign: 'center',
                       padding: '30px',
@@ -1147,6 +1158,7 @@ function DataAbsensi() {
                                   </span>
                                 </td>
 
+                                {isAdmin && (
                                 <td>
                                   <div style={{ display: 'flex', gap: '6px' }}>
                                     <button
@@ -1193,6 +1205,7 @@ function DataAbsensi() {
                                     </button>
                                   </div>
                                 </td>
+                                )}
 
                               </tr>
                             )
@@ -1204,7 +1217,7 @@ function DataAbsensi() {
                         <tr>
 
                           <td
-                            colSpan={8}
+                            colSpan={isAdmin ? 8 : 7}
                             style={{
                               textAlign:
                                 'center',

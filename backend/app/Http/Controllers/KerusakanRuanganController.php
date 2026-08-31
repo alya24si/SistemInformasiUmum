@@ -24,7 +24,7 @@ class KerusakanRuanganController extends Controller
         $request->validate([
             'ruangan_id' => 'required|exists:ruangan,id',
             'pelapor'    => 'required|string',
-            'bagian'     => 'required|string',
+            'bagian'     => 'nullable|string',
             'kerusakan'  => 'required|string',
             'deskripsi'  => 'nullable|string',
             'bukti'      => 'required|image|max:2048',
@@ -37,7 +37,9 @@ class KerusakanRuanganController extends Controller
         $id = DB::table('kerusakan_ruangan')->insertGetId([
             'ruangan_id' => $request->ruangan_id,
             'pelapor'    => $request->pelapor,
-            'bagian'     => $request->bagian,
+            // fallback "-" kalau bagian kosong/null (misal superadmin yang
+            // gak punya bidang), biar gak kena error NOT NULL di database
+            'bagian'     => $request->bagian ?: '-',
             'tanggal'    => now()->toDateString(),
             'kerusakan'  => $request->kerusakan,
             'deskripsi'  => $request->deskripsi,

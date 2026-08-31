@@ -1,10 +1,18 @@
 import { useEffect, useState } from 'react'
+import {
+  Wrench,
+  Settings,
+  CheckCircle2,
+  Plus,
+  ClipboardList,
+  Trash2,
+} from 'lucide-react'
 
 const API = 'http://localhost:8000/api'
 
 function PerbaikanRuangan({ user }) {
   const isAdmin =
-    user.role === 'admin_rumahtangga' ||
+    user.role === 'admin_rumah_tangga' ||
     user.role === 'superadmin'
 
   const [kerusakanBelumDiperbaiki, setKerusakanBelumDiperbaiki] =
@@ -115,7 +123,7 @@ function PerbaikanRuangan({ user }) {
     setSubmitting(true)
 
     try {
-      await fetch(API + '/perbaikan_ruangan', {
+      const res = await fetch(API + '/perbaikan_ruangan', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -128,6 +136,19 @@ function PerbaikanRuangan({ user }) {
           status: formData.status,
         }),
       })
+
+      const json = await res.json().catch(() => null)
+
+      if (!res.ok) {
+        const pesanValidasi = json?.errors
+          ? Object.values(json.errors).flat().join('\n')
+          : json?.message
+
+        alert(
+          pesanValidasi || 'Gagal menyimpan data perbaikan.'
+        )
+        return
+      }
 
       await muatData()
 
@@ -259,7 +280,9 @@ function PerbaikanRuangan({ user }) {
       ========================= */}
 
       <div className="page-title">
-        <h1>🔧 Perbaikan Ruangan</h1>
+        <h1 style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <Wrench size={22} /> Perbaikan Ruangan
+        </h1>
 
         <p>
           Kelola dan pantau proses perbaikan
@@ -324,7 +347,7 @@ function PerbaikanRuangan({ user }) {
 
         <div className="stat-card">
           <div className="stat-icon">
-            🔧
+            <Wrench size={20} />
           </div>
 
           <div className="stat-info">
@@ -342,7 +365,7 @@ function PerbaikanRuangan({ user }) {
 
         <div className="stat-card gold">
           <div className="stat-icon">
-            ⚙️
+            <Settings size={20} />
           </div>
 
           <div className="stat-info">
@@ -366,7 +389,7 @@ function PerbaikanRuangan({ user }) {
 
         <div className="stat-card green">
           <div className="stat-icon">
-            ✅
+            <CheckCircle2 size={20} />
           </div>
 
           <div className="stat-info">
@@ -409,8 +432,8 @@ function PerbaikanRuangan({ user }) {
           >
 
             <div>
-              <h3>
-                ➕ Tambah Data Perbaikan
+              <h3 style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <Plus size={18} /> Tambah Data Perbaikan
               </h3>
 
               <p
@@ -439,10 +462,11 @@ function PerbaikanRuangan({ user }) {
                 kerusakanBelumDiperbaiki.length ===
                 0
               }
+              style={{ display: 'flex', alignItems: 'center', gap: '6px' }}
             >
               {showForm
                 ? 'Tutup'
-                : '+ Tambah Perbaikan'}
+                : (<><Plus size={16} /> Tambah Perbaikan</>)}
             </button>
 
           </div>
@@ -829,8 +853,8 @@ function PerbaikanRuangan({ user }) {
 
       <div className="card">
 
-        <h3>
-          📋 Daftar Perbaikan Ruangan
+        <h3 style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <ClipboardList size={18} /> Daftar Perbaikan Ruangan
         </h3>
 
         <div className="filter-info">
@@ -925,26 +949,50 @@ function PerbaikanRuangan({ user }) {
                               {item.status ===
                                 'Diproses' && (
                                 <button
-                                  className="btn"
+                                  title="Tandai selesai"
                                   onClick={() =>
                                     handleSelesai(
                                       item.id
                                     )
                                   }
+                                  style={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    width: '30px',
+                                    height: '30px',
+                                    padding: 0,
+                                    backgroundColor: '#f0fdf4',
+                                    border: '1px solid #bbf7d0',
+                                    borderRadius: '6px',
+                                    cursor: 'pointer',
+                                  }}
                                 >
-                                  Selesai
+                                  <CheckCircle2 size={14} color="#16a34a" />
                                 </button>
                               )}
 
                               <button
-                                className="btn-danger"
+                                title="Hapus data"
                                 onClick={() =>
                                   handleDelete(
                                     item.id
                                   )
                                 }
+                                style={{
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'center',
+                                  width: '30px',
+                                  height: '30px',
+                                  padding: 0,
+                                  backgroundColor: '#fef2f2',
+                                  border: '1px solid #fecaca',
+                                  borderRadius: '6px',
+                                  cursor: 'pointer',
+                                }}
                               >
-                                🗑
+                                <Trash2 size={14} color="#dc2626" />
                               </button>
 
                             </div>
