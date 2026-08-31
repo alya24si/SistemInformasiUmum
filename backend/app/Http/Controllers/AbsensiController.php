@@ -146,17 +146,17 @@ class AbsensiController extends Controller
                 }
             }
 
-            $tanggalMulai = Carbon::parse($tanggalUrut->first())->translatedFormat('d F Y');
-            $tanggalAkhir = Carbon::parse($tanggalUrut->last())->translatedFormat('d F Y');
+            $daftarTanggal = $tanggalUrut
+                ->map(fn ($t) => Carbon::parse($t)->translatedFormat('d F Y'))
+                ->implode(', ');
 
-            $pesan = $tanggalUrut->count() > 1
-                ? "Kepada {$pegawai->nama} dengan NIP {$pegawai->nip}, "
-                    . "tercatat ada masalah presensi ({$daftarStatus}) pada beberapa tanggal "
-                    . "dari {$tanggalMulai} sampai {$tanggalAkhir}. Segera lakukan konfirmasi "
-                    . "atau akan menerima konsekuensi."
-                : "Kepada {$pegawai->nama} dengan NIP {$pegawai->nip}, "
-                    . "tercatat ada masalah presensi ({$daftarStatus}) pada tanggal {$tanggalMulai}. "
-                    . "Segera lakukan konfirmasi atau akan menerima konsekuensi.";
+            $pesan = "Kepada {$pegawai->nama} dengan NIP {$pegawai->nip},\n"
+                . "Anda tercatat {$daftarStatus} pada tanggal {$daftarTanggal}.\n\n"
+                . "Mohon segera melakukan konfirmasi maksimal 3 Hari Kerja (HK) setelah menerima pesan ini.\n\n"
+                . "Abaikan pesan ini apabila ketidakhadiran tersebut disebabkan oleh penugasan dinas, "
+                . "Surat Tugas (ST), cuti, atau alasan lain yang telah disetujui.\n\n"
+                . "Terima kasih atas perhatian dan kerja samanya.\n\n"
+                . "Pesan ini dikirim secara otomatis oleh boot sistem.";
 
             $hasil[] = [
                 'pegawai_id'         => $pegawai->id,

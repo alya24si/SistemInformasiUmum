@@ -80,9 +80,9 @@ const formatTanggal = (tanggal) => {
 }
 
 function DataAbsensi({ user }) {
-  // pegawai biasa cuma boleh liat absensi miliknya sendiri (read-only),
-  // admin_kepegawaian & superadmin tetap full akses seperti biasa
-  const isAdmin = user.role === 'admin_kepegawaian' || user.role === 'superadmin'
+  const isAdmin =
+    user.role === 'admin_kepegawaian' ||
+    user.role === 'superadmin'
 
   const [data, setData] = useState([])
   const [pegawaiList, setPegawaiList] = useState([])
@@ -297,10 +297,12 @@ function DataAbsensi({ user }) {
     reader.readAsArrayBuffer(file)
   }
 
-  const dataFiltered = data.filter((d) => {
-    // non-admin (role pegawai) cuma boleh lihat baris absensi miliknya sendiri
-    if (!isAdmin && d.nip !== user.nip) return false
+  // Non-admin (pegawai) cuma boleh liat baris miliknya sendiri (dicocokkan lewat NIP)
+  const dataUntukSaya = isAdmin
+    ? data
+    : data.filter((d) => d.nip === user.nip)
 
+  const dataFiltered = dataUntukSaya.filter((d) => {
     const tanggal = new Date(`${d.tanggal}T00:00:00`)
 
     const tahun = String(tanggal.getFullYear())
@@ -317,10 +319,9 @@ function DataAbsensi({ user }) {
       filterBulan === 'semua' ||
       bulan === filterBulan
 
-    const cocokNama =
-      d.nama
-        .toLowerCase()
-        .includes(search.toLowerCase())
+    const cocokNama = (d.nama || '')
+      .toLowerCase()
+      .includes(search.toLowerCase())
 
     return (
       cocokTahun &&
@@ -448,8 +449,18 @@ function DataAbsensi({ user }) {
           <ClipboardList size={22} /> Data Absensi
         </h1>
 
-        <p>{isAdmin ? 'Kelola data kehadiran pegawai.' : 'Riwayat kehadiran Anda.'}</p>
+        <p>
+          {isAdmin
+            ? 'Kelola data kehadiran pegawai.'
+            : 'Riwayat kehadiran Anda.'}
+        </p>
       </div>
+
+      {!isAdmin && (
+        <div className="guest-note">
+          🔒 Data bersifat pribadi — hanya Anda yang dapat melihat riwayat absensi ini.
+        </div>
+      )}
 
       {/* STATISTIK */}
       <div className="stats-grid">
@@ -520,55 +531,55 @@ function DataAbsensi({ user }) {
 
       </div>
 
-      {/* IMPORT EXCEL — khusus admin */}
+      {/* IMPORT EXCEL — admin saja */}
       {isAdmin && (
-      <div className="card">
+        <div className="card">
 
-        <h3 style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <Upload size={18} /> Import Data Absensi
-        </h3>
+          <h3 style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <Upload size={18} /> Import Data Absensi
+          </h3>
 
-        <div className="form-row">
+          <div className="form-row">
 
-          <input
-            type="file"
-            accept=".xlsx,.xls"
-            onChange={handleUploadAbsensi}
-            disabled={importing}
-          />
+            <input
+              type="file"
+              accept=".xlsx,.xls"
+              onChange={handleUploadAbsensi}
+              disabled={importing}
+            />
+
+          </div>
+
+          {importing && (
+            <p style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px', color: '#0b72e7', marginTop: '10px' }}>
+              <Clock size={14} /> Memproses file...
+            </p>
+          )}
+
+          {!importing && importInfo && (
+            <p
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+                fontSize: '13px',
+                color: importInfo.type === 'success' ? '#15803d' : '#dc2626',
+                marginTop: '10px',
+              }}
+            >
+              {importInfo.type === 'success' ? (
+                <CheckCircle2 size={14} />
+              ) : (
+                <XCircle size={14} />
+              )}
+              {importInfo.text}
+            </p>
+          )}
 
         </div>
-
-        {importing && (
-          <p style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px', color: '#0b72e7', marginTop: '10px' }}>
-            <Clock size={14} /> Memproses file...
-          </p>
-        )}
-
-        {!importing && importInfo && (
-          <p
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '6px',
-              fontSize: '13px',
-              color: importInfo.type === 'success' ? '#15803d' : '#dc2626',
-              marginTop: '10px',
-            }}
-          >
-            {importInfo.type === 'success' ? (
-              <CheckCircle2 size={14} />
-            ) : (
-              <XCircle size={14} />
-            )}
-            {importInfo.text}
-          </p>
-        )}
-
-      </div>
       )}
 
-      {/* PEGAWAI ALPA 3 HARI BERTURUT — khusus admin */}
+      {/* PEGAWAI ALPA / PERLU DIHUBUNGI — admin saja */}
       {isAdmin && alpaList.length > 0 && (
         <div className="card">
 
@@ -594,10 +605,7 @@ function DataAbsensi({ user }) {
               <tbody>
 
                 {alpaList
-                  .slice(
-                    alpaPage * 10,
-                    alpaPage * 10 + 10
-                  )
+                  .slice(alpaPage * 10, alpaPage * 10 + 10)
                   .map((item, index) => (
                   <tr
                     key={item.pegawai_id}
@@ -701,9 +709,7 @@ function DataAbsensi({ user }) {
 
             <button
               onClick={() =>
-                setAlpaPage((prev) =>
-                  Math.max(0, prev - 1)
-                )
+                setAlpaPage((prev) => Math.max(0, prev - 1))
               }
               disabled={alpaPage === 0}
               className="btn"
@@ -712,10 +718,7 @@ function DataAbsensi({ user }) {
                 borderRadius: '6px',
                 border: '1px solid #cbd5e1',
                 backgroundColor: '#fff',
-                cursor:
-                  alpaPage === 0
-                    ? 'not-allowed'
-                    : 'pointer',
+                cursor: alpaPage === 0 ? 'not-allowed' : 'pointer',
                 opacity: alpaPage === 0 ? 0.5 : 1,
                 fontSize: '11px',
                 fontWeight: 600,
@@ -732,23 +735,16 @@ function DataAbsensi({ user }) {
               }}
             >
               {alpaPage + 1} /{' '}
-              {Math.max(
-                1,
-                Math.ceil(alpaList.length / 10)
-              )}
+              {Math.max(1, Math.ceil(alpaList.length / 10))}
             </span>
 
             <button
               onClick={() =>
                 setAlpaPage((prev) =>
-                  (prev + 1) * 10 < alpaList.length
-                    ? prev + 1
-                    : prev
+                  (prev + 1) * 10 < alpaList.length ? prev + 1 : prev
                 )
               }
-              disabled={
-                (alpaPage + 1) * 10 >= alpaList.length
-              }
+              disabled={(alpaPage + 1) * 10 >= alpaList.length}
               className="btn"
               style={{
                 padding: '6px 10px',
@@ -760,9 +756,7 @@ function DataAbsensi({ user }) {
                     ? 'not-allowed'
                     : 'pointer',
                 opacity:
-                  (alpaPage + 1) * 10 >= alpaList.length
-                    ? 0.5
-                    : 1,
+                  (alpaPage + 1) * 10 >= alpaList.length ? 0.5 : 1,
                 fontSize: '11px',
                 fontWeight: 600,
               }}
@@ -775,215 +769,218 @@ function DataAbsensi({ user }) {
         </div>
       )}
 
-      {/* TAMBAH DATA — khusus admin */}
+      {/* TAMBAH DATA — admin saja */}
       {isAdmin && (
-      <div className="card">
+        <div className="card">
 
-        <div
-          style={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'flex-start',
-            gap: '20px',
-          }}
-        >
+          <div
+            style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'flex-start',
+              gap: '20px',
+            }}
+          >
 
-          <div>
+            <div>
 
-            <h3 style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              {editId !== null
-                ? (<><Pencil size={18} /> Edit Data Absensi</>)
-                : (<><Plus size={18} /> Tambah Data Absensi</>)}
-            </h3>
+              <h3 style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                {editId !== null
+                  ? (<><Pencil size={18} /> Edit Data Absensi</>)
+                  : (<><Plus size={18} /> Tambah Data Absensi</>)}
+              </h3>
 
-            <p
-              style={{
-                margin: '5px 0 0',
-                color: '#64748b',
-                fontSize: '13px',
+              <p
+                style={{
+                  margin: '5px 0 0',
+                  color: '#64748b',
+                  fontSize: '13px',
+                }}
+              >
+                Isi data kehadiran pegawai untuk tanggal tertentu.
+              </p>
+
+            </div>
+
+            <button
+              type="button"
+              className="btn"
+              onClick={() => {
+                if (showForm) {
+                  batalEdit()
+                } else {
+                  setShowForm(true)
+                }
               }}
+              style={{ display: 'flex', alignItems: 'center', gap: '6px' }}
             >
-              Isi data kehadiran pegawai untuk tanggal tertentu.
-            </p>
+              {showForm ? (
+                'Tutup'
+              ) : (
+                <><Plus size={16} /> Tambah Data Absensi</>
+              )}
+            </button>
 
           </div>
 
-          <button
-            type="button"
-            className="btn"
-            onClick={() => {
-              if (showForm) {
-                batalEdit()
-              } else {
-                setShowForm(true)
-              }
-            }}
-            style={{ display: 'flex', alignItems: 'center', gap: '6px' }}
-          >
-            {showForm ? (
-              'Tutup'
-            ) : (
-              <><Plus size={16} /> Tambah Data Absensi</>
-            )}
-          </button>
+          {showForm && (
+            <form
+              onSubmit={simpanData}
+              className="form-row"
+              style={{
+                marginTop: '20px',
+                paddingTop: '20px',
+                borderTop: '1px solid #e2e8f0',
+              }}
+            >
+
+              <select
+                required
+                value={form.pegawai_id}
+                onChange={(e) =>
+                  setForm({
+                    ...form,
+                    pegawai_id: e.target.value,
+                  })
+                }
+              >
+                <option value="">
+                  Pilih Pegawai
+                </option>
+
+                {pegawaiList.map((p) => (
+                  <option
+                    key={p.id}
+                    value={p.id}
+                  >
+                    {p.nama}
+                  </option>
+                ))}
+              </select>
+
+              <input
+                type="date"
+                required
+                value={form.tanggal}
+                onChange={(e) =>
+                  setForm({
+                    ...form,
+                    tanggal: e.target.value,
+                  })
+                }
+              />
+
+              <input
+                type="time"
+                value={form.jam_masuk}
+                onChange={(e) =>
+                  setForm({
+                    ...form,
+                    jam_masuk: e.target.value,
+                  })
+                }
+              />
+
+              <input
+                type="time"
+                value={form.jam_pulang}
+                onChange={(e) =>
+                  setForm({
+                    ...form,
+                    jam_pulang: e.target.value,
+                  })
+                }
+              />
+
+              <input
+                type="text"
+                placeholder="Status Penugasan (opsional)"
+                value={form.status_penugasan}
+                onChange={(e) =>
+                  setForm({
+                    ...form,
+                    status_penugasan: e.target.value,
+                  })
+                }
+              />
+
+              <select
+                value={form.status}
+                onChange={(e) =>
+                  setForm({
+                    ...form,
+                    status: e.target.value,
+                  })
+                }
+              >
+
+                <option value="Hadir">
+                  Hadir
+                </option>
+
+                <option value="Izin">
+                  Izin
+                </option>
+
+                <option value="Sakit">
+                  Sakit
+                </option>
+
+                <option value="Tanpa Keterangan">
+                  Tanpa Keterangan (Alpa)
+                </option>
+
+              </select>
+
+              <div style={{ display: 'flex', gap: '8px' }}>
+                <button
+                  type="submit"
+                  className="btn"
+                >
+                  {editId !== null ? 'Simpan Perubahan' : 'Simpan'}
+                </button>
+
+                {editId !== null && (
+                  <button
+                    type="button"
+                    onClick={batalEdit}
+                    className="btn"
+                    style={{
+                      backgroundColor: '#94a3b8',
+                      color: '#fff',
+                    }}
+                  >
+                    Batal
+                  </button>
+                )}
+              </div>
+
+            </form>
+          )}
 
         </div>
-
-        {showForm && (
-          <form
-            onSubmit={simpanData}
-            className="form-row"
-            style={{
-              marginTop: '20px',
-              paddingTop: '20px',
-              borderTop: '1px solid #e2e8f0',
-            }}
-          >
-
-            <select
-              required
-              value={form.pegawai_id}
-              onChange={(e) =>
-                setForm({
-                  ...form,
-                  pegawai_id: e.target.value,
-                })
-              }
-            >
-              <option value="">
-                Pilih Pegawai
-              </option>
-
-              {pegawaiList.map((p) => (
-                <option
-                  key={p.id}
-                  value={p.id}
-                >
-                  {p.nama}
-                </option>
-              ))}
-            </select>
-
-            <input
-              type="date"
-              required
-              value={form.tanggal}
-              onChange={(e) =>
-                setForm({
-                  ...form,
-                  tanggal: e.target.value,
-                })
-              }
-            />
-
-            <input
-              type="time"
-              value={form.jam_masuk}
-              onChange={(e) =>
-                setForm({
-                  ...form,
-                  jam_masuk: e.target.value,
-                })
-              }
-            />
-
-            <input
-              type="time"
-              value={form.jam_pulang}
-              onChange={(e) =>
-                setForm({
-                  ...form,
-                  jam_pulang: e.target.value,
-                })
-              }
-            />
-
-            <input
-              type="text"
-              placeholder="Status Penugasan (opsional)"
-              value={form.status_penugasan}
-              onChange={(e) =>
-                setForm({
-                  ...form,
-                  status_penugasan: e.target.value,
-                })
-              }
-            />
-
-            <select
-              value={form.status}
-              onChange={(e) =>
-                setForm({
-                  ...form,
-                  status: e.target.value,
-                })
-              }
-            >
-
-              <option value="Hadir">
-                Hadir
-              </option>
-
-              <option value="Izin">
-                Izin
-              </option>
-
-              <option value="Sakit">
-                Sakit
-              </option>
-
-              <option value="Tanpa Keterangan">
-                Tanpa Keterangan (Alpa)
-              </option>
-
-            </select>
-
-            <div style={{ display: 'flex', gap: '8px' }}>
-              <button
-                type="submit"
-                className="btn"
-              >
-                {editId !== null ? 'Simpan Perubahan' : 'Simpan'}
-              </button>
-
-              {editId !== null && (
-                <button
-                  type="button"
-                  onClick={batalEdit}
-                  className="btn"
-                  style={{
-                    backgroundColor: '#e2e8f0',
-                    color: '#334155',
-                  }}
-                >
-                  Batal
-                </button>
-              )}
-            </div>
-
-          </form>
-        )}
-
-      </div>
       )}
 
       {/* DAFTAR ABSENSI */}
       <div className="card">
 
         <h3 style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <Search size={18} /> Daftar Absensi
+          <Search size={18} />{' '}
+          {isAdmin ? 'Daftar Absensi' : 'Riwayat Absensi Saya'}
         </h3>
 
         <div className="filter-row">
 
-          <input
-            type="text"
-            placeholder="Cari nama pegawai..."
-            value={search}
-            onChange={(e) =>
-              setSearch(e.target.value)
-            }
-          />
+          {isAdmin && (
+            <input
+              type="text"
+              placeholder="Cari nama pegawai..."
+              value={search}
+              onChange={(e) =>
+                setSearch(e.target.value)
+              }
+            />
+          )}
 
           <select
             value={filterTahun}
@@ -1036,7 +1033,7 @@ function DataAbsensi({ user }) {
 
         <div className="filter-info">
           Menampilkan {dataFiltered.length} dari{' '}
-          {data.length} data
+          {dataUntukSaya.length} data
         </div>
 
         <div className="table-wrap">
@@ -1159,52 +1156,52 @@ function DataAbsensi({ user }) {
                                 </td>
 
                                 {isAdmin && (
-                                <td>
-                                  <div style={{ display: 'flex', gap: '6px' }}>
-                                    <button
-                                      type="button"
-                                      style={{
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        justifyContent: 'center',
-                                        width: '30px',
-                                        height: '30px',
-                                        padding: 0,
-                                        backgroundColor: '#eff6ff',
-                                        border: '1px solid #bfdbfe',
-                                        borderRadius: '6px',
-                                        cursor: 'pointer',
-                                      }}
-                                      onClick={() =>
-                                        mulaiEdit(d)
-                                      }
-                                    >
-                                      <Pencil size={14} color="#0b72e7" />
-                                    </button>
-                                    <button
-                                      type="button"
-                                      style={{
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        justifyContent: 'center',
-                                        width: '30px',
-                                        height: '30px',
-                                        padding: 0,
-                                        backgroundColor: '#fef2f2',
-                                        border: '1px solid #fecaca',
-                                        borderRadius: '6px',
-                                        cursor: 'pointer',
-                                      }}
-                                      onClick={() =>
-                                        hapusData(
-                                          d.id
-                                        )
-                                      }
-                                    >
-                                      <Trash2 size={14} color="#dc2626" />
-                                    </button>
-                                  </div>
-                                </td>
+                                  <td>
+                                    <div style={{ display: 'flex', gap: '6px' }}>
+                                      <button
+                                        type="button"
+                                        style={{
+                                          display: 'flex',
+                                          alignItems: 'center',
+                                          justifyContent: 'center',
+                                          width: '30px',
+                                          height: '30px',
+                                          padding: 0,
+                                          backgroundColor: '#eff6ff',
+                                          border: '1px solid #bfdbfe',
+                                          borderRadius: '6px',
+                                          cursor: 'pointer',
+                                        }}
+                                        onClick={() =>
+                                          mulaiEdit(d)
+                                        }
+                                      >
+                                        <Pencil size={14} color="#0b72e7" />
+                                      </button>
+                                      <button
+                                        type="button"
+                                        style={{
+                                          display: 'flex',
+                                          alignItems: 'center',
+                                          justifyContent: 'center',
+                                          width: '30px',
+                                          height: '30px',
+                                          padding: 0,
+                                          backgroundColor: '#fef2f2',
+                                          border: '1px solid #fecaca',
+                                          borderRadius: '6px',
+                                          cursor: 'pointer',
+                                        }}
+                                        onClick={() =>
+                                          hapusData(
+                                            d.id
+                                          )
+                                        }
+                                      >
+                                        <Trash2 size={14} color="#dc2626" />
+                                      </button>
+                                    </div>
+                                  </td>
                                 )}
 
                               </tr>
