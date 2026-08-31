@@ -26,6 +26,15 @@ class AuthController extends Controller
             ], 401);
         }
 
+        $bidang = $user->bidang;
+
+        if ($user->role === 'pegawai' && $user->nip) {
+            $pegawai = DB::table('pegawai')->where('nip', $user->nip)->first();
+            if ($pegawai && $pegawai->bagian) {
+                $bidang = $pegawai->bagian;
+            }
+        }
+
         return response()->json([
             'success' => true,
             'user' => [
@@ -33,7 +42,7 @@ class AuthController extends Controller
                 'username' => $user->username,
                 'nama'     => $user->nama,
                 'role'     => $user->role,
-                'bidang'   => $user->bidang,
+                'bidang'   => $bidang,
                 'nip'      => $user->nip,
             ],
         ]);

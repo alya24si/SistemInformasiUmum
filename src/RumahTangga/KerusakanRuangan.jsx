@@ -16,6 +16,11 @@ function KerusakanRuangan({ user }) {
     user.role === 'admin_rumah_tangga' ||
     user.role === 'superadmin'
 
+  // Akun admin/superadmin sengaja gak punya "bidang" spesifik (bukan pegawai
+  // satu unit tertentu), jadi kalau kosong pakai default ini biar kolom
+  // "Bagian" gak nampilin strip terus dan gak gagal validasi "required".
+  const bagianPengguna = user.bidang || 'Rumah Tangga'
+
   const [laporan, setLaporan] = useState([])
   const [daftarRuangan, setDaftarRuangan] = useState([])
 
@@ -79,7 +84,7 @@ function KerusakanRuangan({ user }) {
     const payload = new FormData()
     payload.append('ruangan_id', formData.ruangan_id)
     payload.append('pelapor', user.nama)
-    payload.append('bagian', user.bidang)
+    payload.append('bagian', bagianPengguna)
     payload.append('kerusakan', formData.kerusakan)
     payload.append('deskripsi', formData.deskripsi)
     payload.append('bukti', formData.bukti)
@@ -460,7 +465,7 @@ function KerusakanRuangan({ user }) {
 
                 <input
                   type="text"
-                  value={user.bidang}
+                  value={bagianPengguna}
                   disabled
                   style={{
                     width: '100%',

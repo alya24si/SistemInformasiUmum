@@ -52,6 +52,11 @@ function BookingRuangan({ user }) {
     user.role === 'admin_rumah_tangga' ||
     user.role === 'superadmin'
 
+  // Akun admin/superadmin sengaja gak punya "bidang" spesifik (bukan pegawai
+  // satu unit tertentu), jadi kalau kosong pakai default ini biar kolom
+  // "Bagian" gak nampilin strip terus dan gak gagal validasi "required".
+  const bagianPengguna = user.bidang || 'Rumah Tangga'
+
   const [booking, setBooking] = useState([])
   const [daftarRuangan, setDaftarRuangan] = useState([])
 
@@ -192,7 +197,7 @@ function BookingRuangan({ user }) {
     const payload = {
       ruangan_id: form.ruangan_id,
       pemesan: user.nama,
-      bagian: user.bidang,
+      bagian: bagianPengguna,
       kegiatan: form.kegiatan,
       jenis_pertemuan: form.jenis_pertemuan,
       deskripsi: form.deskripsi,
@@ -606,7 +611,7 @@ function BookingRuangan({ user }) {
 
                 <input
                   type="text"
-                  value={user.bidang}
+                  value={bagianPengguna}
                   disabled
                   style={{
                     width: '100%',
@@ -991,7 +996,7 @@ function BookingRuangan({ user }) {
 
                 <a
                   href={buatLinkWA(
-                    `Halo Admin RT, saya ${user.nama} (${user.bidang}) ingin bertanya soal pengajuan booking ruangan yang ditolak.\n\nRuangan: ${tolakInfo.ruangan}\nTanggal: ${formatTanggal(tolakInfo.tanggal)}\nJam: ${tolakInfo.mulai}–${tolakInfo.selesai}\n\nMohon informasinya, terima kasih.`
+                    `Halo Admin RT, saya ${user.nama} (${bagianPengguna}) ingin bertanya soal pengajuan booking ruangan yang ditolak.\n\nRuangan: ${tolakInfo.ruangan}\nTanggal: ${formatTanggal(tolakInfo.tanggal)}\nJam: ${tolakInfo.mulai}–${tolakInfo.selesai}\n\nMohon informasinya, terima kasih.`
                   )}
                   target="_blank"
                   rel="noopener noreferrer"
