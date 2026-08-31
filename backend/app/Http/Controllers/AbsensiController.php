@@ -190,6 +190,8 @@ class AbsensiController extends Controller
     // 6. IMPORT dari Excel (frontend sudah parse file ke JSON, di sini tinggal disimpan)
     //    Pegawai diidentifikasi lewat NIP. Kalau NIP tidak ada di tabel pegawai, baris dilewati.
     //    1 pegawai + 1 tanggal yang sama -> di-update, kombinasi baru -> ditambahkan.
+    //    Kalau hapus_lama = true, SEMUA data absensi lama dihapus dulu sebelum data baru dimasukkan
+    //    (dikirim admin lewat checkbox di form import, defaultnya false).
     public function import(Request $request)
     {
         $request->validate([
@@ -198,7 +200,16 @@ class AbsensiController extends Controller
             'data.*.tanggal'          => 'required|date',
             'data.*.status_penugasan' => 'nullable|string',
             'data.*.status'           => 'nullable|string',
+            'hapus_lama'              => 'nullable|boolean',
         ]);
+
+        $hapusLama = $request->boolean('hapus_lama');
+        $dihapus   = 0;
+
+        if ($hapusLama) {
+            $dihapus = DB::table('absensi')->count();
+            DB::table('absensi')->delete();
+        }
 
         $ditambah = 0;
         $diupdate = 0;
@@ -245,10 +256,12 @@ class AbsensiController extends Controller
         }
 
         return response()->json([
-            'success'  => true,
-            'ditambah' => $ditambah,
-            'diupdate' => $diupdate,
-            'dilewati' => $dilewati,
+            'success'    => true,
+            'hapus_lama' => $hapusLama,
+            'dihapus'    => $dihapus,
+            'ditambah'   => $ditambah,
+            'diupdate'   => $diupdate,
+            'dilewati'   => $dilewati,
         ]);
     }
 }
