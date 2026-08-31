@@ -144,6 +144,7 @@ function DataAbsensi({ user }) {
 
   const [importing, setImporting] = useState(false)
   const [importInfo, setImportInfo] = useState(null)
+  const [hapusLamaSebelumImport, setHapusLamaSebelumImport] = useState(false)
 
   // Excel kadang nyimpen tanggal/jam sebagai object Date, kadang teks biasa
   // (contoh dari sistem absensi kantor: "19 Aug 2026" — teks murni, bukan Excel-date)
@@ -197,6 +198,20 @@ function DataAbsensi({ user }) {
   const handleUploadAbsensi = (e) => {
     const file = e.target.files[0]
     if (!file) return
+
+    // aksi destruktif -> minta konfirmasi eksplisit dulu sebelum lanjut
+    if (hapusLamaSebelumImport) {
+      const yakin = window.confirm(
+        'Checkbox "Hapus semua data absensi lama" AKTIF.\n\n' +
+        'SEMUA data absensi yang sudah ada di database akan dihapus permanen, ' +
+        'lalu diganti total dengan isi file ini.\n\n' +
+        'Lanjutkan?'
+      )
+      if (!yakin) {
+        e.target.value = ''
+        return
+      }
+    }
 
     setImporting(true)
     setImportInfo(null)
@@ -258,7 +273,10 @@ function DataAbsensi({ user }) {
         fetch(`${API_URL}/absensi/import`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ data: dataSiapKirim }),
+          body: JSON.stringify({
+            data: dataSiapKirim,
+            hapus_lama: hapusLamaSebelumImport,
+          }),
         })
           .then((res) => res.json())
           .then((res) => {
@@ -266,11 +284,17 @@ function DataAbsensi({ user }) {
               setImportInfo({
                 type: 'success',
                 text:
-                  `Import selesai — ${res.ditambah} data baru ditambahkan, ${res.diupdate} data diperbarui` +
+                  (res.hapus_lama
+                    ? `${res.dihapus} data lama dihapus, lalu `
+                    : '') +
+                  `${res.ditambah} data baru ditambahkan, ${res.diupdate} data diperbarui` +
                   (res.dilewati > 0
                     ? `, ${res.dilewati} baris dilewati (NIP tidak ditemukan atau tanggal kosong).`
                     : '.'),
               })
+              // reset checkbox ke default (aman) tiap habis import biar gak
+              // ke-centang gak sengaja pas upload berikutnya
+              setHapusLamaSebelumImport(false)
               ambilAbsensi()
               ambilAlpaBerturut()
             } else {
@@ -538,6 +562,43 @@ function DataAbsensi({ user }) {
           <h3 style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             <Upload size={18} /> Import Data Absensi
           </h3>
+
+          <label
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              fontSize: '13px',
+              color: hapusLamaSebelumImport ? '#dc2626' : '#374151',
+              marginBottom: '10px',
+              cursor: importing ? 'not-allowed' : 'pointer',
+            }}
+          >
+            <input
+              type="checkbox"
+              checked={hapusLamaSebelumImport}
+              onChange={(e) => setHapusLamaSebelumImport(e.target.checked)}
+              disabled={importing}
+            />
+            Hapus semua data absensi lama sebelum import ini
+          </label>
+
+          {hapusLamaSebelumImport && (
+            <p
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+                fontSize: '12.5px',
+                color: '#dc2626',
+                marginTop: '-4px',
+                marginBottom: '10px',
+              }}
+            >
+              <AlertTriangle size={14} />
+              Semua data absensi lama akan dihapus permanen dan diganti total dengan isi file ini.
+            </p>
+          )}
 
           <div className="form-row">
 
