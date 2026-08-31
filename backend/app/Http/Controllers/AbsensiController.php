@@ -131,7 +131,7 @@ class AbsensiController extends Controller
             $streak           = 1;
 
             for ($i = 1; $i < $tanggalUrut->count(); $i++) {
-                $sebelum = Carbon::parse($tanggalUrut[$i - 1]);
+                $sebelum  = Carbon::parse($tanggalUrut[$i - 1]);
                 $sekarang = Carbon::parse($tanggalUrut[$i]);
 
                 if ($sebelum->diffInDays($sekarang) === 1) {
@@ -147,7 +147,7 @@ class AbsensiController extends Controller
             }
 
             $daftarTanggal = $tanggalUrut
-                ->map(fn ($t) => Carbon::parse($t)->translatedFormat('d F Y'))
+                ->map(fn($t) => Carbon::parse($t)->translatedFormat('d F Y'))
                 ->implode(', ');
 
             $pesan = "Kepada {$pegawai->nama} dengan NIP {$pegawai->nip},\n"
