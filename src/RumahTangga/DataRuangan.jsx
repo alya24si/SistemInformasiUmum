@@ -47,6 +47,7 @@ function DataRuangan({ user }) {
     lokasi: '',
     fasilitas: '',
     status: 'Tersedia',
+    bisa_dibooking: true,
   })
 
   const [searchNama, setSearchNama] = useState('')
@@ -122,6 +123,7 @@ function DataRuangan({ user }) {
       lokasi: '',
       fasilitas: '',
       status: 'Tersedia',
+      bisa_dibooking: true,
     })
 
     setShowForm(true)
@@ -136,6 +138,10 @@ function DataRuangan({ user }) {
       lokasi: item.lokasi,
       fasilitas: item.fasilitas,
       status: item.status,
+      bisa_dibooking:
+        item.bisa_dibooking === undefined
+          ? true
+          : Boolean(item.bisa_dibooking),
     })
 
     setShowForm(true)
@@ -152,6 +158,7 @@ function DataRuangan({ user }) {
       lokasi: form.lokasi,
       fasilitas: form.fasilitas,
       status: form.status,
+      bisa_dibooking: form.bisa_dibooking,
     }
 
     try {
@@ -179,6 +186,7 @@ function DataRuangan({ user }) {
         lokasi: '',
         fasilitas: '',
         status: 'Tersedia',
+        bisa_dibooking: true,
       })
 
       setEditId(null)
@@ -413,6 +421,78 @@ function DataRuangan({ user }) {
               </option>
             </select>
 
+            <label
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                gap: '12px',
+                fontSize: '13px',
+                fontWeight: 600,
+                color: '#334155',
+                border: '1px solid #cbd5e1',
+                borderRadius: '8px',
+                padding: '10px 14px',
+                cursor: 'pointer',
+                backgroundColor: '#fff',
+              }}
+            >
+              <span>Bisa Dibooking?</span>
+
+              <span
+                style={{
+                  position: 'relative',
+                  display: 'inline-block',
+                  width: '40px',
+                  height: '22px',
+                  flexShrink: 0,
+                }}
+              >
+                <input
+                  type="checkbox"
+                  checked={form.bisa_dibooking}
+                  onChange={(e) =>
+                    setForm({
+                      ...form,
+                      bisa_dibooking: e.target.checked,
+                    })
+                  }
+                  style={{
+                    opacity: 0,
+                    width: 0,
+                    height: 0,
+                    position: 'absolute',
+                  }}
+                />
+                <span
+                  aria-hidden="true"
+                  style={{
+                    position: 'absolute',
+                    inset: 0,
+                    backgroundColor: form.bisa_dibooking
+                      ? '#0b72e7'
+                      : '#cbd5e1',
+                    borderRadius: '999px',
+                    transition: 'background-color 0.2s ease',
+                  }}
+                />
+                <span
+                  aria-hidden="true"
+                  style={{
+                    position: 'absolute',
+                    top: '3px',
+                    left: form.bisa_dibooking ? '21px' : '3px',
+                    width: '16px',
+                    height: '16px',
+                    borderRadius: '50%',
+                    backgroundColor: '#fff',
+                    boxShadow: '0 1px 3px rgba(0,0,0,.35)',
+                    transition: 'left 0.2s ease',
+                  }}
+                />
+              </span>
+            </label>
+
             <button
               type="submit"
               className="btn"
@@ -427,7 +507,11 @@ function DataRuangan({ user }) {
 
             <button
               type="button"
-              className="btn-danger"
+              className="btn"
+              style={{
+                backgroundColor: '#94a3b8',
+                color: '#fff',
+              }}
               onClick={() => {
                 setShowForm(false)
                 setEditId(null)
@@ -565,6 +649,7 @@ function DataRuangan({ user }) {
                 <th>Lokasi</th>
                 <th>Fasilitas</th>
                 <th>Status</th>
+                <th>Booking</th>
 
                 {isAdminRT && (
                   <th>Aksi</th>
@@ -641,6 +726,24 @@ function DataRuangan({ user }) {
                                 </span>
                               </td>
 
+                              <td>
+                                {d.bisa_dibooking ? (
+                                  <span className="badge green">
+                                    Bisa Dibooking
+                                  </span>
+                                ) : (
+                                  <span
+                                    className="badge"
+                                    style={{
+                                      backgroundColor: '#f1f5f9',
+                                      color: '#64748b',
+                                    }}
+                                  >
+                                    Tidak Untuk Booking
+                                  </span>
+                                )}
+                              </td>
+
                               {isAdminRT && (
                                 <td>
 
@@ -711,7 +814,7 @@ function DataRuangan({ user }) {
 
                         <td
                           colSpan={
-                            isAdminRT ? 7 : 6
+                            isAdminRT ? 8 : 7
                           }
                           style={{
                             textAlign: 'center',
@@ -805,12 +908,8 @@ function DataRuangan({ user }) {
 
               <button
                 onClick={() =>
-                  setCurrentPage(
-                    (prev) =>
-                      prev + 1 <
-                      totalPages
-                        ? prev + 1
-                        : prev
+                  setCurrentPage((prev) =>
+                    Math.min(prev + 1, totalPages - 1)
                   )
                 }
                 disabled={

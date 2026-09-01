@@ -41,19 +41,21 @@ class RuanganController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'nama'      => 'required|string',
-            'kapasitas' => 'required|integer|min:1',
-            'lokasi'    => 'required|string',
-            'fasilitas' => 'required|string',
-            'status'    => 'nullable|in:Tersedia,Digunakan,Maintenance',
+            'nama'           => 'required|string',
+            'kapasitas'      => 'required|integer|min:1',
+            'lokasi'         => 'required|string',
+            'fasilitas'      => 'required|string',
+            'status'         => 'nullable|in:Tersedia,Digunakan,Maintenance',
+            'bisa_dibooking' => 'nullable|boolean',
         ]);
 
         $id = DB::table('ruangan')->insertGetId([
-            'nama'      => $request->nama,
-            'kapasitas' => (int) $request->kapasitas,
-            'lokasi'    => $request->lokasi,
-            'fasilitas' => $request->fasilitas,
-            'status'    => $request->status ?? 'Tersedia',
+            'nama'           => $request->nama,
+            'kapasitas'      => (int) $request->kapasitas,
+            'lokasi'         => $request->lokasi,
+            'fasilitas'      => $request->fasilitas,
+            'status'         => $request->status ?? 'Tersedia',
+            'bisa_dibooking' => $request->boolean('bisa_dibooking', true),
         ]);
 
         return response()->json(['success' => true, 'id' => $id], 201);
@@ -63,11 +65,12 @@ class RuanganController extends Controller
     public function update(Request $request, $id)
     {
         $request->validate([
-            'nama'      => 'required|string',
-            'kapasitas' => 'required|integer|min:1',
-            'lokasi'    => 'required|string',
-            'fasilitas' => 'required|string',
-            'status'    => 'required|in:Tersedia,Digunakan,Maintenance',
+            'nama'           => 'required|string',
+            'kapasitas'      => 'required|integer|min:1',
+            'lokasi'         => 'required|string',
+            'fasilitas'      => 'required|string',
+            'status'         => 'required|in:Tersedia,Digunakan,Maintenance',
+            'bisa_dibooking' => 'nullable|boolean',
         ]);
 
         $row = DB::table('ruangan')->where('id', $id)->first();
@@ -77,11 +80,12 @@ class RuanganController extends Controller
         }
 
         DB::table('ruangan')->where('id', $id)->update([
-            'nama'      => $request->nama,
-            'kapasitas' => (int) $request->kapasitas,
-            'lokasi'    => $request->lokasi,
-            'fasilitas' => $request->fasilitas,
-            'status'    => $request->status,
+            'nama'           => $request->nama,
+            'kapasitas'      => (int) $request->kapasitas,
+            'lokasi'         => $request->lokasi,
+            'fasilitas'      => $request->fasilitas,
+            'status'         => $request->status,
+            'bisa_dibooking' => $request->boolean('bisa_dibooking', true),
         ]);
 
         return response()->json(['success' => true]);

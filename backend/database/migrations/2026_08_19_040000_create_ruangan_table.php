@@ -15,6 +15,7 @@ return new class extends Migration
             $table->string('lokasi');
             $table->string('fasilitas');
             $table->enum('status', ['Tersedia', 'Digunakan', 'Maintenance'])->default('Tersedia');
+            $table->boolean('bisa_dibooking')->default(true);
             $table->timestamps();
         });
     }

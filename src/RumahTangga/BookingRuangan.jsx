@@ -102,7 +102,12 @@ function BookingRuangan({ user }) {
     try {
       const res = await fetch(API + '/ruangan')
       const json = await res.json()
-      setDaftarRuangan(json?.data || [])
+
+      // hanya ruangan yang ditandai "bisa dibooking" yang muncul di dropdown pengajuan
+      const semuaRuangan = json?.data || []
+      setDaftarRuangan(
+        semuaRuangan.filter((r) => r.bisa_dibooking)
+      )
     } catch (err) {
       // dropdown ruangan tetap kosong kalau gagal, error utama ditangani muatData
     }
