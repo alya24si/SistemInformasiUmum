@@ -61,7 +61,34 @@ class KerusakanRuanganController extends Controller
     // 4. UBAH status jadi Selesai
     public function selesai($id)
     {
+        $kerusakan = DB::table('kerusakan_ruangan')->where('id', $id)->first();
+
+        if (! $kerusakan) {
+            return response()->json(['success' => false, 'message' => 'Data tidak ditemukan'], 404);
+        }
+
         DB::table('kerusakan_ruangan')->where('id', $id)->update(['status' => 'Selesai']);
+
+        // Kalau belum ada record perbaikan buat kerusakan ini (mis. admin
+        // langsung klik "selesai" di halaman Kerusakan tanpa lewat form
+        // Perbaikan), buatkan otomatis biar riwayatnya tetap tercatat &
+        // konsisten dengan halaman Perbaikan.
+        $sudahAdaPerbaikan = DB::table('perbaikan_ruangan')
+            ->where('kerusakan_id', $id)
+            ->exists();
+
+        if (! $sudahAdaPerbaikan) {
+            DB::table('perbaikan_ruangan')->insert([
+                'kerusakan_id'     => $id,
+                'jenis_perbaikan'  => 'Diselesaikan langsung',
+                'penanggung_jawab' => $kerusakan->pelapor ?? '-',
+                'tanggal_mulai'    => now()->toDateString(),
+                'status'           => 'Selesai',
+                'created_at'       => now(),
+                'updated_at'       => now(),
+            ]);
+        }
+
         return response()->json(['success' => true]);
     }
 
