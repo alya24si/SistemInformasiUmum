@@ -471,7 +471,7 @@ function Pelanggaran({ user }) {
                             <td style={{ ...tdStyle, textAlign: 'center', color: r.psw2 > 0 ? '#dc2626' : '#94a3b8', fontWeight: r.psw2 > 0 ? 700 : 400 }}>{r.psw2}</td>
                             <td style={{ ...tdStyle, textAlign: 'center', color: r.psw3 > 0 ? '#dc2626' : '#94a3b8', fontWeight: r.psw3 > 0 ? 700 : 400 }}>{r.psw3}</td>
                             <td style={{ ...tdStyle, textAlign: 'center', color: r.psw4 > 0 ? '#dc2626' : '#94a3b8', fontWeight: r.psw4 > 0 ? 700 : 400 }}>{r.psw4}</td>
-                            <td style={{ ...tdStyle, textAlign: 'center', fontWeight: 700, color: '#dc2626' }}>{r.total}</td>
+                            <td style={{ ...tdStyle, textAlign: 'center', fontWeight: 700, color: '#dc2626' }}>{catatanku.total}</td>
                             <td style={tdStyle}>{r.sumber}</td>
                           </tr>
                         ))}
