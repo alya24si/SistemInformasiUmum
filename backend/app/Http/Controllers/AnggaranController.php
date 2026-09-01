@@ -61,6 +61,7 @@ class AnggaranController extends Controller
     }
 
     // 4. TAMBAH realisasi → catat riwayat per bulan + update total
+    // 4. TAMBAH realisasi → catat riwayat per bulan + update total
     public function tambahRealisasi(Request $request, $id)
     {
         $request->validate([
@@ -74,11 +75,12 @@ class AnggaranController extends Controller
             return response()->json(['success' => false, 'message' => 'Data tidak ditemukan'], 404);
         }
 
-        // catat riwayat per bulan
+        // ✨ TAMBAH 'created_at' supaya waktu input tercatat
         DB::table('realisasi_anggaran')->insert([
             'anggaran_id' => $id,
             'bulan' => $request->bulan,
             'jumlah' => (int) $request->jumlah,
+            'created_at' => now(),
         ]);
 
         // update total realisasi

@@ -131,6 +131,14 @@ function Anggaran({ user }) {
 
   const [data, setData] = useState([])
 
+  // ✨ STATE BARU: untuk modal riwayat realisasi
+  const [riwayatModal, setRiwayatModal] = useState({
+    open: false,
+    loading: false,
+    anggaran: null,
+    riwayat: [],
+  })
+
   const muatData = async () => {
     const res = await fetch(API + '/anggaran')
     const json = await res.json()
@@ -302,6 +310,45 @@ function Anggaran({ user }) {
       })
       muatData()
     }
+  }
+
+  // ✨ FUNCTION BARU: buka modal & fetch riwayat realisasi
+  const lihatRiwayat = async (d) => {
+    setRiwayatModal({
+      open: true,
+      loading: true,
+      anggaran: d,
+      riwayat: [],
+    })
+
+    try {
+      const res = await fetch(API + '/anggaran/' + d.id + '/realisasi')
+      const json = await res.json()
+      if (json.success) {
+        setRiwayatModal({
+          open: true,
+          loading: false,
+          anggaran: d,
+          riwayat: json.data || [],
+        })
+      }
+    } catch {
+      setRiwayatModal({
+        open: false,
+        loading: false,
+        anggaran: null,
+        riwayat: [],
+      })
+    }
+  }
+
+  const tutupModal = () => {
+    setRiwayatModal({
+      open: false,
+      loading: false,
+      anggaran: null,
+      riwayat: [],
+    })
   }
 
   return (
@@ -895,20 +942,34 @@ function Anggaran({ user }) {
                             </td>
 
                             <td>
-
-                              {isAdmin && (
+                              <div style={{ display: 'flex', gap: '6px' }}>
+                                {/* ✨ TOMBOL LIHAT RIWAYAT */}
                                 <button
-                                  className="btn-danger"
-                                  onClick={() =>
-                                    hapusData(
-                                      d.id
-                                    )
-                                  }
+                                  className="btn"
+                                  onClick={() => lihatRiwayat(d)}
+                                  style={{
+                                    padding: '6px 10px',
+                                    fontSize: '12px',
+                                    background: 'linear-gradient(135deg, #005ca9, #0072ce)',
+                                    color: '#fff',
+                                  }}
                                 >
-                                  🗑
+                                  👁️ Lihat
                                 </button>
-                              )}
 
+                                {isAdmin && (
+                                  <button
+                                    className="btn-danger"
+                                    onClick={() =>
+                                      hapusData(
+                                        d.id
+                                      )
+                                    }
+                                  >
+                                    🗑
+                                  </button>
+                                )}
+                              </div>
                             </td>
 
                           </tr>
@@ -1051,6 +1112,263 @@ function Anggaran({ user }) {
         })()}
 
       </div>
+
+      {/* ✨ MODAL RIWAYAT REALISASI */}
+      {riwayatModal.open && (
+        <div
+          className="warning-overlay"
+          style={{
+            background: 'rgba(0, 31, 69, 0.75)',
+            backdropFilter: 'blur(4px)',
+          }}
+          onClick={tutupModal}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              width: '560px',
+              maxWidth: '94%',
+              maxHeight: '85vh',
+              background: '#fff',
+              borderRadius: '16px',
+              overflow: 'hidden',
+              boxShadow: '0 25px 60px rgba(0, 0, 0, 0.35)',
+              display: 'flex',
+              flexDirection: 'column',
+            }}
+          >
+            {/* Header Modal */}
+            <div
+              style={{
+                background: 'linear-gradient(90deg, #002b5c, #004080)',
+                color: '#fff',
+                padding: '18px 22px',
+                borderBottom: '3px solid #ffc72c',
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+              }}
+            >
+              <div>
+                <h3 style={{ margin: 0, fontSize: '16px' }}>
+                  📅 Histori Realisasi
+                </h3>
+                <p
+                  style={{
+                    margin: '4px 0 0 0',
+                    fontSize: '12px',
+                    color: '#ffd76e',
+                    opacity: 0.9,
+                  }}
+                >
+                  {riwayatModal.anggaran?.kodeAkun} •{' '}
+                  {riwayatModal.anggaran?.deskripsi}
+                </p>
+              </div>
+              <button
+                onClick={tutupModal}
+                style={{
+                  background: 'rgba(255,255,255,0.15)',
+                  border: 'none',
+                  color: '#fff',
+                  width: '32px',
+                  height: '32px',
+                  borderRadius: '8px',
+                  fontSize: '18px',
+                  cursor: 'pointer',
+                }}
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Ringkasan Singkat */}
+            <div
+              style={{
+                padding: '14px 22px',
+                background: '#f8fafc',
+                borderBottom: '1px solid #e2e8f0',
+                display: 'flex',
+                gap: '16px',
+                flexWrap: 'wrap',
+              }}
+            >
+              <div>
+                <div
+                  style={{
+                    fontSize: '10px',
+                    color: '#64748b',
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.5px',
+                  }}
+                >
+                  Pagu
+                </div>
+                <div style={{ fontSize: '14px', fontWeight: 700, color: '#002b5c' }}>
+                  {formatRupiah(riwayatModal.anggaran?.pagu || 0)}
+                </div>
+              </div>
+              <div>
+                <div
+                  style={{
+                    fontSize: '10px',
+                    color: '#64748b',
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.5px',
+                  }}
+                >
+                  Total Realisasi
+                </div>
+                <div style={{ fontSize: '14px', fontWeight: 700, color: '#16a34a' }}>
+                  {formatRupiah(riwayatModal.anggaran?.realisasi || 0)}
+                </div>
+              </div>
+              <div>
+                <div
+                  style={{
+                    fontSize: '10px',
+                    color: '#64748b',
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.5px',
+                  }}
+                >
+                  Sisa
+                </div>
+                <div
+                  style={{
+                    fontSize: '14px',
+                    fontWeight: 700,
+                    color:
+                      (riwayatModal.anggaran?.pagu || 0) -
+                        (riwayatModal.anggaran?.realisasi || 0) >
+                      0
+                        ? '#d97706'
+                        : '#16a34a',
+                  }}
+                >
+                  {formatRupiah(
+                    (riwayatModal.anggaran?.pagu || 0) -
+                      (riwayatModal.anggaran?.realisasi || 0)
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Isi Tabel Riwayat */}
+            <div style={{ padding: '18px 22px', overflowY: 'auto' }}>
+              {riwayatModal.loading ? (
+                <div
+                  style={{
+                    textAlign: 'center',
+                    padding: '30px',
+                    color: '#64748b',
+                    fontSize: '13px',
+                  }}
+                >
+                  ⏳ Memuat riwayat...
+                </div>
+              ) : riwayatModal.riwayat.length === 0 ? (
+                <div
+                  style={{
+                    textAlign: 'center',
+                    padding: '40px 20px',
+                    color: '#94a3b8',
+                    fontSize: '13px',
+                    background: '#f8fafc',
+                    borderRadius: '10px',
+                    border: '1px dashed #cbd5e1',
+                  }}
+                >
+                  📭 Belum ada realisasi tercatat untuk anggaran ini.
+                </div>
+              ) : (
+                <table className="table" style={{ minWidth: '100%' }}>
+                  <thead>
+                    <tr>
+                      <th style={{ width: '50px' }}>No</th>
+                      <th>Bulan</th>
+                      <th className="num">Jumlah Realisasi</th>
+                      <th>Waktu Input</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {riwayatModal.riwayat.map((r, i) => (
+                      <tr key={r.id}>
+                        <td>{i + 1}</td>
+                        <td>
+                          <strong>{r.bulan}</strong>
+                        </td>
+                        <td
+                          className="num"
+                          style={{ fontWeight: 700, color: '#16a34a' }}
+                        >
+                          {formatRupiah(Number(r.jumlah))}
+                        </td>
+                        <td style={{ fontSize: '11px', color: '#64748b' }}>
+                          {r.created_at
+                            ? new Date(r.created_at).toLocaleString('id-ID', {
+                                day: '2-digit',
+                                month: 'short',
+                                year: 'numeric',
+                                hour: '2-digit',
+                                minute: '2-digit',
+                              })
+                            : '-'}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                  <tfoot>
+                    <tr style={{ background: '#f1f5f9' }}>
+                      <td colSpan="2" style={{ fontWeight: 700, textAlign: 'right' }}>
+                        TOTAL
+                      </td>
+                      <td
+                        className="num"
+                        style={{
+                          fontWeight: 800,
+                          color: '#002b5c',
+                          fontSize: '14px',
+                        }}
+                      >
+                        {formatRupiah(
+                          riwayatModal.riwayat.reduce(
+                            (a, r) => a + Number(r.jumlah),
+                            0
+                          )
+                        )}
+                      </td>
+                      <td></td>
+                    </tr>
+                  </tfoot>
+                </table>
+              )}
+            </div>
+
+            {/* Footer Modal */}
+            <div
+              style={{
+                padding: '14px 22px',
+                borderTop: '1px solid #e2e8f0',
+                background: '#f8fafc',
+                display: 'flex',
+                justifyContent: 'flex-end',
+              }}
+            >
+              <button
+                onClick={tutupModal}
+                className="btn"
+                style={{
+                  padding: '8px 20px',
+                  fontSize: '13px',
+                }}
+              >
+                Tutup
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
     </div>
   )
