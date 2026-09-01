@@ -26,11 +26,13 @@ Route::get('/anggaran/{id}/realisasi', [AnggaranController::class, 'riwayatReali
 // ===== API PROGRAM KERJA =====
 Route::get('/program_kerja', [ProgramKerjaController::class, 'index']);
 Route::post('/program_kerja', [ProgramKerjaController::class, 'store']);
-Route::put('/program_kerja/{id}/realisasi', [ProgramKerjaController::class, 'updateRealisasi']);
+Route::put('/program_kerja/{id}', [ProgramKerjaController::class, 'update']);
 Route::delete('/program_kerja/{id}', [ProgramKerjaController::class, 'destroy']);
 
-// NANTI, kalau login sudah dibangun, tambahkan baris ini:
-// Route::post('/login', [AuthController::class, 'login']);
+// ===== API KEGIATAN PROGRAM (tambah/edit/hapus kegiatan per bulan) =====
+Route::post('/kegiatan_program', [ProgramKerjaController::class, 'storeKegiatan']);
+Route::put('/kegiatan_program/{id}', [ProgramKerjaController::class, 'updateKegiatan']);
+Route::delete('/kegiatan_program/{id}', [ProgramKerjaController::class, 'destroyKegiatan']);
 
 // ===== Rumah Tangga =====
 // ===== API RUANGAN =====
