@@ -150,7 +150,7 @@ class AbsensiController extends Controller
                 ->map(fn($t) => Carbon::parse($t)->translatedFormat('d F Y'))
                 ->implode(', ');
 
-            $pesan = "Kepada {$pegawai->nama} dengan NIP {$pegawai->nip},\n"
+            $pesan = "Kepada Bapak/Ibu {$pegawai->nama} dengan NIP {$pegawai->nip},\n"
                 . "Anda tercatat {$daftarStatus} pada tanggal {$daftarTanggal}.\n\n"
                 . "Mohon segera melakukan konfirmasi maksimal 3 Hari Kerja (HK) setelah menerima pesan ini.\n\n"
                 . "Abaikan pesan ini apabila ketidakhadiran tersebut disebabkan oleh penugasan dinas, "
