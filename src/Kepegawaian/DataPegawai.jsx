@@ -183,10 +183,25 @@ function DataPegawai() {
 
   const [importing, setImporting] = useState(false)
   const [importInfo, setImportInfo] = useState(null)
+  const [hapusLamaSebelumImport, setHapusLamaSebelumImport] = useState(false)
 
   const handleUploadPegawai = (e) => {
     const file = e.target.files[0]
     if (!file) return
+
+    // aksi destruktif -> minta konfirmasi eksplisit dulu sebelum lanjut
+    if (hapusLamaSebelumImport) {
+      const yakin = window.confirm(
+        'Checkbox "Hapus semua data pegawai lama" AKTIF.\n\n' +
+        'SEMUA data pegawai (dan otomatis SEMUA data absensi terkait) yang sudah ada ' +
+        'di database akan dihapus permanen, lalu diganti total dengan isi file ini.\n\n' +
+        'Lanjutkan?'
+      )
+      if (!yakin) {
+        e.target.value = ''
+        return
+      }
+    }
 
     setImporting(true)
     setImportInfo(null)
@@ -237,7 +252,10 @@ function DataPegawai() {
         fetch(`${API_URL}/pegawai/import`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ data: dataSiapKirim }),
+          body: JSON.stringify({
+            data: dataSiapKirim,
+            hapus_lama: hapusLamaSebelumImport,
+          }),
         })
           .then((res) => res.json())
           .then((res) => {
@@ -245,9 +263,15 @@ function DataPegawai() {
               setImportInfo({
                 type: 'success',
                 text:
-                  `Import selesai — ${res.ditambah} pegawai baru ditambahkan, ${res.diupdate} pegawai diperbarui` +
+                  (res.hapus_lama
+                    ? `${res.dihapus} data pegawai lama dihapus, lalu `
+                    : '') +
+                  `${res.ditambah} pegawai baru ditambahkan, ${res.diupdate} pegawai diperbarui` +
                   (res.dilewati > 0 ? `, ${res.dilewati} baris dilewati (NIP/Nama kosong).` : '.'),
               })
+              // reset checkbox ke default (aman) tiap habis import biar gak
+              // ke-centang gak sengaja pas upload berikutnya
+              setHapusLamaSebelumImport(false)
               ambilData()
             } else {
               setImportInfo({
@@ -378,6 +402,43 @@ function DataPegawai() {
           <h3 style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             <Upload size={18} /> Import Data Pegawai
           </h3>
+
+          <label
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              fontSize: '13px',
+              color: hapusLamaSebelumImport ? '#dc2626' : '#374151',
+              marginBottom: '10px',
+              cursor: importing ? 'not-allowed' : 'pointer',
+            }}
+          >
+            <input
+              type="checkbox"
+              checked={hapusLamaSebelumImport}
+              onChange={(e) => setHapusLamaSebelumImport(e.target.checked)}
+              disabled={importing}
+            />
+            Hapus semua data pegawai lama sebelum import ini
+          </label>
+
+          {hapusLamaSebelumImport && (
+            <p
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+                fontSize: '12.5px',
+                color: '#dc2626',
+                marginTop: '-4px',
+                marginBottom: '10px',
+              }}
+            >
+              <AlertTriangle size={14} />
+              Semua data pegawai lama (dan absensi terkait) akan dihapus permanen dan diganti total dengan isi file ini.
+            </p>
+          )}
 
           <div className="form-row">
             <input
@@ -763,7 +824,7 @@ function DataPegawai() {
                 {currentPage + 1} / {Math.max(1, totalPages)}
               </span>
               <button
-                onClick={() => setCurrentPage(prev => (prev + 1 < totalPages ? prev + 1 : prev))}
+                onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages - 1))}
                 disabled={currentPage + 1 >= totalPages}
                 className="btn"
                 style={{ padding: '6px 10px', borderRadius: '6px', border: '1px solid #cbd5e1', backgroundColor: '#fff', cursor: currentPage + 1 >= totalPages ? 'not-allowed' : 'pointer', opacity: currentPage + 1 >= totalPages ? 0.5 : 1, fontSize: '11px', fontWeight: 600 }}

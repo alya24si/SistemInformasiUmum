@@ -80,6 +80,8 @@ class PegawaiController extends Controller
 
     // 5. IMPORT dari Excel (frontend sudah parse file ke JSON, di sini tinggal disimpan)
     //    NIP yang sama -> data pegawai di-update, NIP baru -> ditambahkan
+    //    Kalau hapus_lama = true, SEMUA data pegawai lama dihapus dulu sebelum data baru dimasukkan
+    //    (dikirim admin lewat checkbox di form import, defaultnya false)
     public function import(Request $request)
     {
         $request->validate([
@@ -91,7 +93,16 @@ class PegawaiController extends Controller
             'data.*.eselon_iii' => 'nullable|string',
             'data.*.bagian'     => 'nullable|string',
             'data.*.no_hp'      => 'nullable|string',
+            'hapus_lama'        => 'nullable|boolean',
         ]);
+
+        $hapusLama = $request->boolean('hapus_lama');
+        $dihapus   = 0;
+
+        if ($hapusLama) {
+            $dihapus = DB::table('pegawai')->count();
+            DB::table('pegawai')->delete();
+        }
 
         $ditambah = 0;
         $diupdate = 0;
@@ -127,10 +138,12 @@ class PegawaiController extends Controller
         }
 
         return response()->json([
-            'success'  => true,
-            'ditambah' => $ditambah,
-            'diupdate' => $diupdate,
-            'dilewati' => count($dilewati),
+            'success'    => true,
+            'hapus_lama' => $hapusLama,
+            'dihapus'    => $dihapus,
+            'ditambah'   => $ditambah,
+            'diupdate'   => $diupdate,
+            'dilewati'   => count($dilewati),
         ]);
     }
 }
