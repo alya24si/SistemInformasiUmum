@@ -16,7 +16,9 @@ return new class extends Migration
             $table->string('jabatan');
             $table->string('eselon_iii')->nullable();
             $table->string('bagian');
-            $table->string('no_hp'); $table->timestamps();
+            $table->string('no_hp');
+            $table->date('tanggal_masuk')->nullable();
+            $table->timestamps();
         });
     }
 
