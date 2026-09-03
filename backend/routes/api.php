@@ -11,7 +11,7 @@ use App\Http\Controllers\RuanganController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\PelanggaranController;
 use App\Http\Controllers\AuthController;
-
+use App\Http\Controllers\IuranController;
 
 
 // ===== Keuangan =====
@@ -85,6 +85,19 @@ Route::get('/pelanggaran', [PelanggaranController::class, 'index']);
 Route::post('/pelanggaran/import', [PelanggaranController::class, 'import']);
 Route::delete('/pelanggaran/{id}', [PelanggaranController::class, 'destroy']);
 Route::post('/pelanggaran/tambah-pegawai', [PelanggaranController::class, 'tambahPegawai']);
+
+
+// ===== API IURAN (KANG CEPOT) =====
+// ===== API IURAN (KANG CEPOT) =====
+Route::get('/iuran', [IuranController::class, 'index']);
+Route::post('/iuran/import', [IuranController::class, 'import']);
+Route::post('/iuran', [IuranController::class, 'store']);
+Route::put('/iuran/{id}', [IuranController::class, 'update']);
+Route::delete('/iuran/{id}', [IuranController::class, 'destroy']);
+Route::get('/iuran/{id}/bulanan', [IuranController::class, 'bulanan']);
+Route::post('/iuran/{id}/bulanan', [IuranController::class, 'updateBulan']);
+Route::get('/iuran/tagihan/{nip}', [IuranController::class, 'tagihan']);
+Route::get('/iuran/profil/{nip}', [IuranController::class, 'profil']);  // ✨ YANG INI HARUS ADA
 
 
 
