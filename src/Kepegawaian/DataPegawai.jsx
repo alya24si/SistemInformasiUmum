@@ -11,6 +11,11 @@ import {
   Search,
   Trash2,
   XCircle,
+  Building2,
+  ShieldAlert,
+  Ship,
+  ShieldCheck,
+  Handshake,
 } from 'lucide-react'
 
 const API_URL = 'http://127.0.0.1:8000/api'
@@ -22,7 +27,8 @@ function DataPegawai() {
   const [loading, setLoading] = useState(true)
   const [showForm, setShowForm] = useState(false)
   const [search, setSearch] = useState('')
-  const [filterBagian, setFilterBagian] = useState('semua')
+  const [filterEselonTiga, setFilterEselonTiga] = useState('semua')
+  const [filterEselonEmpat, setFilterEselonEmpat] = useState('semua')
   const [currentPage, setCurrentPage] = useState(0)
   const [editId, setEditId] = useState(null)
 
@@ -34,7 +40,65 @@ function DataPegawai() {
     eselon_iii: '',
     bagian: '',
     no_hp: '',
+    tanggal_masuk: '',
   })
+
+  // Hitung masa kerja (tahun/bulan/hari) dari tanggal masuk sampai hari ini.
+  // Dihitung penuh secara kalender (bukan estimasi 30 hari/bulan), supaya
+  // hasilnya presisi walau bulan panjangnya beda-beda.
+  const hitungMasaKerja = (tanggalMasuk) => {
+    if (!tanggalMasuk) return null
+
+    const mulai = new Date(`${tanggalMasuk}T00:00:00`)
+    const sekarang = new Date()
+
+    if (isNaN(mulai.getTime()) || mulai > sekarang) return null
+
+    let tahun = sekarang.getFullYear() - mulai.getFullYear()
+    let bulan = sekarang.getMonth() - mulai.getMonth()
+    let hari = sekarang.getDate() - mulai.getDate()
+
+    if (hari < 0) {
+      bulan -= 1
+      // jumlah hari di bulan sebelum bulan berjalan
+      const bulanSebelumnya = new Date(
+        sekarang.getFullYear(),
+        sekarang.getMonth(),
+        0
+      )
+      hari += bulanSebelumnya.getDate()
+    }
+
+    if (bulan < 0) {
+      tahun -= 1
+      bulan += 12
+    }
+
+    return { tahun, bulan, hari }
+  }
+
+  const formatMasaKerja = (tanggalMasuk) => {
+    const hasil = hitungMasaKerja(tanggalMasuk)
+    if (!hasil) return '-'
+
+    const { tahun, bulan, hari } = hasil
+    const bagianTeks = []
+
+    if (tahun > 0) bagianTeks.push(`${tahun} tahun`)
+    if (bulan > 0) bagianTeks.push(`${bulan} bulan`)
+    if (hari > 0 || bagianTeks.length === 0) bagianTeks.push(`${hari} hari`)
+
+    return bagianTeks.join(' ')
+  }
+
+  const formatTanggalMasuk = (tanggalMasuk) => {
+    if (!tanggalMasuk) return '-'
+    return new Date(`${tanggalMasuk}T00:00:00`).toLocaleDateString('id-ID', {
+      day: '2-digit',
+      month: 'short',
+      year: 'numeric',
+    })
+  }
 
   const ambilData = () => {
     setLoading(true)
@@ -73,12 +137,27 @@ function DataPegawai() {
       pegawai.nama.toLowerCase().includes(search.toLowerCase()) ||
       pegawai.nip.toLowerCase().includes(search.toLowerCase())
 
-    const cocokBagian =
-      filterBagian === 'semua' ||
-      cocokkanBagian(pegawai.bagian, filterBagian)
+    const cocokEselonTiga =
+      filterEselonTiga === 'semua' ||
+      normalisasiBagian(pegawai.eselon_iii) === normalisasiBagian(filterEselonTiga)
 
-    return cocokSearch && cocokBagian
+    const cocokEselonEmpat =
+      filterEselonEmpat === 'semua' ||
+      cocokkanBagian(pegawai.bagian, filterEselonEmpat)
+
+    return cocokSearch && cocokEselonTiga && cocokEselonEmpat
   })
+
+  // Daftar Eselon III diambil dinamis dari data yang ada (bukan daftar
+  // tetap), karena isinya bebas diisi admin lewat form/import, beda
+  // dengan Eselon IV yang pilihannya sudah baku lewat dropdown.
+  const daftarEselonTiga = Array.from(
+    new Set(
+      data
+        .map((pegawai) => (pegawai.eselon_iii || '').trim())
+        .filter((nilai) => nilai !== '')
+    )
+  ).sort((a, b) => a.localeCompare(b))
 
   const totalPegawai = data.length
 
@@ -110,6 +189,7 @@ function DataPegawai() {
     eselon_iii: '',
     bagian: '',
     no_hp: '',
+    tanggal_masuk: '',
   }
 
   const simpanData = (e) => {
@@ -159,6 +239,7 @@ function DataPegawai() {
       eselon_iii: pegawai.eselon_iii || '',
       bagian: pegawai.bagian,
       no_hp: pegawai.no_hp || '',
+      tanggal_masuk: pegawai.tanggal_masuk || '',
     })
     setEditId(pegawai.id)
     setShowForm(true)
@@ -221,31 +302,53 @@ function DataPegawai() {
           return
         }
 
-        // Kolom yang didukung: NIP, Nama, Pangkat, Jabatan, Eselon III, Bagian, No HP
+        // Kolom yang didukung: NIP, Nama, Pangkat, Jabatan, Eselon III, Bagian, No HP, TMT
         // Catatan: kalau file Excel gak punya kolom "Bagian" tersendiri (kayak file
         // Kanwil), kolom "Eselon III" dipakai juga sebagai sumber Bagian — karena di
         // data aslinya kolom itu isinya nama unit kerja (Bagian Umum / Bidang ...),
         // bukan kode eselon.
         const dataSiapKirim = rows.map((baris) => {
-          const cari = (kunciList) => {
+          // cari(kunciPersis, kunciFallback):
+          // 1) coba cocokkan header yang PERSIS SAMA dulu (paling aman)
+          // 2) kalau gak ketemu, baru coba header yang MENGANDUNG salah satu kunciFallback
+          //    (buat nangkep variasi nama kolom kayak "Nama Pegawai", "No HP Aktif", dst)
+          const cari = (kunciPersis, kunciFallback = []) => {
             for (const key of Object.keys(baris)) {
               const bersih = key.trim().toLowerCase().replace(/[\s_]/g, '')
-              if (kunciList.includes(bersih)) return baris[key]
+              if (kunciPersis.includes(bersih)) return baris[key]
             }
+
+            for (const key of Object.keys(baris)) {
+              const bersih = key.trim().toLowerCase().replace(/[\s_]/g, '')
+              if (kunciFallback.some((k) => bersih.includes(k))) return baris[key]
+            }
+
             return undefined
           }
 
-          const eselonIii = String(cari(['eseloniii', 'eselon3', 'eselon']) ?? '').trim()
-          const bagianEksplisit = String(cari(['bagian']) ?? '').trim()
+          const eselonIii = String(
+            cari(['eseloniii', 'eselon3', 'eselon'], ['eseloniii', 'eselon3']) ?? ''
+          ).trim()
+          const bagianEksplisit = String(cari(['bagian'], ['bagian']) ?? '').trim()
 
           return {
-            nip: String(cari(['nip']) ?? '').trim(),
-            nama: String(cari(['nama']) ?? '').trim(),
-            pangkat: String(cari(['pangkat']) ?? '').trim() || null,
-            jabatan: String(cari(['jabatan']) ?? '').trim(),
+            nip: String(cari(['nip'], ['nip']) ?? '').trim(),
+            nama: String(cari(['nama'], ['nama']) ?? '').trim(),
+            pangkat: String(cari(['pangkat'], ['pangkat', 'golongan']) ?? '').trim() || null,
+            jabatan: String(cari(['jabatan'], ['jabatan']) ?? '').trim(),
             eselon_iii: eselonIii || null,
             bagian: bagianEksplisit || eselonIii,
-            no_hp: String(cari(['nohp', 'hp', 'notelepon', 'telepon']) ?? '').trim(),
+            no_hp: String(
+              cari(['nohp', 'hp', 'notelepon', 'telepon'], ['nohp', 'notelepon', 'telepon'])
+                ?? ''
+            ).trim(),
+            tanggal_masuk:
+              String(
+                cari(
+                  ['tanggalmasuk', 'tglmasuk', 'masuk', 'tmt'],
+                  ['tanggalmasuk', 'tglmasuk', 'tmt']
+                ) ?? ''
+              ).trim() || null,
           }
         })
 
@@ -346,7 +449,7 @@ function DataPegawai() {
         </div>
 
         <div className="stat-card green">
-          <div className="stat-icon"><CheckCircle2 size={20} /></div>
+          <div className="stat-icon"><Building2 size={20} /></div>
 
           <div className="stat-info">
             <h4>Bagian Umum</h4>
@@ -356,7 +459,7 @@ function DataPegawai() {
         </div>
 
         <div className="stat-card gold">
-          <div className="stat-icon"><Clock size={20} /></div>
+          <div className="stat-icon"><ShieldAlert size={20} /></div>
 
           <div className="stat-info">
             <h4>Penindakan</h4>
@@ -366,7 +469,7 @@ function DataPegawai() {
         </div>
 
         <div className="stat-card">
-          <div className="stat-icon"><AlertTriangle size={20} /></div>
+          <div className="stat-icon"><Ship size={20} /></div>
 
           <div className="stat-info">
             <h4>Kepabeanan</h4>
@@ -376,7 +479,7 @@ function DataPegawai() {
         </div>
 
         <div className="stat-card">
-          <div className="stat-icon"><AlertTriangle size={20} /></div>
+          <div className="stat-icon"><ShieldCheck size={20} /></div>
 
           <div className="stat-info">
             <h4>Kepatuhan Internal</h4>
@@ -386,7 +489,7 @@ function DataPegawai() {
         </div>
 
         <div className="stat-card">
-          <div className="stat-icon"><AlertTriangle size={20} /></div>
+          <div className="stat-icon"><Handshake size={20} /></div>
 
           <div className="stat-info">
             <h4>Fasilitas</h4>
@@ -611,7 +714,7 @@ function DataPegawai() {
                 })
               }
             >
-              <option value="">Pilih Bagian</option>
+              <option value="">Pilih Eselon IV</option>
               <option value="Bagian Umum">Bagian Umum</option>
               <option value="Bidang Penindakan dan Penyidikan">Bidang Penindakan dan Penyidikan</option>
               <option value="Bidang Kepabeanan dan Cukai">Bidang Kepabeanan dan Cukai</option>
@@ -632,8 +735,48 @@ function DataPegawai() {
               }
             />
 
-            <div style={{ display: 'flex', gap: '8px' }}>
-              <button type="submit" className="btn">
+            <div style={{ alignSelf: 'flex-end' }}>
+              <label
+                style={{
+                  display: 'block',
+                  marginBottom: '4px',
+                  fontSize: '11px',
+                  color: '#64748b',
+                }}
+              >
+                TMT
+              </label>
+              <input
+                type="date"
+                required
+                value={form.tanggal_masuk}
+                onChange={(e) =>
+                  setForm({
+                    ...form,
+                    tanggal_masuk: e.target.value,
+                  })
+                }
+              />
+            </div>
+
+            <div
+              style={{
+                display: 'flex',
+                gap: '8px',
+                alignSelf: 'flex-end',
+                height: 'fit-content',
+              }}
+            >
+              <button
+                type="submit"
+                className="btn"
+                style={{
+                  width: 'auto',
+                  height: 'auto',
+                  padding: '8px 16px',
+                  fontSize: '13px',
+                }}
+              >
                 {editId !== null
                   ? 'Simpan Perubahan'
                   : 'Simpan Data Pegawai'}
@@ -645,6 +788,10 @@ function DataPegawai() {
                   onClick={batalEdit}
                   className="btn"
                   style={{
+                    width: 'auto',
+                    height: 'auto',
+                    padding: '8px 16px',
+                    fontSize: '13px',
                     backgroundColor: '#94a3b8',
                     color: '#fff',
                   }}
@@ -672,12 +819,26 @@ function DataPegawai() {
           />
 
           <select
-            value={filterBagian}
+            value={filterEselonTiga}
             onChange={(e) =>
-              setFilterBagian(e.target.value)
+              setFilterEselonTiga(e.target.value)
             }
           >
-            <option value="semua">Semua Bagian</option>
+            <option value="semua">Semua Eselon III</option>
+            {daftarEselonTiga.map((nilai) => (
+              <option key={nilai} value={nilai}>
+                {nilai}
+              </option>
+            ))}
+          </select>
+
+          <select
+            value={filterEselonEmpat}
+            onChange={(e) =>
+              setFilterEselonEmpat(e.target.value)
+            }
+          >
+            <option value="semua">Semua Eselon IV</option>
             <option value="Bagian Umum">Bagian Umum</option>
             <option value="Bidang Penindakan dan Penyidikan">Bidang Penindakan dan Penyidikan</option>
             <option value="Bidang Kepabeanan dan Cukai">Bidang Kepabeanan dan Cukai</option>
@@ -699,8 +860,10 @@ function DataPegawai() {
                 <th>Nama Pegawai</th>
                 <th>Pangkat</th>
                 <th>Jabatan</th>
+                <th>Eselon IV</th>
                 <th>Eselon III</th>
-                <th>Bagian</th>
+                <th>TMT</th>
+                <th>Masa Kerja</th>
                 <th>No. HP</th>
                 {isAdmin && <th>Aksi</th>}
               </tr>
@@ -710,7 +873,7 @@ function DataPegawai() {
               {loading ? (
                 <tr>
                   <td
-                    colSpan={isAdmin ? 9 : 8}
+                    colSpan={isAdmin ? 11 : 10}
                     style={{
                       textAlign: 'center',
                       padding: '30px',
@@ -738,8 +901,10 @@ function DataPegawai() {
                               <td>{pegawai.nama}</td>
                               <td>{pegawai.pangkat || '-'}</td>
                               <td>{pegawai.jabatan}</td>
-                              <td>{pegawai.eselon_iii || '-'}</td>
                               <td>{pegawai.bagian}</td>
+                              <td>{pegawai.eselon_iii || '-'}</td>
+                              <td>{formatTanggalMasuk(pegawai.tanggal_masuk)}</td>
+                              <td>{formatMasaKerja(pegawai.tanggal_masuk)}</td>
                               <td>{pegawai.no_hp || '-'}</td>
                               {isAdmin && (
                                 <td>
@@ -789,7 +954,7 @@ function DataPegawai() {
                       ) : (
                         <tr>
                           <td
-                            colSpan={isAdmin ? 9 : 8}
+                            colSpan={isAdmin ? 11 : 10}
                             style={{
                               textAlign: 'center',
                               padding: '30px',

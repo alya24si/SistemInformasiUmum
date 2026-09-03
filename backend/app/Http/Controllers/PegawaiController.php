@@ -3,9 +3,62 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Carbon\Carbon;
 
 class PegawaiController extends Controller
 {
+    // Ubah berbagai format tanggal (dari input form, atau dari file Excel yang
+    // diimport) menjadi format 'Y-m-d' yang dipahami MySQL. Kalau gagal dikenali,
+    // return null (biar gak bikin insert/update error, tanggal cuma jadi kosong).
+    private function normalisasiTanggal($nilai)
+    {
+        if ($nilai === null || $nilai === '') {
+            return null;
+        }
+
+        // Kalau Excel nyimpen sebagai serial number (kadang kejadian tergantung
+        // format cell di file aslinya), 1 = 31 Desember 1899.
+        if (is_numeric($nilai)) {
+            try {
+                return Carbon::create(1899, 12, 30)->addDays((int) $nilai)->format('Y-m-d');
+            } catch (\Throwable $e) {
+                return null;
+            }
+        }
+
+        $nilai = trim((string) $nilai);
+
+        // Coba beberapa format yang paling sering dipakai di file Excel kepegawaian.
+        // Format "tahun dulu" (Y-m-d / Y/m/d) dicoba PALING AWAL karena itu format
+        // yang dipakai admin -> menghindari risiko salah baca kalau dicoba pakai
+        // format tanggal-dulu duluan (misal "2018-12-01" bisa salah kebaca kalau
+        // format d-m-Y dicoba lebih dulu).
+        $formatDicoba = ['Y-m-d', 'Y/m/d', 'd-m-Y', 'd/m/Y', 'd-m-y', 'd/m/y'];
+
+        foreach ($formatDicoba as $format) {
+            $tanggal = \DateTime::createFromFormat($format, $nilai);
+            $error = \DateTime::getLastErrors();
+
+            // getLastErrors() bakal ngasih warning kalau ada nilai yang gak masuk
+            // akal tapi "dipaksa" jadi valid sama PHP (misal tanggal 2018 dibaca
+            // sebagai day karena salah format, terus di-overflow-in jadi tanggal lain
+            // yang sekilas kelihatan valid). Kalau ada warning/error, format ini
+            // dianggap gak cocok, lanjut coba format berikutnya.
+            $adaMasalah = $error && ($error['warning_count'] > 0 || $error['error_count'] > 0);
+
+            if ($tanggal !== false && !$adaMasalah) {
+                return $tanggal->format('Y-m-d');
+            }
+        }
+
+        // Terakhir, coba parse bebas (buat jaga-jaga format lain yang masih wajar)
+        try {
+            return Carbon::parse($nilai)->format('Y-m-d');
+        } catch (\Throwable $e) {
+            return null;
+        }
+    }
+
     // 1. BACA semua data
     public function index()
     {
@@ -24,6 +77,7 @@ class PegawaiController extends Controller
             'eselon_iii' => 'nullable|string',
             'bagian'     => 'required|string',
             'no_hp'      => 'required|string',
+            'tanggal_masuk' => 'nullable|date',
         ]);
 
         $id = DB::table('pegawai')->insertGetId([
@@ -34,6 +88,7 @@ class PegawaiController extends Controller
             'eselon_iii' => $request->eselon_iii,
             'bagian'     => $request->bagian,
             'no_hp'      => $request->no_hp,
+            'tanggal_masuk' => $this->normalisasiTanggal($request->tanggal_masuk),
         ]);
 
         return response()->json(['success' => true, 'id' => $id], 201);
@@ -50,6 +105,7 @@ class PegawaiController extends Controller
             'eselon_iii' => 'nullable|string',
             'bagian'     => 'required|string',
             'no_hp'      => 'required|string',
+            'tanggal_masuk' => 'nullable|date',
         ]);
 
         $row = DB::table('pegawai')->where('id', $id)->first();
@@ -66,6 +122,7 @@ class PegawaiController extends Controller
             'eselon_iii' => $request->eselon_iii,
             'bagian'     => $request->bagian,
             'no_hp'      => $request->no_hp,
+            'tanggal_masuk' => $this->normalisasiTanggal($request->tanggal_masuk),
         ]);
 
         return response()->json(['success' => true]);
@@ -93,6 +150,7 @@ class PegawaiController extends Controller
             'data.*.eselon_iii' => 'nullable|string',
             'data.*.bagian'     => 'nullable|string',
             'data.*.no_hp'      => 'nullable|string',
+            'data.*.tanggal_masuk' => 'nullable',
             'hapus_lama'        => 'nullable|boolean',
         ]);
 
@@ -124,6 +182,7 @@ class PegawaiController extends Controller
                 'eselon_iii' => $baris['eselon_iii'] ?? null,
                 'bagian'     => $baris['bagian'] ?? '-',
                 'no_hp'      => $baris['no_hp'] ?? '-',
+                'tanggal_masuk' => $this->normalisasiTanggal($baris['tanggal_masuk'] ?? null),
             ];
 
             $sudahAda = DB::table('pegawai')->where('nip', $nip)->first();

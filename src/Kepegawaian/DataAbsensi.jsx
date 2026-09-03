@@ -33,13 +33,6 @@ const daftarBulan = [
   'Desember',
 ]
 
-const tahunIni = new Date().getFullYear()
-
-const daftarTahun = Array.from(
-  { length: 6 },
-  (_, i) => tahunIni - 1 + i
-)
-
 // nama bulan (Indonesia & Inggris disingkat) -> angka bulan, buat parsing teks tanggal
 // yang bukan format Excel-date beneran (misal: "19 Aug 2026")
 const namaBulanKeAngka = {
@@ -99,9 +92,7 @@ function DataAbsensi({ user }) {
     status: 'Hadir',
   })
 
-  const [filterTahun, setFilterTahun] = useState(
-    String(tahunIni)
-  )
+  const [filterStatus, setFilterStatus] = useState('semua')
 
   const [filterBulan, setFilterBulan] = useState('semua')
 
@@ -326,18 +317,25 @@ function DataAbsensi({ user }) {
     ? data
     : data.filter((d) => d.nip === user.nip)
 
+  // Daftar status unik yang benar-benar ada di data (buat opsi dropdown filter)
+  const daftarStatus = Array.from(
+    new Set(
+      data
+        .map((d) => d.status)
+        .filter((s) => s && s.trim() !== '')
+    )
+  ).sort()
+
   const dataFiltered = dataUntukSaya.filter((d) => {
     const tanggal = new Date(`${d.tanggal}T00:00:00`)
-
-    const tahun = String(tanggal.getFullYear())
 
     const bulan = String(
       tanggal.getMonth() + 1
     ).padStart(2, '0')
 
-    const cocokTahun =
-      filterTahun === 'semua' ||
-      tahun === filterTahun
+    const cocokStatus =
+      filterStatus === 'semua' ||
+      d.status === filterStatus
 
     const cocokBulan =
       filterBulan === 'semua' ||
@@ -348,7 +346,7 @@ function DataAbsensi({ user }) {
       .includes(search.toLowerCase())
 
     return (
-      cocokTahun &&
+      cocokStatus &&
       cocokBulan &&
       cocokNama
     )
@@ -1044,22 +1042,22 @@ function DataAbsensi({ user }) {
           )}
 
           <select
-            value={filterTahun}
+            value={filterStatus}
             onChange={(e) =>
-              setFilterTahun(e.target.value)
+              setFilterStatus(e.target.value)
             }
           >
 
             <option value="semua">
-              Semua Tahun
+              Semua Status
             </option>
 
-            {daftarTahun.map((t) => (
+            {daftarStatus.map((s) => (
               <option
-                key={t}
-                value={t}
+                key={s}
+                value={s}
               >
-                Tahun {t}
+                {s}
               </option>
             ))}
 
