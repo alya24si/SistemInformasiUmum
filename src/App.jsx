@@ -13,6 +13,7 @@ import PerbaikanRuangan from './RumahTangga/PerbaikanRuangan'
 import DataAbsensi from './Kepegawaian/DataAbsensi'
 import DataPegawai from './Kepegawaian/DataPegawai'
 import Pelanggaran from './Kepegawaian/Pelanggaran'
+import KangCepot from './pages/KangCepot'
 
 function App() {
   const [user, setUser] = useState(() => {
@@ -42,7 +43,7 @@ function App() {
   const halamanAwal = () => {
     if (isAdminKepegawaian && !isSuperAdmin) return '/data-absensi'
     if (user.role === 'admin_keuangan') return '/program-kerja'
-if (user.role === 'admin_rumah_tangga') return '/data-ruangan'
+    if (user.role === 'admin_rumah_tangga') return '/data-ruangan'
     if (isPegawaiBiasa) return '/pelanggaran'
     return '/program-kerja'
   }
@@ -59,7 +60,7 @@ if (user.role === 'admin_rumah_tangga') return '/data-ruangan'
             <Route path="/program-kerja" element={isAdminKeuangan || isGuest ? <ProgramKerja user={user} /> : <Navigate to="/" />} />
             <Route path="/anggaran" element={isAdminKeuangan || isGuest ? <Anggaran user={user} /> : <Navigate to="/" />} />
 
-            {/* 🏠 RUMAH TANGGA — semua bisa masuk, hak kelola diatur di dalam halaman */}
+            {/* 🏠 RUMAH TANGGA */}
             <Route path="/data-ruangan" element={<DataRuangan user={user} />} />
             <Route path="/booking-ruangan" element={<BookingRuangan user={user} />} />
             <Route path="/kalender-ruangan" element={<KalenderRuangan user={user} />} />
@@ -69,6 +70,9 @@ if (user.role === 'admin_rumah_tangga') return '/data-ruangan'
             <Route path="/data-pegawai" element={isAdminKepegawaian ? <DataPegawai user={user} /> : <Navigate to="/" />} />
             <Route path="/data-absensi" element={isAdminKepegawaian || isPegawaiBiasa ? <DataAbsensi user={user} /> : <Navigate to="/" />} />
             <Route path="/pelanggaran" element={isAdminKepegawaian || isPegawaiBiasa ? <Pelanggaran user={user} /> : <Navigate to="/" />} />
+
+            {/* 🟢 KANG CEPOT — hanya Admin Keuangan & Superadmin */}
+<Route path="/kang-cepot" element={(isAdminKeuangan || isPegawaiBiasa) ? <KangCepot user={user} /> : <Navigate to="/" />} />
           </Routes>
         </main>
       </div>

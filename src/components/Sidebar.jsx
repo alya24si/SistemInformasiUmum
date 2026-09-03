@@ -5,7 +5,6 @@ function Sidebar({ user }) {
   const isPegawaiBiasa = user.role === 'pegawai'
   const isGuest = user.role === 'guest'
 
-  // 🎯 Hak akses (Super Admin otomatis tembus semua)
   const isAdminKeuangan = user.role === 'admin_keuangan' || isSuperAdmin
   const isAdminKepegawaian = user.role === 'admin_kepegawaian' || isSuperAdmin
 
@@ -14,9 +13,11 @@ function Sidebar({ user }) {
   const bolehPelanggaran = isAdminKepegawaian || isPegawaiBiasa
   const bolehDataAbsensi = isAdminKepegawaian || isPegawaiBiasa
 
+  // 🟢 KANG CEPOT khusus Admin Keuangan & Superadmin
+const bolehKangCepot = isAdminKeuangan || isPegawaiBiasa
+
   const aktif = ({ isActive }) => 'menu-item' + (isActive ? ' active' : '')
 
-  // 🏷️ Label role di user-card
   const getRoleLabel = () => {
     switch (user.role) {
       case 'superadmin': return '👑 Super Admin'
@@ -39,7 +40,7 @@ function Sidebar({ user }) {
         </div>
       </div>
 
-      {/* 💰 KEUANGAN — desain Delita, ditambah logika RBAC */}
+      {/* 💰 KEUANGAN */}
       {bolehKeuangan && (
         <>
           <div className="nav-label">Keuangan</div>
@@ -50,7 +51,7 @@ function Sidebar({ user }) {
         </>
       )}
 
-      {/* 🏠 RUMAH TANGGA — semua role bisa akses */}
+      {/* 🏠 RUMAH TANGGA */}
       <div className="nav-label">Rumah Tangga</div>
       <nav>
         <NavLink to="/data-ruangan" className={aktif}>🏢 Fasilitas</NavLink>
@@ -60,7 +61,7 @@ function Sidebar({ user }) {
         <NavLink to="/perbaikan-ruangan" className={aktif}>🔧 Perbaikan</NavLink>
       </nav>
 
-      {/* 👔 KEPEGAWAIAN — struktur Delita, ditampilkan sesuai hak akses */}
+      {/* 👔 KEPEGAWAIAN */}
       {(bolehDataPegawai || bolehPelanggaran || bolehDataAbsensi) && (
         <>
           <div className="nav-label">Kepegawaian</div>
@@ -68,6 +69,46 @@ function Sidebar({ user }) {
             {bolehDataPegawai && <NavLink to="/data-pegawai" className={aktif}>📋 Data Pegawai</NavLink>}
             {bolehPelanggaran && <NavLink to="/pelanggaran" className={aktif}>⚠️ Pelanggaran</NavLink>}
             {bolehDataAbsensi && <NavLink to="/data-absensi" className={aktif}>📊 Data Absensi</NavLink>}
+          </nav>
+        </>
+      )}
+
+      {/* 🟢 KANG CEPOT — section tersendiri di bawah Kepegawaian */}
+      {bolehKangCepot && (
+        <>
+          <div className="nav-label">KANG CEPOT</div>
+          <nav>
+            <NavLink
+              to="/kang-cepot"
+              className={aktif}
+              style={{
+                backgroundImage:
+                  'linear-gradient(rgba(16, 42, 67, 0.82), rgba(16, 42, 67, 0.88)), url(/kang-cepot.png)',
+                backgroundSize: 'cover',
+                backgroundPosition: 'center',
+                borderRadius: '10px',
+                color: '#ffd76e',
+                fontWeight: 800,
+                display: 'flex',
+                alignItems: 'center',
+                padding: '10px 14px',
+                margin: '4px 8px',
+              }}
+            >
+              <img
+                src="/kang-cepot.png"
+                alt="Kang Cepot"
+                style={{
+                  width: '32px',
+                  height: '32px',
+                  borderRadius: '50%',
+                  objectFit: 'cover',
+                  border: '2px solid #ffc72c',
+                  marginRight: '10px',
+                }}
+              />
+              KANG CEPOT
+            </NavLink>
           </nav>
         </>
       )}
