@@ -2,14 +2,15 @@ import { useState } from 'react'
 import { Routes, Route, Navigate } from 'react-router-dom'
 import Sidebar from './components/Sidebar'
 import Header from './components/Header'
+import NotifikasiRumahTangga from './components/NotifikasiRumahTangga'
 import Login from './pages/Login'
 import ProgramKerja from './pages/ProgramKerja'
 import Anggaran from './pages/Anggaran'
 import DataRuangan from './RumahTangga/DataRuangan'
 import BookingRuangan from './RumahTangga/BookingRuangan'
 import KalenderRuangan from './RumahTangga/KalenderRuangan'
-import KerusakanRuangan from './RumahTangga/KerusakanRuangan'
-import PerbaikanRuangan from './RumahTangga/PerbaikanRuangan'
+import Kerusakan from './RumahTangga/Kerusakan'
+import Perbaikan from './RumahTangga/Perbaikan'
 import DataAbsensi from './Kepegawaian/DataAbsensi'
 import DataPegawai from './Kepegawaian/DataPegawai'
 import Pelanggaran from './Kepegawaian/Pelanggaran'
@@ -43,7 +44,7 @@ function App() {
   const halamanAwal = () => {
     if (isAdminKepegawaian && !isSuperAdmin) return '/data-absensi'
     if (user.role === 'admin_keuangan') return '/program-kerja'
-    if (user.role === 'admin_rumah_tangga') return '/data-ruangan'
+    if (user.role === 'admin_rumahtangga') return '/data-ruangan'
     if (isPegawaiBiasa) return '/pelanggaran'
     return '/program-kerja'
   }
@@ -64,18 +65,32 @@ function App() {
             <Route path="/data-ruangan" element={<DataRuangan user={user} />} />
             <Route path="/booking-ruangan" element={<BookingRuangan user={user} />} />
             <Route path="/kalender-ruangan" element={<KalenderRuangan user={user} />} />
-            <Route path="/kerusakan-ruangan" element={<KerusakanRuangan user={user} />} />
-            <Route path="/perbaikan-ruangan" element={<PerbaikanRuangan user={user} />} />
+
+            {/* Kerusakan & Perbaikan sekarang 1 halaman per fitur, pilihan
+                Ruangan/Mobil ada di dalam sebagai tab (lihat Kerusakan.jsx
+                & Perbaikan.jsx) */}
+            <Route path="/kerusakan" element={<Kerusakan user={user} />} />
+            <Route path="/perbaikan" element={<Perbaikan user={user} />} />
+
+            {/* Redirect rute lama biar link/bookmark lama gak 404 */}
+            <Route path="/kerusakan-ruangan" element={<Navigate to="/kerusakan" replace />} />
+            <Route path="/kerusakan-mobil" element={<Navigate to="/kerusakan" replace />} />
+            <Route path="/perbaikan-ruangan" element={<Navigate to="/perbaikan" replace />} />
+            <Route path="/perbaikan-mobil" element={<Navigate to="/perbaikan" replace />} />
 
             <Route path="/data-pegawai" element={isAdminKepegawaian ? <DataPegawai user={user} /> : <Navigate to="/" />} />
             <Route path="/data-absensi" element={isAdminKepegawaian || isPegawaiBiasa ? <DataAbsensi user={user} /> : <Navigate to="/" />} />
             <Route path="/pelanggaran" element={isAdminKepegawaian || isPegawaiBiasa ? <Pelanggaran user={user} /> : <Navigate to="/" />} />
 
             {/* 🟢 KANG CEPOT — hanya Admin Keuangan & Superadmin */}
-<Route path="/kang-cepot" element={(isAdminKeuangan || isPegawaiBiasa) ? <KangCepot user={user} /> : <Navigate to="/" />} />
+            <Route path="/kang-cepot" element={(isAdminKeuangan || isPegawaiBiasa) ? <KangCepot user={user} /> : <Navigate to="/" />} />
           </Routes>
         </main>
       </div>
+
+      {/* 🔔 Notifikasi Rumah Tangga -- widget mengambang, cuma tampil buat
+          Admin Rumah Tangga / Superadmin */}
+      <NotifikasiRumahTangga user={user} />
     </div>
   )
 }

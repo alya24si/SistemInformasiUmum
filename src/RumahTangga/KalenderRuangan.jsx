@@ -34,8 +34,6 @@ const buatGridBulan = (tahun, bulan) => {
 };
 
 function KalenderRuangan({ user }) {
-  const isAdminRT = user.role === 'admin_rumah_tangga' || user.role === 'superadmin';
-
   const [bookingDisetujui, setBookingDisetujui] = useState([]);
   const [loading, setLoading] = useState(true);
   const [errorMsg, setErrorMsg] = useState("");

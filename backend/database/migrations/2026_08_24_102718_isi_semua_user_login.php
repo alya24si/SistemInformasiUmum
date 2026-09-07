@@ -9,7 +9,10 @@ return new class extends Migration
     // Helper: insert hanya kalau username belum ada (aman dijalankan ulang)
     private function tambah(array $data): void
     {
-        if (DB::table('users')->where('username', $data['username'])->first()) return;
+        if (DB::table('users')->where('username', $data['username'])->first()) {
+            return;
+        }
+
         DB::table('users')->insert(array_merge($data, [
             'created_at' => now(),
             'updated_at' => now(),
@@ -19,20 +22,19 @@ return new class extends Migration
     public function up(): void
     {
         // ============ 1. SUPERADMIN & ADMIN ============
-      
-        $this->tambah(['username' => 'superadmin',  'password' => Hash::make('Super@2026'),     'nama' => 'Super Admin',       'role' => 'superadmin',       'bidang' => '', 'nip' => null]);
-        $this->tambah(['username' => 'keuangan',    'password' => Hash::make('Keuangan#2026'),  'nama' => 'Admin Keuangan',    'role' => 'admin_keuangan',   'bidang' => '', 'nip' => null]);
-        $this->tambah(['username' => 'kepegawaian', 'password' => Hash::make('Pegawai@2026'),   'nama' => 'Admin Kepegawaian', 'role' => 'admin_kepegawaian','bidang' => '', 'nip' => null]);
-        $this->tambah(['username' => 'umum',        'password' => Hash::make('Umum#2026'),      'nama' => 'Admin Umum',        'role' => 'admin_umum',       'bidang' => '', 'nip' => null]);
-        $this->tambah(['username' => 'rumahtangga', 'password' => Hash::make('Rumah@2026'),     'nama' => 'Admin Rumah Tangga', 'role' => 'admin_rumah_tangga', 'bidang' => '', 'nip' => null]);
 
+        $this->tambah(['username' => 'superadmin', 'password' => Hash::make('Super@2026'), 'nama' => 'Super Admin', 'role' => 'superadmin', 'bidang' => '', 'nip' => null]);
+        $this->tambah(['username' => 'keuangan', 'password' => Hash::make('Keuangan#2026'), 'nama' => 'Admin Keuangan', 'role' => 'admin_keuangan', 'bidang' => '', 'nip' => null]);
+        $this->tambah(['username' => 'kepegawaian', 'password' => Hash::make('Pegawai@2026'), 'nama' => 'Admin Kepegawaian', 'role' => 'admin_kepegawaian', 'bidang' => '', 'nip' => null]);
+        $this->tambah(['username' => 'umum', 'password' => Hash::make('Umum#2026'), 'nama' => 'Admin Umum', 'role' => 'admin_umum', 'bidang' => '', 'nip' => null]);
+        $this->tambah(['username' => 'rumahtangga', 'password' => Hash::make('Rumah@2026'), 'nama' => 'Admin Rumah Tangga', 'role' => 'admin_rumahtangga', 'bidang' => '', 'nip' => null]);
 
-                // ============ 2. GUEST PER BIDANG (password berbeda-beda) ============
-        $this->tambah(['username' => 'guest.umum',      'password' => Hash::make('TamuUmum1'),      'nama' => 'Tamu Bidang Umum',      'role' => 'guest', 'bidang' => 'Umum',      'nip' => null]);
-        $this->tambah(['username' => 'guest.p2',        'password' => Hash::make('TamuP2_1'),       'nama' => 'Tamu Bidang P2',        'role' => 'guest', 'bidang' => 'P2',        'nip' => null]);
-        $this->tambah(['username' => 'guest.ki',        'password' => Hash::make('TamuKI_1'),       'nama' => 'Tamu Bidang KI',        'role' => 'guest', 'bidang' => 'KI',        'nip' => null]);
-        $this->tambah(['username' => 'guest.pabean',    'password' => Hash::make('TamuPabean1'),    'nama' => 'Tamu Bidang Pabean',    'role' => 'guest', 'bidang' => 'Pabean',    'nip' => null]);
-        $this->tambah(['username' => 'guest.fasilitas', 'password' => Hash::make('TamuFasilitas1'), 'nama' => 'Tamu Bidang Fasilitas','role' => 'guest', 'bidang' => 'Fasilitas', 'nip' => null]);
+        // ============ 2. GUEST PER BIDANG (password berbeda-beda) ============
+        $this->tambah(['username' => 'guest.umum', 'password' => Hash::make('TamuUmum1'), 'nama' => 'Tamu Bidang Umum', 'role' => 'guest', 'bidang' => 'Umum', 'nip' => null]);
+        $this->tambah(['username' => 'guest.p2', 'password' => Hash::make('TamuP2_1'), 'nama' => 'Tamu Bidang P2', 'role' => 'guest', 'bidang' => 'P2', 'nip' => null]);
+        $this->tambah(['username' => 'guest.ki', 'password' => Hash::make('TamuKI_1'), 'nama' => 'Tamu Bidang KI', 'role' => 'guest', 'bidang' => 'KI', 'nip' => null]);
+        $this->tambah(['username' => 'guest.pabean', 'password' => Hash::make('TamuPabean1'), 'nama' => 'Tamu Bidang Pabean', 'role' => 'guest', 'bidang' => 'Pabean', 'nip' => null]);
+        $this->tambah(['username' => 'guest.fasilitas', 'password' => Hash::make('TamuFasilitas1'), 'nama' => 'Tamu Bidang Fasilitas', 'role' => 'guest', 'bidang' => 'Fasilitas', 'nip' => null]);
 
         // ============ 3. PEGAWAI (username = NIP) ============
         $pegawai = [
@@ -125,7 +127,7 @@ return new class extends Migration
         foreach ($pegawai as [$pass, $nip]) {
             preg_match('/^([A-Za-z]+)/', $pass, $m);
             $this->tambah([
-                'username' => $nip,               // 👈 pegawai login pakai NIP
+                'username' => $nip, // 👈 pegawai login pakai NIP
                 'password' => Hash::make($pass),
                 'nama'     => $m[1] ?? 'Pegawai',
                 'role'     => 'pegawai',

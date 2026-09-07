@@ -4,8 +4,10 @@ use App\Http\Controllers\AbsensiController;
 use App\Http\Controllers\AnggaranController;
 use App\Http\Controllers\BookingRuanganController;
 use App\Http\Controllers\KerusakanRuanganController;
+use App\Http\Controllers\KerusakanMobilController;
 use App\Http\Controllers\PegawaiController;
 use App\Http\Controllers\PerbaikanRuanganController;
+use App\Http\Controllers\PerbaikanMobilController;
 use App\Http\Controllers\ProgramKerjaController;
 use App\Http\Controllers\RuanganController;
 use Illuminate\Support\Facades\Route;
@@ -63,6 +65,19 @@ Route::post('/perbaikan_ruangan', [PerbaikanRuanganController::class, 'store']);
 Route::put('/perbaikan_ruangan/{id}/selesai', [PerbaikanRuanganController::class, 'selesai']);
 Route::delete('/perbaikan_ruangan/{id}', [PerbaikanRuanganController::class, 'destroy']);
 
+// ===== API KERUSAKAN MOBIL =====
+Route::get('/kerusakan_mobil', [KerusakanMobilController::class, 'index']);
+Route::post('/kerusakan_mobil', [KerusakanMobilController::class, 'store']);
+Route::put('/kerusakan_mobil/{id}/proses', [KerusakanMobilController::class, 'proses']);
+Route::put('/kerusakan_mobil/{id}/selesai', [KerusakanMobilController::class, 'selesai']);
+Route::delete('/kerusakan_mobil/{id}', [KerusakanMobilController::class, 'destroy']);
+
+// ===== API PERBAIKAN MOBIL =====
+Route::get('/perbaikan_mobil', [PerbaikanMobilController::class, 'index']);
+Route::get('/perbaikan_mobil/belum_diperbaiki', [PerbaikanMobilController::class, 'kerusakanBelumDiperbaiki']);
+Route::post('/perbaikan_mobil', [PerbaikanMobilController::class, 'store']);
+Route::put('/perbaikan_mobil/{id}/selesai', [PerbaikanMobilController::class, 'selesai']);
+Route::delete('/perbaikan_mobil/{id}', [PerbaikanMobilController::class, 'destroy']);
 // ===== Kepegawaian =====
 // ===== API PEGAWAI =====
 Route::get('/pegawai', [PegawaiController::class, 'index']);

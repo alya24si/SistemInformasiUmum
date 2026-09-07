@@ -15,6 +15,10 @@ return new class extends Migration
             $table->string('bagian');
             $table->string('kegiatan');
             $table->text('deskripsi')->nullable();
+            // Layout cuma dipakai untuk booking Aula (Meja Bundar/Classroom/DKO).
+            // Untuk ruangan lain (termasuk Ruang Rapat Bagian Umum) nilainya "-".
+            $table->string('layout')->nullable();
+            $table->boolean('butuh_konsumsi')->default(false);
             $table->date('tanggal');
             $table->time('mulai');
             $table->time('selesai');

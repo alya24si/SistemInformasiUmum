@@ -26,6 +26,40 @@ const formatTanggal = (tanggal) => {
   })
 }
 
+// Jam dropdown 1-24 (tanpa AM/PM) & menit cuma boleh 00/15/30/45
+const OPSI_JAM = Array.from({ length: 24 }, (_, i) =>
+  String(i + 1).padStart(2, '0')
+)
+const OPSI_MENIT = ['00', '15', '30', '45']
+
+const OPSI_LAYOUT = ['Meja Bundar', 'Classroom', 'DKO']
+
+// Jam & menit sekarang digabung jadi satu kotak time-picker (1 border,
+// dipisah ":") -- selectnya sendiri tanpa border/background biar nyatu.
+const timePartStyle = {
+  flex: 1,
+  minWidth: 0,
+  boxSizing: 'border-box',
+  border: 'none',
+  outline: 'none',
+  backgroundColor: 'transparent',
+  padding: '9px 8px',
+  color: '#334155',
+  fontSize: '12px',
+  cursor: 'pointer',
+}
+
+const timeColonStyle = {
+  color: '#94a3b8',
+  fontWeight: 700,
+  fontSize: '12px',
+}
+
+// Layout cuma relevan buat ruangan Aula; Ruang Rapat Bagian Umum &
+// ruangan lain otomatis "-" (gak butuh pilihan layout)
+const perluPilihLayout = (namaRuangan) =>
+  (namaRuangan || '').toLowerCase().includes('aula')
+
 const statusBooking = (status) => {
   if (status === 'Disetujui') {
     return {
@@ -49,7 +83,7 @@ const statusBooking = (status) => {
 
 function BookingRuangan({ user }) {
   const isAdminRT =
-    user.role === 'admin_rumah_tangga' ||
+    user.role === 'admin_rumahtangga' ||
     user.role === 'superadmin'
 
   // Akun admin/superadmin sengaja gak punya "bidang" spesifik (bukan pegawai
@@ -69,10 +103,19 @@ function BookingRuangan({ user }) {
     kegiatan: '',
     jenis_pertemuan: 'Offline',
     deskripsi: '',
+    layout: '',
+    butuh_konsumsi: false,
     tanggal: '',
     mulai: '',
     selesai: '',
   })
+
+  // Dropdown jam/menit terpisah dari `form.mulai`/`form.selesai` biar gampang
+  // dikontrol per-bagian (jam & menit), lalu digabung jadi "HH:MM" saat dipakai.
+  const [jamMulai, setJamMulai] = useState('')
+  const [menitMulai, setMenitMulai] = useState('00')
+  const [jamSelesai, setJamSelesai] = useState('')
+  const [menitSelesai, setMenitSelesai] = useState('00')
 
   const [showForm, setShowForm] = useState(false)
   const [currentPage, setCurrentPage] = useState(0)
@@ -117,6 +160,27 @@ function BookingRuangan({ user }) {
     muatData()
     muatRuangan()
   }, [])
+
+  // Ruangan yang lagi dipilih di form — dipakai buat nentuin apakah field
+  // Layout perlu ditampilkan (khusus Aula) atau otomatis "-"
+  const namaRuanganDipilih =
+    daftarRuangan.find(
+      (r) => String(r.id) === String(form.ruangan_id)
+    )?.nama || ''
+
+  const tampilkanPilihanLayout = perluPilihLayout(namaRuanganDipilih)
+
+  // Setiap ganti ruangan: kalau bukan Aula, layout otomatis "-".
+  // Kalau Aula dan sebelumnya "-" (misal pindah dari ruangan lain), kosongkan
+  // lagi biar admin/pegawai wajib pilih salah satu opsi layout.
+  useEffect(() => {
+    if (!tampilkanPilihanLayout) {
+      setForm((f) => (f.layout === '-' ? f : { ...f, layout: '-' }))
+    } else {
+      setForm((f) => (f.layout === '-' ? { ...f, layout: '' } : f))
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [namaRuanganDipilih])
 
   const bookingMilikSaya = isAdminRT
     ? booking
@@ -178,16 +242,33 @@ function BookingRuangan({ user }) {
       kegiatan: '',
       jenis_pertemuan: 'Offline',
       deskripsi: '',
+      layout: '',
+      butuh_konsumsi: false,
       tanggal: '',
       mulai: '',
       selesai: '',
     })
+
+    setJamMulai('')
+    setMenitMulai('00')
+    setJamSelesai('')
+    setMenitSelesai('00')
 
     setTolakInfo(null)
   }
 
   const tambahBooking = async (e) => {
     e.preventDefault()
+
+    if (!jamMulai || !jamSelesai) {
+      alert('Pilih jam mulai dan jam selesai.')
+      return
+    }
+
+    if (tampilkanPilihanLayout && !form.layout) {
+      alert('Pilih layout untuk ruangan Aula.')
+      return
+    }
 
     if (form.selesai <= form.mulai) {
       alert(
@@ -206,6 +287,8 @@ function BookingRuangan({ user }) {
       kegiatan: form.kegiatan,
       jenis_pertemuan: form.jenis_pertemuan,
       deskripsi: form.deskripsi,
+      layout: tampilkanPilihanLayout ? form.layout : '-',
+      butuh_konsumsi: form.butuh_konsumsi,
       tanggal: form.tanggal,
       mulai: form.mulai,
       selesai: form.selesai,
@@ -839,7 +922,7 @@ function BookingRuangan({ user }) {
 
               <textarea
                 name="deskripsi"
-                placeholder="Jelaskan tujuan atau keperluan penggunaan ruangan..."
+                placeholder="Jelaskan tujuan penggunaan ruangan, jumlah dan jenis/snack atau makan siang yang dibutuhkan, detail layout lainnya..."
                 value={form.deskripsi}
                 onChange={handleChange}
                 required
@@ -863,8 +946,7 @@ function BookingRuangan({ user }) {
             <div
               style={{
                 display: 'grid',
-                gridTemplateColumns:
-                  '1fr 1fr 1fr',
+                gridTemplateColumns: '1fr 1fr 1fr',
                 gap: '14px',
                 marginBottom: '20px',
               }}
@@ -918,24 +1000,63 @@ function BookingRuangan({ user }) {
                   Jam Mulai
                 </label>
 
-                <input
-                  type="time"
-                  name="mulai"
-                  value={form.mulai}
-                  onChange={handleChange}
-                  required
+                <div
                   style={{
+                    display: 'flex',
+                    alignItems: 'center',
                     width: '100%',
                     boxSizing: 'border-box',
-                    padding: '9px 11px',
-                    border:
-                      '1px solid #cbd5e1',
+                    border: '1px solid #cbd5e1',
                     borderRadius: '6px',
                     backgroundColor: '#fff',
-                    color: '#334155',
-                    fontSize: '12px',
                   }}
-                />
+                >
+                  <select
+                    value={jamMulai}
+                    onChange={(e) => {
+                      setJamMulai(e.target.value)
+                      setForm({
+                        ...form,
+                        mulai: e.target.value
+                          ? `${e.target.value}:${menitMulai}`
+                          : '',
+                      })
+                      if (tolakInfo) setTolakInfo(null)
+                    }}
+                    required
+                    style={timePartStyle}
+                  >
+                    <option value="">Jam</option>
+                    {OPSI_JAM.map((j) => (
+                      <option key={j} value={j}>
+                        {j}
+                      </option>
+                    ))}
+                  </select>
+
+                  <span style={timeColonStyle}>:</span>
+
+                  <select
+                    value={menitMulai}
+                    onChange={(e) => {
+                      setMenitMulai(e.target.value)
+                      setForm({
+                        ...form,
+                        mulai: jamMulai
+                          ? `${jamMulai}:${e.target.value}`
+                          : '',
+                      })
+                      if (tolakInfo) setTolakInfo(null)
+                    }}
+                    style={timePartStyle}
+                  >
+                    {OPSI_MENIT.map((m) => (
+                      <option key={m} value={m}>
+                        {m}
+                      </option>
+                    ))}
+                  </select>
+                </div>
               </div>
 
               {/* JAM SELESAI */}
@@ -952,24 +1073,198 @@ function BookingRuangan({ user }) {
                   Jam Selesai
                 </label>
 
-                <input
-                  type="time"
-                  name="selesai"
-                  value={form.selesai}
-                  onChange={handleChange}
-                  required
+                <div
                   style={{
+                    display: 'flex',
+                    alignItems: 'center',
                     width: '100%',
                     boxSizing: 'border-box',
-                    padding: '9px 11px',
-                    border:
-                      '1px solid #cbd5e1',
+                    border: '1px solid #cbd5e1',
                     borderRadius: '6px',
                     backgroundColor: '#fff',
-                    color: '#334155',
-                    fontSize: '12px',
                   }}
-                />
+                >
+                  <select
+                    value={jamSelesai}
+                    onChange={(e) => {
+                      setJamSelesai(e.target.value)
+                      setForm({
+                        ...form,
+                        selesai: e.target.value
+                          ? `${e.target.value}:${menitSelesai}`
+                          : '',
+                      })
+                      if (tolakInfo) setTolakInfo(null)
+                    }}
+                    required
+                    style={timePartStyle}
+                  >
+                    <option value="">Jam</option>
+                    {OPSI_JAM.map((j) => (
+                      <option key={j} value={j}>
+                        {j}
+                      </option>
+                    ))}
+                  </select>
+
+                  <span style={timeColonStyle}>:</span>
+
+                  <select
+                    value={menitSelesai}
+                    onChange={(e) => {
+                      setMenitSelesai(e.target.value)
+                      setForm({
+                        ...form,
+                        selesai: jamSelesai
+                          ? `${jamSelesai}:${e.target.value}`
+                          : '',
+                      })
+                      if (tolakInfo) setTolakInfo(null)
+                    }}
+                    style={timePartStyle}
+                  >
+                    {OPSI_MENIT.map((m) => (
+                      <option key={m} value={m}>
+                        {m}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+            </div>
+
+            {/* LAYOUT (khusus Aula) & KONSUMSI */}
+            <div
+              style={{
+                display: 'grid',
+                gridTemplateColumns: '1fr 1fr 1fr',
+                gap: '14px',
+                marginBottom: '20px',
+                alignItems: 'end',
+              }}
+            >
+
+              <div>
+                <label
+                  style={{
+                    display: 'block',
+                    marginBottom: '6px',
+                    fontSize: '12px',
+                    fontWeight: 600,
+                    color: '#475569',
+                  }}
+                >
+                  Pilihan Layout{' '}
+                  {!tampilkanPilihanLayout && (
+                    <span
+                      style={{
+                        fontWeight: 400,
+                        color: '#94a3b8',
+                        textTransform: 'none',
+                      }}
+                    >
+                      (khusus Aula)
+                    </span>
+                  )}
+                </label>
+
+                {tampilkanPilihanLayout ? (
+                  <select
+                    value={form.layout}
+                    onChange={(e) =>
+                      setForm({ ...form, layout: e.target.value })
+                    }
+                    required
+                    style={{
+                      width: '100%',
+                      boxSizing: 'border-box',
+                      padding: '9px 11px',
+                      border: '1px solid #cbd5e1',
+                      borderRadius: '6px',
+                      backgroundColor: '#fff',
+                      color: '#334155',
+                      fontSize: '12px',
+                      height: '36px',
+                    }}
+                  >
+                    <option value="">-- Pilih Layout --</option>
+                    {OPSI_LAYOUT.map((l) => (
+                      <option key={l} value={l}>
+                        {l}
+                      </option>
+                    ))}
+                  </select>
+                ) : (
+                  <input
+                    type="text"
+                    value="-"
+                    disabled
+                    style={{
+                      width: '100%',
+                      boxSizing: 'border-box',
+                      padding: '9px 11px',
+                      border: '1px dashed #cbd5e1',
+                      borderRadius: '6px',
+                      backgroundColor: '#f1f5f9',
+                      color: '#94a3b8',
+                      fontSize: '12px',
+                      height: '36px',
+                      cursor: 'not-allowed',
+                    }}
+                  />
+                )}
+              </div>
+
+              <div>
+                {/* Label kosong (spacer) -- disamakan tinggi dengan label
+                    "Pilihan Layout" di sebelah, supaya kotak konsumsi di
+                    bawahnya sejajar presisi, bukan digeser pakai marginTop. */}
+                <label
+                  aria-hidden="true"
+                  style={{
+                    display: 'block',
+                    marginBottom: '6px',
+                    fontSize: '12px',
+                    fontWeight: 600,
+                    color: 'transparent',
+                    userSelect: 'none',
+                  }}
+                >
+                  &nbsp;
+                </label>
+
+                <label
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    gap: '10px',
+                    fontSize: '12px',
+                    fontWeight: 600,
+                    color: '#334155',
+                    border: '1px solid #cbd5e1',
+                    borderRadius: '6px',
+                    padding: '9px 11px',
+                    height: '36px',
+                    boxSizing: 'border-box',
+                    cursor: 'pointer',
+                    backgroundColor: '#fff',
+                  }}
+                >
+                  <span>Butuh Konsumsi / Snack?</span>
+                  <input
+                    type="checkbox"
+                    checked={form.butuh_konsumsi}
+                    onChange={(e) =>
+                      setForm({
+                        ...form,
+                        butuh_konsumsi: e.target.checked,
+                      })
+                    }
+                    style={{ width: '16px', height: '16px', cursor: 'pointer', flexShrink: 0 }}
+                  />
+                </label>
               </div>
 
             </div>
@@ -1164,6 +1459,8 @@ function BookingRuangan({ user }) {
                 <th>Kegiatan</th>
                 <th>Jenis</th>
                 <th>Deskripsi</th>
+                <th>Layout</th>
+                <th>Konsumsi</th>
                 <th>Tanggal</th>
                 <th>Waktu</th>
                 <th>Status</th>
@@ -1230,6 +1527,26 @@ function BookingRuangan({ user }) {
                           }}
                         >
                           {item.deskripsi || '-'}
+                        </td>
+
+                        <td>
+                          {item.layout || '-'}
+                        </td>
+
+                        <td>
+                          {item.butuh_konsumsi ? (
+                            <span className="badge green">Ya</span>
+                          ) : (
+                            <span
+                              className="badge"
+                              style={{
+                                backgroundColor: '#f1f5f9',
+                                color: '#64748b',
+                              }}
+                            >
+                              Tidak
+                            </span>
+                          )}
                         </td>
 
                         <td>
@@ -1386,7 +1703,7 @@ function BookingRuangan({ user }) {
 
                 <tr>
                   <td
-                    colSpan="11"
+                    colSpan="13"
                     style={{
                       textAlign: 'center',
                       padding: '30px',

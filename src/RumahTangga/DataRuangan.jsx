@@ -32,7 +32,7 @@ const statusRuangan = (status) => {
 
 function DataRuangan({ user }) {
   const isAdminRT =
-    user.role === 'admin_rumah_tangga' ||
+    user.role === 'admin_rumahtangga' ||
     user.role === 'superadmin'
 
   const [data, setData] = useState([])

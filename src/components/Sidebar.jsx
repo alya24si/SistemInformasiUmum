@@ -1,12 +1,42 @@
-import { NavLink } from 'react-router-dom'
+import { useEffect, useState } from 'react'
+import { NavLink, useLocation } from 'react-router-dom'
+import { ChevronDown, ChevronRight } from 'lucide-react'
+
+const API = 'http://localhost:8000/api'
+
+// Badge angka kecil, cuma muncul kalau count > 0
+function BadgeNotif({ count }) {
+  if (!count) return null
+
+  return (
+    <span
+      style={{
+        marginLeft: 'auto',
+        backgroundColor: '#ef4444',
+        color: '#fff',
+        fontSize: '10px',
+        fontWeight: 700,
+        borderRadius: '999px',
+        padding: '1px 7px',
+        minWidth: '18px',
+        textAlign: 'center',
+        lineHeight: '16px',
+      }}
+    >
+      {count}
+    </span>
+  )
+}
 
 function Sidebar({ user }) {
+
   const isSuperAdmin = user.role === 'superadmin'
   const isPegawaiBiasa = user.role === 'pegawai'
   const isGuest = user.role === 'guest'
 
   const isAdminKeuangan = user.role === 'admin_keuangan' || isSuperAdmin
   const isAdminKepegawaian = user.role === 'admin_kepegawaian' || isSuperAdmin
+  const isAdminRT = user.role === 'admin_rumahtangga' || isSuperAdmin
 
   const bolehKeuangan = isAdminKeuangan || isGuest
   const bolehDataPegawai = isAdminKepegawaian
@@ -14,7 +44,99 @@ function Sidebar({ user }) {
   const bolehDataAbsensi = isAdminKepegawaian || isPegawaiBiasa
 
   // 🟢 KANG CEPOT khusus Admin Keuangan & Superadmin
-const bolehKangCepot = isAdminKeuangan || isPegawaiBiasa
+  const bolehKangCepot = isAdminKeuangan || isPegawaiBiasa
+
+  // 🔔 Notifikasi Admin Rumah Tangga: jumlah booking & kerusakan yang
+  // masih berstatus "Menunggu" (Ruangan & Mobil dihitung terpisah supaya
+  // bisa ditampilkan sebagai badge masing-masing di submenu).
+  const [jumlahBookingMenunggu, setJumlahBookingMenunggu] = useState(0)
+  const [jumlahKerusakanRuanganMenunggu, setJumlahKerusakanRuanganMenunggu] = useState(0)
+  const [jumlahKerusakanMobilMenunggu, setJumlahKerusakanMobilMenunggu] = useState(0)
+  const jumlahKerusakanMenunggu = jumlahKerusakanRuanganMenunggu + jumlahKerusakanMobilMenunggu
+
+  // Submenu Kerusakan & Perbaikan bisa di-expand/collapse, defaultnya
+  // sama-sama terbuka biar Ruangan/Mobil langsung kelihatan.
+  const [bukaKerusakan, setBukaKerusakan] = useState(true)
+  const [bukaPerbaikan, setBukaPerbaikan] = useState(true)
+
+  const location = useLocation()
+
+  // Submenu dianggap aktif kalau pathname cocok DAN query ?tab= cocok
+  // (atau ?tab= gak ada sama sekali, dianggap "ruangan" karena itu
+  // default tab di halaman Kerusakan/Perbaikan).
+  const subAktif = (pathname, tabValue) => {
+    if (location.pathname !== pathname) return false
+    const tabUrl = new URLSearchParams(location.search).get('tab') || 'ruangan'
+    return tabUrl === tabValue
+  }
+
+  const kelasSub = (aktifSub) => 'menu-item' + (aktifSub ? ' active' : '')
+  const subIndentStyle = { paddingLeft: '34px', display: 'flex', alignItems: 'center' }
+
+  // Cuma layout flex + cursor pointer -- font/warna/padding dasar
+  // sengaja dibiarkan ikut className="menu-item" biar SAMA PERSIS
+  // dengan tampilan menu lain (Booking Ruangan, Data Pegawai, dst),
+  // bukan style custom sendiri yang bikin beda.
+  const groupHeaderStyle = {
+    display: 'flex',
+    alignItems: 'center',
+    cursor: 'pointer',
+    userSelect: 'none',
+  }
+
+  useEffect(() => {
+    if (!isAdminRT) return
+
+    let batal = false
+
+    const muatNotifikasi = async () => {
+      try {
+        const [resBooking, resKerusakanRuangan, resKerusakanMobil] =
+          await Promise.all([
+            fetch(API + '/booking_ruangan'),
+            fetch(API + '/kerusakan_ruangan'),
+            fetch(API + '/kerusakan_mobil'),
+          ])
+
+        const [jsonBooking, jsonKerusakanRuangan, jsonKerusakanMobil] =
+          await Promise.all([
+            resBooking.json(),
+            resKerusakanRuangan.json(),
+            resKerusakanMobil.json(),
+          ])
+
+        if (batal) return
+
+        const booking = jsonBooking?.data || []
+        const kerusakanRuangan = jsonKerusakanRuangan?.data || []
+        const kerusakanMobil = jsonKerusakanMobil?.data || []
+
+        setJumlahBookingMenunggu(
+          booking.filter((b) => b.status === 'Menunggu').length
+        )
+
+        setJumlahKerusakanRuanganMenunggu(
+          kerusakanRuangan.filter((k) => k.status === 'Menunggu').length
+        )
+
+        setJumlahKerusakanMobilMenunggu(
+          kerusakanMobil.filter((k) => k.status === 'Menunggu').length
+        )
+      } catch (err) {
+        // gagal diam-diam — badge cuma gak muncul, gak ganggu sidebar
+      }
+    }
+
+    muatNotifikasi()
+
+    // Refresh berkala tiap 30 detik biar angkanya gak basi kelamaan
+    const interval = setInterval(muatNotifikasi, 30000)
+
+    return () => {
+      batal = true
+      clearInterval(interval)
+    }
+  }, [isAdminRT])
 
   const aktif = ({ isActive }) => 'menu-item' + (isActive ? ' active' : '')
 
@@ -55,10 +177,62 @@ const bolehKangCepot = isAdminKeuangan || isPegawaiBiasa
       <div className="nav-label">Rumah Tangga</div>
       <nav>
         <NavLink to="/data-ruangan" className={aktif}>🏢 Fasilitas</NavLink>
-        <NavLink to="/booking-ruangan" className={aktif}>📅 Booking Ruangan</NavLink>
+        <NavLink
+          to="/booking-ruangan"
+          className={aktif}
+          style={{ display: 'flex', alignItems: 'center' }}
+        >
+          <span>📅 Booking Ruangan</span>
+          <BadgeNotif count={jumlahBookingMenunggu} />
+        </NavLink>
         <NavLink to="/kalender-ruangan" className={aktif}>🗓️ Kalender Ruangan</NavLink>
-        <NavLink to="/kerusakan-ruangan" className={aktif}>🛠️ Kerusakan</NavLink>
-        <NavLink to="/perbaikan-ruangan" className={aktif}>🔧 Perbaikan</NavLink>
+
+        {/* Kerusakan — dropdown, submenu Ruangan/Mobil masing-masing
+            punya badge notifikasi sendiri */}
+        <div
+          className="menu-item"
+          style={groupHeaderStyle}
+          onClick={() => setBukaKerusakan((v) => !v)}
+        >
+          <span style={{ flex: 1 }}>🛠️ Kerusakan</span>
+          <BadgeNotif count={jumlahKerusakanMenunggu} />
+          {bukaKerusakan ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
+        </div>
+
+        {bukaKerusakan && (
+          <>
+            <NavLink to="/kerusakan?tab=ruangan" className={kelasSub(subAktif('/kerusakan', 'ruangan'))} style={subIndentStyle}>
+              <span style={{ flex: 1 }}>🏢 Ruangan</span>
+              <BadgeNotif count={jumlahKerusakanRuanganMenunggu} />
+            </NavLink>
+            <NavLink to="/kerusakan?tab=mobil" className={kelasSub(subAktif('/kerusakan', 'mobil'))} style={subIndentStyle}>
+              <span style={{ flex: 1 }}>🚗 Mobil</span>
+              <BadgeNotif count={jumlahKerusakanMobilMenunggu} />
+            </NavLink>
+          </>
+        )}
+
+        {/* Perbaikan — dropdown, submenu Ruangan/Mobil (gak ada badge,
+            karena perbaikan gak termasuk yang dinotifikasikan) */}
+        <div
+          className="menu-item"
+          style={groupHeaderStyle}
+          onClick={() => setBukaPerbaikan((v) => !v)}
+        >
+          <span style={{ flex: 1 }}>🔧 Perbaikan</span>
+          {bukaPerbaikan ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
+        </div>
+
+        {bukaPerbaikan && (
+          <>
+            <NavLink to="/perbaikan?tab=ruangan" className={kelasSub(subAktif('/perbaikan', 'ruangan'))} style={subIndentStyle}>
+              <span>🏢 Ruangan</span>
+            </NavLink>
+            <NavLink to="/perbaikan?tab=mobil" className={kelasSub(subAktif('/perbaikan', 'mobil'))} style={subIndentStyle}>
+              <span>🚗 Mobil</span>
+            </NavLink>
+          </>
+        )}
       </nav>
 
       {/* 👔 KEPEGAWAIAN */}

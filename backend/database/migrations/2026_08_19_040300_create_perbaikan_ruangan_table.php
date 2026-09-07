@@ -17,6 +17,10 @@ return new class extends Migration
             $table->enum('status', ['Diproses', 'Selesai'])->default('Diproses');
             $table->timestamps();
         });
+
+        // perbaikan_mobil dibuat di migration terpisah
+        // (2026_09_03_030100_create_perbaikan_mobil_table.php), setelah
+        // kerusakan_mobil ada (dibutuhkan untuk foreign key-nya).
     }
 
     public function down(): void

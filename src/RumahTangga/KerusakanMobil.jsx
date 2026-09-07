@@ -1,0 +1,1085 @@
+import { useEffect, useState } from 'react'
+import {
+  Wrench,
+  Plus,
+  ClipboardList,
+  Clock,
+  CheckCircle2,
+  Trash2,
+} from 'lucide-react'
+
+const API = 'http://localhost:8000/api'
+const STORAGE_URL = 'http://localhost:8000/storage'
+
+function KerusakanMobil({ user }) {
+  const isAdmin =
+    user.role === 'admin_rumahtangga' ||
+    user.role === 'superadmin'
+
+  // Akun admin/superadmin sengaja gak punya "bidang" spesifik (bukan pegawai
+  // satu unit tertentu), jadi kalau kosong pakai default ini biar kolom
+  // "Bagian" gak nampilin strip terus dan gak gagal validasi "required".
+  const bagianPengguna = user.bidang || 'Rumah Tangga'
+
+  const [laporan, setLaporan] = useState([])
+
+  const [loading, setLoading] = useState(true)
+  const [errorMsg, setErrorMsg] = useState('')
+  const [submitting, setSubmitting] = useState(false)
+
+  const [formData, setFormData] = useState({
+    mobil: '',
+    kerusakan: '',
+    deskripsi: '',
+    bukti: null,
+  })
+
+  const [showForm, setShowForm] = useState(false)
+  const [currentPage, setCurrentPage] = useState(0)
+
+  const muatData = async () => {
+    setLoading(true)
+    setErrorMsg('')
+
+    try {
+      const resLaporan = await fetch(API + '/kerusakan_mobil')
+      const jsonLaporan = await resLaporan.json()
+
+      setLaporan(jsonLaporan?.data || [])
+    } catch (err) {
+      setErrorMsg('Gagal memuat data kerusakan mobil.')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    muatData()
+  }, [])
+
+  const handleChange = (e) => {
+    const { name, value, files } = e.target
+
+    setFormData({
+      ...formData,
+      [name]: files ? files[0] : value,
+    })
+  }
+
+  const handleSubmit = async (e) => {
+    e.preventDefault()
+
+    if (!formData.bukti) {
+      alert('Bukti gambar wajib dilampirkan.')
+      return
+    }
+
+    const payload = new FormData()
+    payload.append('mobil', formData.mobil)
+    payload.append('pelapor', user.nama)
+    payload.append('bagian', bagianPengguna)
+    payload.append('kerusakan', formData.kerusakan)
+    payload.append('deskripsi', formData.deskripsi)
+    payload.append('bukti', formData.bukti)
+    payload.append(
+      'sumber',
+      isAdmin ? 'Pemeriksaan Admin' : 'Laporan Pegawai'
+    )
+    payload.append(
+      'status',
+      isAdmin ? 'Diproses' : 'Menunggu'
+    )
+
+    setSubmitting(true)
+
+    try {
+      const res = await fetch(API + '/kerusakan_mobil', {
+        method: 'POST',
+        body: payload,
+      })
+
+      const json = await res.json().catch(() => null)
+
+      if (!res.ok) {
+        // Tampilkan pesan error asli dari backend (misal validasi gagal)
+        // biar keliatan alasannya, bukan nge-klaim berhasil padahal enggak.
+        const pesanValidasi = json?.errors
+          ? Object.values(json.errors).flat().join('\n')
+          : json?.message
+
+        alert(
+          pesanValidasi || 'Gagal mengirim laporan kerusakan.'
+        )
+        return
+      }
+
+      await muatData()
+
+      setFormData({
+        mobil: '',
+        kerusakan: '',
+        deskripsi: '',
+        bukti: null,
+      })
+
+      setShowForm(false)
+
+      alert(
+        isAdmin
+          ? 'Data kerusakan berhasil ditambahkan.'
+          : 'Laporan kerusakan berhasil dikirim.'
+      )
+    } catch (err) {
+      alert('Gagal mengirim laporan kerusakan.')
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
+  const handleProses = async (id) => {
+    try {
+      await fetch(API + '/kerusakan_mobil/' + id + '/proses', {
+        method: 'PUT',
+      })
+      await muatData()
+    } catch (err) {
+      alert('Gagal memproses laporan.')
+    }
+  }
+
+  const handleSelesai = async (id) => {
+    try {
+      await fetch(API + '/kerusakan_mobil/' + id + '/selesai', {
+        method: 'PUT',
+      })
+      await muatData()
+    } catch (err) {
+      alert('Gagal menyelesaikan laporan.')
+    }
+  }
+
+  const handleHapus = async (id) => {
+    if (
+      window.confirm(
+        'Yakin ingin menghapus data kerusakan ini?'
+      )
+    ) {
+      try {
+        await fetch(API + '/kerusakan_mobil/' + id, {
+          method: 'DELETE',
+        })
+        await muatData()
+      } catch (err) {
+        alert('Gagal menghapus data.')
+      }
+    }
+  }
+
+  const laporanDitampilkan = isAdmin
+    ? laporan
+    : laporan.filter(
+        (item) => item.pelapor === user.nama
+      )
+
+  const totalLaporan = laporanDitampilkan.length
+
+  const totalMenunggu = laporanDitampilkan.filter(
+    (item) => item.status === 'Menunggu'
+  ).length
+
+  const totalDiproses = laporanDitampilkan.filter(
+    (item) => item.status === 'Diproses'
+  ).length
+
+  const totalSelesai = laporanDitampilkan.filter(
+    (item) => item.status === 'Selesai'
+  ).length
+
+  const getStatusClass = (status) => {
+    if (status === 'Selesai') return 'green'
+    if (status === 'Diproses') return 'blue'
+    return 'yellow'
+  }
+
+  const formatTanggal = (tanggal) => {
+    return new Date(
+      `${tanggal}T00:00:00`
+    ).toLocaleDateString('id-ID', {
+      day: '2-digit',
+      month: 'short',
+      year: 'numeric',
+    })
+  }
+
+  const ITEMS_PER_PAGE = 10
+
+  const totalPages = Math.ceil(
+    laporanDitampilkan.length / ITEMS_PER_PAGE
+  )
+
+  const startIndex = currentPage * ITEMS_PER_PAGE
+
+  const dataPaginated = laporanDitampilkan.slice(
+    startIndex,
+    startIndex + ITEMS_PER_PAGE
+  )
+
+  return (
+    <div className="page">
+
+      {/* HEADER */}
+      <div className="page-title">
+        <h1 style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <Wrench size={22} /> Kerusakan Mobil
+        </h1>
+        <p>
+          Laporkan kerusakan mobil dinas dan pantau
+          proses penanganannya.
+        </p>
+      </div>
+
+      {/* MODE USER */}
+      {!isAdmin && (
+        <div className="guest-note">
+          👁️ Mode tamu: Anda dapat melaporkan kerusakan
+          dan melihat laporan kerusakan Anda sendiri.
+        </div>
+      )}
+
+      {/* ERROR */}
+      {errorMsg && (
+        <div
+          style={{
+            padding: '12px 16px',
+            marginBottom: '16px',
+            borderRadius: '8px',
+            backgroundColor: '#fee2e2',
+            color: '#991b1b',
+            fontSize: '13px',
+          }}
+        >
+          ⚠️ {errorMsg}
+        </div>
+      )}
+
+      {/* LOADING */}
+      {loading && (
+        <div
+          style={{
+            padding: '12px 16px',
+            marginBottom: '16px',
+            borderRadius: '8px',
+            backgroundColor: '#f1f5f9',
+            color: '#475569',
+            fontSize: '13px',
+          }}
+        >
+          Memuat data kerusakan mobil...
+        </div>
+      )}
+
+      {/* SUMMARY */}
+      <div className="stats-grid">
+
+        <div className="stat-card">
+          <div className="stat-icon"><ClipboardList size={20} /></div>
+
+          <div className="stat-info">
+            <h4>Total Laporan</h4>
+
+            <div className="stat-value">
+              {totalLaporan}
+            </div>
+
+            <div className="stat-desc">
+              {isAdmin
+                ? 'Seluruh laporan kerusakan'
+                : 'Laporan kerusakan Anda'}
+            </div>
+          </div>
+        </div>
+
+        <div className="stat-card gold">
+          <div className="stat-icon"><Clock size={20} /></div>
+
+          <div className="stat-info">
+            <h4>Menunggu</h4>
+
+            <div className="stat-value">
+              {totalMenunggu}
+            </div>
+
+            <div className="stat-desc">
+              Menunggu diproses
+            </div>
+          </div>
+        </div>
+
+        <div className="stat-card">
+          <div className="stat-icon"><Wrench size={20} /></div>
+
+          <div className="stat-info">
+            <h4>Diproses</h4>
+
+            <div className="stat-value">
+              {totalDiproses}
+            </div>
+
+            <div className="stat-desc">
+              Sedang ditindaklanjuti
+            </div>
+          </div>
+        </div>
+
+        <div className="stat-card green">
+          <div className="stat-icon"><CheckCircle2 size={20} /></div>
+
+          <div className="stat-info">
+            <h4>Selesai</h4>
+
+            <div className="stat-value">
+              {totalSelesai}
+            </div>
+
+            <div className="stat-desc">
+              Kerusakan telah selesai
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      {/* FORM TAMBAH KERUSAKAN */}
+      <div className="card">
+
+        <div
+          style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'flex-start',
+            gap: '20px',
+          }}
+        >
+          <div>
+            <h3 style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              {isAdmin
+                ? (<><Plus size={18} /> Tambah Data Kerusakan</>)
+                : (<><Plus size={18} /> Lapor Kerusakan</>)}
+            </h3>
+
+            <p
+              style={{
+                margin: '5px 0 0',
+                color: '#64748b',
+                fontSize: '13px',
+              }}
+            >
+              {isAdmin
+                ? 'Tambahkan data kerusakan mobil dinas.'
+                : 'Laporkan kerusakan fasilitas dengan melampirkan bukti gambar.'}
+            </p>
+          </div>
+
+          <button
+            type="button"
+            className="btn"
+            onClick={() => setShowForm(!showForm)}
+            style={{ display: 'flex', alignItems: 'center', gap: '6px' }}
+          >
+            {showForm
+              ? 'Tutup'
+              : (<><Plus size={16} /> Tambah Kerusakan</>)}
+          </button>
+        </div>
+
+        {showForm && (
+          <form
+            onSubmit={handleSubmit}
+            style={{
+              marginTop: '20px',
+              paddingTop: '20px',
+              borderTop: '1px solid #e2e8f0',
+            }}
+          >
+
+            {/* INFORMASI OTOMATIS */}
+            <div
+              style={{
+                display: 'grid',
+                gridTemplateColumns:
+                  '1fr 1fr 1fr',
+                gap: '14px',
+                marginBottom: '16px',
+              }}
+            >
+
+              <div>
+                <label
+                  style={{
+                    display: 'block',
+                    marginBottom: '6px',
+                    fontSize: '12px',
+                    fontWeight: 600,
+                    color: '#475569',
+                  }}
+                >
+                  Pelapor
+                </label>
+
+                <input
+                  type="text"
+                  value={user.nama}
+                  disabled
+                  style={{
+                    width: '100%',
+                    boxSizing: 'border-box',
+                    padding: '9px 11px',
+                    border: '1px solid #cbd5e1',
+                    borderRadius: '6px',
+                    backgroundColor: '#f8fafc',
+                    color: '#64748b',
+                    fontSize: '12px',
+                  }}
+                />
+              </div>
+
+              <div>
+                <label
+                  style={{
+                    display: 'block',
+                    marginBottom: '6px',
+                    fontSize: '12px',
+                    fontWeight: 600,
+                    color: '#475569',
+                  }}
+                >
+                  Bagian
+                </label>
+
+                <input
+                  type="text"
+                  value={bagianPengguna}
+                  disabled
+                  style={{
+                    width: '100%',
+                    boxSizing: 'border-box',
+                    padding: '9px 11px',
+                    border: '1px solid #cbd5e1',
+                    borderRadius: '6px',
+                    backgroundColor: '#f8fafc',
+                    color: '#64748b',
+                    fontSize: '12px',
+                  }}
+                />
+              </div>
+
+              <div>
+                <label
+                  style={{
+                    display: 'block',
+                    marginBottom: '6px',
+                    fontSize: '12px',
+                    fontWeight: 600,
+                    color: '#475569',
+                  }}
+                >
+                  Tanggal
+                </label>
+
+                <input
+                  type="text"
+                  value={formatTanggal(
+                    new Date()
+                      .toISOString()
+                      .split('T')[0]
+                  )}
+                  disabled
+                  style={{
+                    width: '100%',
+                    boxSizing: 'border-box',
+                    padding: '9px 11px',
+                    border: '1px solid #cbd5e1',
+                    borderRadius: '6px',
+                    backgroundColor: '#f8fafc',
+                    color: '#64748b',
+                    fontSize: '12px',
+                  }}
+                />
+              </div>
+
+            </div>
+
+            {/* DATA KERUSAKAN */}
+            <div
+              style={{
+                display: 'grid',
+                gridTemplateColumns: '1fr 1fr',
+                gap: '14px',
+                marginBottom: '16px',
+              }}
+            >
+
+              <div>
+                <label
+                  style={{
+                    display: 'block',
+                    marginBottom: '6px',
+                    fontSize: '12px',
+                    fontWeight: 600,
+                    color: '#475569',
+                  }}
+                >
+                  Mobil
+                </label>
+
+                <input
+                  type="text"
+                  name="mobil"
+                  placeholder="Contoh: Toyota Avanza - B 1234 XY"
+                  value={formData.mobil}
+                  onChange={handleChange}
+                  required
+                  style={{
+                    width: '100%',
+                    boxSizing: 'border-box',
+                    padding: '9px 11px',
+                    border: '1px solid #cbd5e1',
+                    borderRadius: '6px',
+                    backgroundColor: '#fff',
+                    color: '#334155',
+                    fontSize: '12px',
+                  }}
+                />
+              </div>
+
+              <div>
+                <label
+                  style={{
+                    display: 'block',
+                    marginBottom: '6px',
+                    fontSize: '12px',
+                    fontWeight: 600,
+                    color: '#475569',
+                  }}
+                >
+                  Jenis Kerusakan
+                </label>
+
+                <input
+                  type="text"
+                  name="kerusakan"
+                  placeholder="Contoh: AC tidak dingin"
+                  value={formData.kerusakan}
+                  onChange={handleChange}
+                  required
+                  style={{
+                    width: '100%',
+                    boxSizing: 'border-box',
+                    padding: '9px 11px',
+                    border: '1px solid #cbd5e1',
+                    borderRadius: '6px',
+                    backgroundColor: '#fff',
+                    color: '#334155',
+                    fontSize: '12px',
+                  }}
+                />
+              </div>
+
+            </div>
+
+            {/* DESKRIPSI */}
+            <div
+              style={{
+                marginBottom: '16px',
+              }}
+            >
+
+              <label
+                style={{
+                  display: 'block',
+                  marginBottom: '6px',
+                  fontSize: '12px',
+                  fontWeight: 600,
+                  color: '#475569',
+                }}
+              >
+                Deskripsi Kerusakan
+              </label>
+
+              <textarea
+                name="deskripsi"
+                placeholder="Jelaskan kondisi atau kerusakan yang terjadi..."
+                value={formData.deskripsi}
+                onChange={handleChange}
+                required
+                rows="4"
+                style={{
+                  width: '100%',
+                  boxSizing: 'border-box',
+                  padding: '9px 11px',
+                  border: '1px solid #cbd5e1',
+                  borderRadius: '6px',
+                  backgroundColor: '#fff',
+                  color: '#334155',
+                  fontSize: '12px',
+                  resize: 'vertical',
+                }}
+              />
+
+            </div>
+
+            {/* BUKTI */}
+            <div
+              style={{
+                marginBottom: '18px',
+              }}
+            >
+
+              <label
+                style={{
+                  display: 'block',
+                  marginBottom: '6px',
+                  fontSize: '12px',
+                  fontWeight: 600,
+                  color: '#475569',
+                }}
+              >
+                Bukti Gambar
+              </label>
+
+              <input
+                type="file"
+                name="bukti"
+                accept="image/*"
+                onChange={handleChange}
+                required
+                style={{
+                  width: '100%',
+                  boxSizing: 'border-box',
+                  padding: '8px 10px',
+                  border: '1px solid #cbd5e1',
+                  borderRadius: '6px',
+                  backgroundColor: '#fff',
+                  color: '#475569',
+                  fontSize: '12px',
+                }}
+              />
+
+              <div
+                style={{
+                  marginTop: '5px',
+                  fontSize: '11px',
+                  color: '#94a3b8',
+                }}
+              >
+                Wajib melampirkan gambar sebagai bukti
+                kerusakan.
+              </div>
+
+            </div>
+
+            {/* DATA OTOMATIS */}
+            <div
+              style={{
+                display: 'grid',
+                gridTemplateColumns: '1fr 1fr',
+                gap: '14px',
+                marginBottom: '20px',
+              }}
+            >
+
+              <div>
+                <label
+                  style={{
+                    display: 'block',
+                    marginBottom: '6px',
+                    fontSize: '12px',
+                    fontWeight: 600,
+                    color: '#475569',
+                  }}
+                >
+                  Sumber
+                </label>
+
+                <input
+                  type="text"
+                  value={
+                    isAdmin
+                      ? 'Pemeriksaan Admin'
+                      : 'Laporan Pegawai'
+                  }
+                  disabled
+                  style={{
+                    width: '100%',
+                    boxSizing: 'border-box',
+                    padding: '9px 11px',
+                    border: '1px solid #cbd5e1',
+                    borderRadius: '6px',
+                    backgroundColor: '#f8fafc',
+                    color: '#64748b',
+                    fontSize: '12px',
+                  }}
+                />
+              </div>
+
+              <div>
+                <label
+                  style={{
+                    display: 'block',
+                    marginBottom: '6px',
+                    fontSize: '12px',
+                    fontWeight: 600,
+                    color: '#475569',
+                  }}
+                >
+                  Status
+                </label>
+
+                <input
+                  type="text"
+                  value={
+                    isAdmin
+                      ? 'Diproses'
+                      : 'Menunggu'
+                  }
+                  disabled
+                  style={{
+                    width: '100%',
+                    boxSizing: 'border-box',
+                    padding: '9px 11px',
+                    border: '1px solid #cbd5e1',
+                    borderRadius: '6px',
+                    backgroundColor: '#f8fafc',
+                    color: '#64748b',
+                    fontSize: '12px',
+                  }}
+                />
+              </div>
+
+            </div>
+
+            {/* BUTTON */}
+            <div
+              style={{
+                display: 'flex',
+                justifyContent: 'flex-end',
+                gap: '8px',
+                borderTop: '1px solid #e2e8f0',
+                paddingTop: '16px',
+              }}
+            >
+
+              {/* BATAL */}
+              <button
+                type="button"
+                className="btn"
+                onClick={() => setShowForm(false)}
+                style={{
+                  backgroundColor: '#fff',
+                  border: '1px solid #cbd5e1',
+                }}
+              >
+                Batal
+              </button>
+
+              {/* SIMPAN */}
+              <button
+                type="submit"
+                className="btn"
+                disabled={submitting}
+              >
+                {submitting
+                  ? 'Mengirim...'
+                  : 'Simpan Laporan'}
+              </button>
+
+            </div>
+
+          </form>
+        )}
+
+      </div>
+
+      {/* TABLE */}
+      <div className="card">
+
+        <h3 style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <ClipboardList size={18} /> Daftar Kerusakan Mobil
+        </h3>
+
+        <div className="filter-info">
+          Menampilkan {laporanDitampilkan.length} laporan
+        </div>
+
+        <div className="table-wrap">
+
+          <table className="table">
+
+            <thead>
+              <tr>
+                <th>Mobil</th>
+                <th>Pelapor</th>
+                <th>Bagian</th>
+                <th>Tanggal</th>
+                <th>Kerusakan</th>
+                <th>Deskripsi</th>
+                <th>Bukti</th>
+                <th>Status</th>
+                <th>Aksi</th>
+              </tr>
+            </thead>
+
+            <tbody>
+
+              {dataPaginated.length > 0 ? (
+                dataPaginated.map((item) => {
+
+                  const statusClass =
+                    getStatusClass(item.status)
+
+                  return (
+                    <tr key={item.id}>
+
+                      <td>{item.mobil}</td>
+
+                      <td>{item.pelapor}</td>
+
+                      <td>{item.bagian}</td>
+
+                      <td>
+                        {formatTanggal(
+                          item.tanggal
+                        )}
+                      </td>
+
+                      <td>{item.kerusakan}</td>
+
+                      <td>{item.deskripsi}</td>
+
+                      <td>
+                        {item.bukti ? (
+                          <a
+                            href={`${STORAGE_URL}/${item.bukti}`}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="badge blue"
+                            style={{
+                              textDecoration: 'none',
+                            }}
+                          >
+                            📷 Lihat
+                          </a>
+                        ) : (
+                          <span className="badge yellow">
+                            Tidak ada
+                          </span>
+                        )}
+                      </td>
+
+                      <td>
+                        <span
+                          className={`badge ${statusClass}`}
+                        >
+                          {item.status}
+                        </span>
+                      </td>
+
+                      <td>
+                        {isAdmin && (
+                          <div
+                            style={{
+                              display: 'flex',
+                              gap: '5px',
+                              alignItems: 'center',
+                            }}
+                          >
+
+                            {item.status ===
+                              'Menunggu' && (
+                              <button
+                                title="Proses laporan"
+                                onClick={() =>
+                                  handleProses(
+                                    item.id
+                                  )
+                                }
+                                style={{
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'center',
+                                  width: '30px',
+                                  height: '30px',
+                                  padding: 0,
+                                  backgroundColor: '#eff6ff',
+                                  border: '1px solid #bfdbfe',
+                                  borderRadius: '6px',
+                                  cursor: 'pointer',
+                                }}
+                              >
+                                <Clock size={14} color="#0b72e7" />
+                              </button>
+                            )}
+
+                            {item.status ===
+                              'Diproses' && (
+                              <button
+                                title="Tandai selesai"
+                                onClick={() =>
+                                  handleSelesai(
+                                    item.id
+                                  )
+                                }
+                                style={{
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'center',
+                                  width: '30px',
+                                  height: '30px',
+                                  padding: 0,
+                                  backgroundColor: '#f0fdf4',
+                                  border: '1px solid #bbf7d0',
+                                  borderRadius: '6px',
+                                  cursor: 'pointer',
+                                }}
+                              >
+                                <CheckCircle2 size={14} color="#16a34a" />
+                              </button>
+                            )}
+
+                            <button
+                              title="Hapus data"
+                              onClick={() =>
+                                handleHapus(item.id)
+                              }
+                              style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                width: '30px',
+                                height: '30px',
+                                padding: 0,
+                                backgroundColor: '#fef2f2',
+                                border: '1px solid #fecaca',
+                                borderRadius: '6px',
+                                cursor: 'pointer',
+                              }}
+                            >
+                              <Trash2 size={14} color="#dc2626" />
+                            </button>
+
+                          </div>
+                        )}
+                      </td>
+
+                    </tr>
+                  )
+                })
+              ) : (
+                <tr>
+                  <td
+                    colSpan="9"
+                    style={{
+                      textAlign: 'center',
+                      padding: '30px',
+                    }}
+                  >
+                    Belum ada laporan kerusakan.
+                  </td>
+                </tr>
+              )}
+
+            </tbody>
+
+          </table>
+
+        </div>
+
+        {/* PAGINATION */}
+        <div
+          style={{
+            display: 'flex',
+            justifyContent: 'flex-end',
+            gap: '8px',
+            marginTop: '16px',
+            alignItems: 'center',
+          }}
+        >
+
+          <button
+            onClick={() =>
+              setCurrentPage((prev) =>
+                Math.max(0, prev - 1)
+              )
+            }
+            disabled={currentPage === 0}
+            className="btn"
+            style={{
+              padding: '6px 10px',
+              borderRadius: '6px',
+              border: '1px solid #cbd5e1',
+              backgroundColor: '#fff',
+              cursor:
+                currentPage === 0
+                  ? 'not-allowed'
+                  : 'pointer',
+              opacity:
+                currentPage === 0 ? 0.5 : 1,
+              fontSize: '11px',
+              fontWeight: 600,
+            }}
+          >
+            Back
+          </button>
+
+          <span
+            style={{
+              fontSize: '11px',
+              fontWeight: '500',
+              color: '#64748b',
+            }}
+          >
+            {currentPage + 1} /{' '}
+            {Math.max(1, totalPages)}
+          </span>
+
+          <button
+            onClick={() =>
+              setCurrentPage((prev) =>
+                prev + 1 < totalPages
+                  ? prev + 1
+                  : prev
+              )
+            }
+            disabled={
+              currentPage + 1 >= totalPages
+            }
+            className="btn"
+            style={{
+              padding: '6px 10px',
+              borderRadius: '6px',
+              border: '1px solid #cbd5e1',
+              backgroundColor: '#fff',
+              cursor:
+                currentPage + 1 >= totalPages
+                  ? 'not-allowed'
+                  : 'pointer',
+              opacity:
+                currentPage + 1 >= totalPages
+                  ? 0.5
+                  : 1,
+              fontSize: '11px',
+              fontWeight: 600,
+            }}
+          >
+            Next
+          </button>
+
+        </div>
+
+      </div>
+
+    </div>
+  )
+}
+
+export default KerusakanMobil

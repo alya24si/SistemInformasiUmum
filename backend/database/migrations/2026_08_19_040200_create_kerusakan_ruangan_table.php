@@ -21,6 +21,9 @@ return new class extends Migration
             $table->string('sumber');
             $table->timestamps();
         });
+
+        // kerusakan_mobil dibuat di migration terpisah
+        // (2026_09_03_030000_create_kerusakan_mobil_table.php)
     }
 
     public function down(): void
