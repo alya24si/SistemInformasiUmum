@@ -54,12 +54,18 @@ function Sidebar({ user }) {
   const [jumlahKerusakanMobilMenunggu, setJumlahKerusakanMobilMenunggu] = useState(0)
   const jumlahKerusakanMenunggu = jumlahKerusakanRuanganMenunggu + jumlahKerusakanMobilMenunggu
 
-  // Submenu Kerusakan & Perbaikan bisa di-expand/collapse, defaultnya
-  // sama-sama terbuka biar Ruangan/Mobil langsung kelihatan.
-  const [bukaKerusakan, setBukaKerusakan] = useState(true)
-  const [bukaPerbaikan, setBukaPerbaikan] = useState(true)
-
   const location = useLocation()
+
+  // Submenu Kerusakan & Perbaikan bisa di-expand/collapse. Defaultnya
+  // TERTUTUP (biar sidebar gak penuh pas pertama buka web) -- kecuali
+  // kalau pas dibuka/refresh usernya emang lagi ada di halaman itu,
+  // baru otomatis kebuka biar menu yang aktif gak "hilang" ketutup.
+  const [bukaKerusakan, setBukaKerusakan] = useState(
+    () => location.pathname === '/kerusakan'
+  )
+  const [bukaPerbaikan, setBukaPerbaikan] = useState(
+    () => location.pathname === '/perbaikan'
+  )
 
   // Submenu dianggap aktif kalau pathname cocok DAN query ?tab= cocok
   // (atau ?tab= gak ada sama sekali, dianggap "ruangan" karena itu

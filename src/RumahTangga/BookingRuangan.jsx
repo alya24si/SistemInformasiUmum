@@ -26,9 +26,9 @@ const formatTanggal = (tanggal) => {
   })
 }
 
-// Jam dropdown 1-24 (tanpa AM/PM) & menit cuma boleh 00/15/30/45
-const OPSI_JAM = Array.from({ length: 24 }, (_, i) =>
-  String(i + 1).padStart(2, '0')
+// Jam dropdown 06-22 (tanpa AM/PM) & menit cuma boleh 00/15/30/45
+const OPSI_JAM = Array.from({ length: 17 }, (_, i) =>
+  String(i + 6).padStart(2, '0')
 )
 const OPSI_MENIT = ['00', '15', '30', '45']
 
@@ -113,9 +113,9 @@ function BookingRuangan({ user }) {
   // Dropdown jam/menit terpisah dari `form.mulai`/`form.selesai` biar gampang
   // dikontrol per-bagian (jam & menit), lalu digabung jadi "HH:MM" saat dipakai.
   const [jamMulai, setJamMulai] = useState('')
-  const [menitMulai, setMenitMulai] = useState('00')
+  const [menitMulai, setMenitMulai] = useState('')
   const [jamSelesai, setJamSelesai] = useState('')
-  const [menitSelesai, setMenitSelesai] = useState('00')
+  const [menitSelesai, setMenitSelesai] = useState('')
 
   const [showForm, setShowForm] = useState(false)
   const [currentPage, setCurrentPage] = useState(0)
@@ -250,9 +250,9 @@ function BookingRuangan({ user }) {
     })
 
     setJamMulai('')
-    setMenitMulai('00')
+    setMenitMulai('')
     setJamSelesai('')
-    setMenitSelesai('00')
+    setMenitSelesai('')
 
     setTolakInfo(null)
   }
@@ -260,8 +260,8 @@ function BookingRuangan({ user }) {
   const tambahBooking = async (e) => {
     e.preventDefault()
 
-    if (!jamMulai || !jamSelesai) {
-      alert('Pilih jam mulai dan jam selesai.')
+    if (!jamMulai || !menitMulai || !jamSelesai || !menitSelesai) {
+      alert('Pilih jam dan menit, untuk waktu mulai maupun selesai.')
       return
     }
 
@@ -1014,12 +1014,14 @@ function BookingRuangan({ user }) {
                   <select
                     value={jamMulai}
                     onChange={(e) => {
-                      setJamMulai(e.target.value)
+                      const jBaru = e.target.value
+                      setJamMulai(jBaru)
                       setForm({
                         ...form,
-                        mulai: e.target.value
-                          ? `${e.target.value}:${menitMulai}`
-                          : '',
+                        mulai:
+                          jBaru && menitMulai
+                            ? `${jBaru}:${menitMulai}`
+                            : '',
                       })
                       if (tolakInfo) setTolakInfo(null)
                     }}
@@ -1039,17 +1041,21 @@ function BookingRuangan({ user }) {
                   <select
                     value={menitMulai}
                     onChange={(e) => {
-                      setMenitMulai(e.target.value)
+                      const mBaru = e.target.value
+                      setMenitMulai(mBaru)
                       setForm({
                         ...form,
-                        mulai: jamMulai
-                          ? `${jamMulai}:${e.target.value}`
-                          : '',
+                        mulai:
+                          jamMulai && mBaru
+                            ? `${jamMulai}:${mBaru}`
+                            : '',
                       })
                       if (tolakInfo) setTolakInfo(null)
                     }}
+                    required
                     style={timePartStyle}
                   >
+                    <option value="">Menit</option>
                     {OPSI_MENIT.map((m) => (
                       <option key={m} value={m}>
                         {m}
@@ -1087,12 +1093,14 @@ function BookingRuangan({ user }) {
                   <select
                     value={jamSelesai}
                     onChange={(e) => {
-                      setJamSelesai(e.target.value)
+                      const jBaru = e.target.value
+                      setJamSelesai(jBaru)
                       setForm({
                         ...form,
-                        selesai: e.target.value
-                          ? `${e.target.value}:${menitSelesai}`
-                          : '',
+                        selesai:
+                          jBaru && menitSelesai
+                            ? `${jBaru}:${menitSelesai}`
+                            : '',
                       })
                       if (tolakInfo) setTolakInfo(null)
                     }}
@@ -1112,17 +1120,21 @@ function BookingRuangan({ user }) {
                   <select
                     value={menitSelesai}
                     onChange={(e) => {
-                      setMenitSelesai(e.target.value)
+                      const mBaru = e.target.value
+                      setMenitSelesai(mBaru)
                       setForm({
                         ...form,
-                        selesai: jamSelesai
-                          ? `${jamSelesai}:${e.target.value}`
-                          : '',
+                        selesai:
+                          jamSelesai && mBaru
+                            ? `${jamSelesai}:${mBaru}`
+                            : '',
                       })
                       if (tolakInfo) setTolakInfo(null)
                     }}
+                    required
                     style={timePartStyle}
                   >
+                    <option value="">Menit</option>
                     {OPSI_MENIT.map((m) => (
                       <option key={m} value={m}>
                         {m}

@@ -871,7 +871,7 @@ function PerbaikanMobil({ user }) {
 
                 <th>Mobil</th>
 
-                <th>Kerusakan</th>
+                <th>Keluhan Mobil</th>
 
                 <th>Jenis Perbaikan</th>
 
