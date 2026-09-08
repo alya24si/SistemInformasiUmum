@@ -16,6 +16,7 @@ import {
   Ship,
   ShieldCheck,
   Handshake,
+  Download,
 } from 'lucide-react'
 
 const API_URL = 'http://127.0.0.1:8000/api'
@@ -149,8 +150,7 @@ function DataPegawai() {
   })
 
   // Daftar Eselon III diambil dinamis dari data yang ada (bukan daftar
-  // tetap), karena isinya bebas diisi admin lewat form/import, beda
-  // dengan Eselon IV yang pilihannya sudah baku lewat dropdown.
+  // tetap), karena isinya bebas diisi admin lewat form/import.
   const daftarEselonTiga = Array.from(
     new Set(
       data
@@ -159,26 +159,43 @@ function DataPegawai() {
     )
   ).sort((a, b) => a.localeCompare(b))
 
+  // Eselon IV sekarang juga diambil dinamis dari data, sama seperti Eselon III.
+  // Sebelumnya dropdown filter ini pakai daftar tetap (5 opsi lama), padahal
+  // hasil import Excel bisa punya nilai Eselon IV yang jauh lebih detail
+  // (mis. "Subbagian Tata Usaha dan Keuangan", "Seksi Pemeriksaan", dst).
+  const daftarEselonEmpat = Array.from(
+    new Set(
+      data
+        .map((pegawai) => (pegawai.bagian || '').trim())
+        .filter((nilai) => nilai !== '')
+    )
+  ).sort((a, b) => a.localeCompare(b))
+
   const totalPegawai = data.length
 
+  // PENTING: kartu ringkasan ini hitung berdasarkan ESELON III (bukan
+  // eselon_iv/"bagian"), karena Eselon III yang konsisten berisi 5 kategori
+  // besar (Bagian Umum, Bidang Penindakan, dst) di SETIAP baris data.
+  // Eselon IV sekarang isinya granular per Subbagian/Seksi (hasil import
+  // Excel Kanwil), jadi gak cocok lagi dipakai buat pengelompokan besar ini.
   const totalBagianUmum = data.filter((pegawai) =>
-    cocokkanBagian(pegawai.bagian, 'Bagian Umum')
+    cocokkanBagian(pegawai.eselon_iii, 'Bagian Umum')
   ).length
 
   const totalPenindakan = data.filter((pegawai) =>
-    cocokkanBagian(pegawai.bagian, 'Bidang Penindakan dan Penyidikan')
+    cocokkanBagian(pegawai.eselon_iii, 'Bidang Penindakan dan Penyidikan')
   ).length
 
   const totalKepabeanan = data.filter((pegawai) =>
-    cocokkanBagian(pegawai.bagian, 'Bidang Kepabeanan dan Cukai')
+    cocokkanBagian(pegawai.eselon_iii, 'Bidang Kepabeanan dan Cukai')
   ).length
 
   const totalKepatuhan = data.filter((pegawai) =>
-    cocokkanBagian(pegawai.bagian, 'Bidang Kepatuhan Internal')
+    cocokkanBagian(pegawai.eselon_iii, 'Bidang Kepatuhan Internal')
   ).length
 
   const totalFasilitas = data.filter((pegawai) =>
-    cocokkanBagian(pegawai.bagian, 'Bidang Fasilitas Kepabeanan dan Cukai')
+    cocokkanBagian(pegawai.eselon_iii, 'Bidang Fasilitas Kepabeanan dan Cukai')
   ).length
 
   const formKosong = {
@@ -329,7 +346,13 @@ function DataPegawai() {
           const eselonIii = String(
             cari(['eseloniii', 'eselon3', 'eselon'], ['eseloniii', 'eselon3']) ?? ''
           ).trim()
-          const bagianEksplisit = String(cari(['bagian'], ['bagian']) ?? '').trim()
+          // BUGFIX: sebelumnya cuma nyari header "Bagian", jadi file Excel yang
+          // headernya "Eselon IV" (kayak file Kanwil) gak pernah kebaca dan selalu
+          // jatuh ke nilai Eselon III (makanya kolom Eselon IV di tabel isinya
+          // dobel sama Eselon III). Sekarang "Eselon IV" dicari duluan.
+          const bagianEksplisit = String(
+            cari(['eseloniv', 'eselon4', 'bagian'], ['eseloniv', 'eselon4', 'bagian']) ?? ''
+          ).trim()
 
           return {
             nip: String(cari(['nip'], ['nip']) ?? '').trim(),
@@ -400,6 +423,45 @@ function DataPegawai() {
     reader.readAsArrayBuffer(file)
   }
 
+  // Download data pegawai (yang lagi ditampilkan/difilter) jadi file Excel.
+  // Urutan & nama kolom sengaja disamakan dengan tabel di layar, supaya kalau
+  // nanti file ini di-edit lalu di-import ulang, kolomnya tetap kebaca benar.
+  const exportExcel = () => {
+    const rows = dataFiltered.map((pegawai, index) => ({
+      No: index + 1,
+      NIP: pegawai.nip,
+      'Nama Pegawai': pegawai.nama,
+      Pangkat: pegawai.pangkat || '',
+      Jabatan: pegawai.jabatan || '',
+      'Eselon IV': pegawai.bagian || '',
+      'Eselon III': pegawai.eselon_iii || '',
+      TMT: formatTanggalMasuk(pegawai.tanggal_masuk),
+      'Masa Kerja': formatMasaKerja(pegawai.tanggal_masuk),
+      'No HP': pegawai.no_hp || '',
+    }))
+
+    const worksheet = XLSX.utils.json_to_sheet(rows)
+    // Lebarkan kolom biar gak kepotong pas dibuka di Excel
+    worksheet['!cols'] = [
+      { wch: 5 },   // No
+      { wch: 22 },  // NIP
+      { wch: 28 },  // Nama Pegawai
+      { wch: 26 },  // Pangkat
+      { wch: 32 },  // Jabatan
+      { wch: 30 },  // Eselon IV
+      { wch: 30 },  // Eselon III
+      { wch: 12 },  // TMT
+      { wch: 18 },  // Masa Kerja
+      { wch: 16 },  // No HP
+    ]
+
+    const workbook = XLSX.utils.book_new()
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Data Pegawai')
+
+    const tanggalFile = new Date().toISOString().split('T')[0]
+    XLSX.writeFile(workbook, `Data Pegawai - ${tanggalFile}.xlsx`)
+  }
+
   return (
     <div className="page">
 
@@ -442,9 +504,8 @@ function DataPegawai() {
           <div className="stat-icon"><Users size={20} /></div>
 
           <div className="stat-info">
-            <h4>Total Pegawai</h4>
+            <div className="stat-desc" style={{ fontWeight: 700 }}>Seluruh pegawai</div>
             <div className="stat-value">{totalPegawai}</div>
-            <div className="stat-desc">Seluruh pegawai</div>
           </div>
         </div>
 
@@ -452,9 +513,8 @@ function DataPegawai() {
           <div className="stat-icon"><Building2 size={20} /></div>
 
           <div className="stat-info">
-            <h4>Bagian Umum</h4>
+            <div className="stat-desc" style={{ fontWeight: 700 }}>Bagian Umum</div>
             <div className="stat-value">{totalBagianUmum}</div>
-            <div className="stat-desc">Bagian Umum</div>
           </div>
         </div>
 
@@ -462,9 +522,8 @@ function DataPegawai() {
           <div className="stat-icon"><ShieldAlert size={20} /></div>
 
           <div className="stat-info">
-            <h4>Penindakan</h4>
+            <div className="stat-desc" style={{ fontWeight: 700 }}>Bidang Penindakan dan Penyidikan</div>
             <div className="stat-value">{totalPenindakan}</div>
-            <div className="stat-desc">Bidang Penindakan dan Penyidikan</div>
           </div>
         </div>
 
@@ -472,9 +531,8 @@ function DataPegawai() {
           <div className="stat-icon"><Ship size={20} /></div>
 
           <div className="stat-info">
-            <h4>Kepabeanan</h4>
+            <div className="stat-desc" style={{ fontWeight: 700 }}>Bidang Kepabeanan dan Cukai</div>
             <div className="stat-value">{totalKepabeanan}</div>
-            <div className="stat-desc">Bidang Kepabeanan dan Cukai</div>
           </div>
         </div>
 
@@ -482,9 +540,8 @@ function DataPegawai() {
           <div className="stat-icon"><ShieldCheck size={20} /></div>
 
           <div className="stat-info">
-            <h4>Kepatuhan Internal</h4>
+            <div className="stat-desc" style={{ fontWeight: 700 }}>Bidang Kepatuhan Internal</div>
             <div className="stat-value">{totalKepatuhan}</div>
-            <div className="stat-desc">Bidang Kepatuhan Internal</div>
           </div>
         </div>
 
@@ -492,9 +549,8 @@ function DataPegawai() {
           <div className="stat-icon"><Handshake size={20} /></div>
 
           <div className="stat-info">
-            <h4>Fasilitas</h4>
+            <div className="stat-desc" style={{ fontWeight: 700 }}>Bidang Fasilitas Kepabeanan dan Cukai</div>
             <div className="stat-value">{totalFasilitas}</div>
-            <div className="stat-desc">Bidang Fasilitas Kepabeanan dan Cukai</div>
           </div>
         </div>
 
@@ -806,9 +862,39 @@ function DataPegawai() {
       )}
 
       <div className="card">
-        <h3 style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <Search size={18} /> Daftar Pegawai
-        </h3>
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            flexWrap: 'wrap',
+            gap: '10px',
+          }}
+        >
+          <h3 style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <Search size={18} /> Daftar Pegawai
+          </h3>
+
+          <button
+            type="button"
+            onClick={exportExcel}
+            className="btn"
+            title="Download data pegawai yang sedang ditampilkan ke file Excel"
+            style={{
+              width: 'auto',
+              height: 'auto',
+              padding: '8px 16px',
+              fontSize: '13px',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              backgroundColor: '#16a34a',
+              color: '#fff',
+            }}
+          >
+            <Download size={16} /> Download Excel
+          </button>
+        </div>
 
         <div className="filter-row">
           <input
@@ -839,11 +925,11 @@ function DataPegawai() {
             }
           >
             <option value="semua">Semua Eselon IV</option>
-            <option value="Bagian Umum">Bagian Umum</option>
-            <option value="Bidang Penindakan dan Penyidikan">Bidang Penindakan dan Penyidikan</option>
-            <option value="Bidang Kepabeanan dan Cukai">Bidang Kepabeanan dan Cukai</option>
-            <option value="Bidang Kepatuhan Internal">Bidang Kepatuhan Internal</option>
-            <option value="Bidang Fasilitas Kepabeanan dan Cukai">Bidang Fasilitas Kepabeanan dan Cukai</option>
+            {daftarEselonEmpat.map((nilai) => (
+              <option key={nilai} value={nilai}>
+                {nilai}
+              </option>
+            ))}
           </select>
         </div>
 

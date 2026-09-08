@@ -7,6 +7,7 @@ import {
   FileText,
   AlertTriangle,
   Upload,
+  Download,
   MessageCircle,
   Plus,
   Pencil,
@@ -364,6 +365,68 @@ function DataAbsensi({ user }) {
     (d) => d.status === 'Tanpa Keterangan'
   ).length
 
+  // Download data absensi (yang lagi ditampilkan/difilter) jadi file Excel.
+  const exportExcelAbsensi = () => {
+    const rows = dataFiltered.map((d, index) => ({
+      No: index + 1,
+      'Nama Pegawai': d.nama,
+      Tanggal: formatTanggal(d.tanggal),
+      'Jam Masuk': d.jam_masuk || '-',
+      'Jam Pulang': d.jam_pulang || '-',
+      Penugasan: d.status_penugasan || '-',
+      Status: d.status,
+    }))
+
+    const worksheet = XLSX.utils.json_to_sheet(rows)
+    worksheet['!cols'] = [
+      { wch: 5 },   // No
+      { wch: 28 },  // Nama Pegawai
+      { wch: 14 },  // Tanggal
+      { wch: 12 },  // Jam Masuk
+      { wch: 12 },  // Jam Pulang
+      { wch: 24 },  // Penugasan
+      { wch: 18 },  // Status
+    ]
+
+    const workbook = XLSX.utils.book_new()
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Data Absensi')
+
+    const tanggalFile = new Date().toISOString().split('T')[0]
+    XLSX.writeFile(workbook, `Data Absensi - ${tanggalFile}.xlsx`)
+  }
+
+  // Download tabel "Pegawai Perlu Dihubungi" (alpa/bermasalah berturut) jadi
+  // file Excel terpisah -- detail_alpa (array tanggal+status) digabung jadi
+  // satu teks per baris biar tetap kebaca rapi di Excel.
+  const exportExcelAlpa = () => {
+    const rows = alpaList.map((item, index) => ({
+      No: index + 1,
+      'Nama Pegawai': item.nama,
+      NIP: item.nip,
+      'Tanggal & Status Bermasalah': (item.detail_alpa || [])
+        .map((d) => `${formatTanggal(d.tanggal)} - ${d.status}`)
+        .join('; '),
+      '3 Hari Berturut': item.tiga_hari_berturut ? 'Ya' : 'Tidak',
+      'No. WA': item.no_hp || '-',
+    }))
+
+    const worksheet = XLSX.utils.json_to_sheet(rows)
+    worksheet['!cols'] = [
+      { wch: 5 },   // No
+      { wch: 28 },  // Nama Pegawai
+      { wch: 22 },  // NIP
+      { wch: 50 },  // Tanggal & Status Bermasalah
+      { wch: 16 },  // 3 Hari Berturut
+      { wch: 16 },  // No. WA
+    ]
+
+    const workbook = XLSX.utils.book_new()
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Perlu Dihubungi')
+
+    const tanggalFile = new Date().toISOString().split('T')[0]
+    XLSX.writeFile(workbook, `Pegawai Perlu Dihubungi - ${tanggalFile}.xlsx`)
+  }
+
   const formKosong = {
     pegawai_id: '',
     tanggal: '',
@@ -642,9 +705,42 @@ function DataAbsensi({ user }) {
       {isAdmin && alpaList.length > 0 && (
         <div className="card">
 
-          <h3 style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <MessageCircle size={18} /> Pegawai Perlu Dihubungi
-          </h3>
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              flexWrap: 'wrap',
+              gap: '12px',
+              marginBottom: '20px',
+            }}
+          >
+            <h3 style={{ display: 'flex', alignItems: 'center', gap: '8px', margin: 0 }}>
+              <MessageCircle size={18} /> Pegawai Perlu Dihubungi
+            </h3>
+
+            <button
+              type="button"
+              onClick={exportExcelAlpa}
+              className="btn"
+              title="Download daftar pegawai yang perlu dihubungi ke file Excel"
+              style={{
+                flexShrink: 0,
+                width: 'auto',
+                height: 'auto',
+                padding: '8px 16px',
+                fontSize: '13px',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+                backgroundColor: '#16a34a',
+                color: '#fff',
+                whiteSpace: 'nowrap',
+              }}
+            >
+              <Download size={16} /> Download Excel
+            </button>
+          </div>
 
           <div className="table-wrap">
 
@@ -1023,12 +1119,46 @@ function DataAbsensi({ user }) {
       {/* DAFTAR ABSENSI */}
       <div className="card">
 
-        <h3 style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <Search size={18} />{' '}
-          {isAdmin ? 'Daftar Absensi' : 'Riwayat Absensi Saya'}
-        </h3>
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            flexWrap: 'wrap',
+            gap: '12px',
+            marginBottom: '20px',
+          }}
+        >
+          <h3 style={{ display: 'flex', alignItems: 'center', gap: '8px', margin: 0 }}>
+            <Search size={18} />{' '}
+            {isAdmin ? 'Daftar Absensi' : 'Riwayat Absensi Saya'}
+          </h3>
+
+          <button
+            type="button"
+            onClick={exportExcelAbsensi}
+            className="btn"
+            title="Download data absensi yang sedang ditampilkan ke file Excel"
+            style={{
+              flexShrink: 0,
+              width: 'auto',
+              height: 'auto',
+              padding: '8px 16px',
+              fontSize: '13px',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              backgroundColor: '#16a34a',
+              color: '#fff',
+              whiteSpace: 'nowrap',
+            }}
+          >
+            <Download size={16} /> Download Excel
+          </button>
+        </div>
 
         <div className="filter-row">
+
 
           {isAdmin && (
             <input

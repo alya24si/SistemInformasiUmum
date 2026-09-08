@@ -134,7 +134,10 @@ class AbsensiController extends Controller
                 $sebelum  = Carbon::parse($tanggalUrut[$i - 1]);
                 $sekarang = Carbon::parse($tanggalUrut[$i]);
 
-                if ($sebelum->diffInDays($sekarang) === 1) {
+                // NOTE: diffInDays() di Carbon 3 balikin float (mis. 1.0), bukan
+                // int -- makanya sengaja pakai "==" (bukan "===") di sini,
+                // supaya perbandingannya tetap kena walau tipe datanya beda.
+                if ($sebelum->diffInDays($sekarang) == 1) {
                     $streak++;
                 } else {
                     $streak = 1;
