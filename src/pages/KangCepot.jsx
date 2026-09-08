@@ -3,7 +3,7 @@ import * as XLSX from 'xlsx'
 
 const API = 'http://localhost:8000/api'
 
-const daftarBulan = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember']
+const daftarBulan = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember']
 const tahunIni = new Date().getFullYear()
 
 const cariKolom = (row, ...kemungkinan) => {
@@ -50,9 +50,8 @@ function KangCepot({ user }) {
   const [formEdit, setFormEdit] = useState({ nama: '', no_hp: '', dpp: '', bapors: '', keagamaan: '', status_bayar: 'belum' })
   const [filterStatus, setFilterStatus] = useState('semua')
   const [kelola, setKelola] = useState(null)
-
-  // ✨ STATE BARU untuk tampilan pegawai
   const [profil, setProfil] = useState(null)
+  const [popupDitutup, setPopupDitutup] = useState(false)
 
   const muatData = async () => {
     const res = await fetch(API + '/iuran')
@@ -69,7 +68,6 @@ function KangCepot({ user }) {
 
   useEffect(() => { muatData() }, [])
 
-  // ✨ FETCH profil iuran pegawai (hanya kalau role pegawai)
   useEffect(() => {
     if (user.role === 'pegawai' && user.nip) {
       fetch(API + '/iuran/profil/' + user.nip)
@@ -79,14 +77,167 @@ function KangCepot({ user }) {
     }
   }, [user.role, user.nip])
 
-  // ===== ✨ TAMPILAN PEGAWAI (hanya data sendiri) =====
+  // ===== ✨ TAMPILAN PEGAWAI (dengan efek WOW) =====
   if (user.role === 'pegawai') {
     const bulananMap = {}
     ;(profil?.bulanan || []).forEach((b) => { bulananMap[b.bulan] = b.status })
     const belum = daftarBulan.filter((b) => bulananMap[b] !== 'sudah')
 
+    const popupTagihan = profil && profil !== false && belum.length > 0 && !popupDitutup && (
+      <div style={{
+        position: 'fixed', inset: 0,
+        backgroundColor: 'rgba(0,31,69,.85)',
+        backdropFilter: 'blur(8px)',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        zIndex: 1000,
+        animation: 'overlayFade 0.3s ease-out',
+      }}>
+        <div style={{
+          width: '500px', maxWidth: '94%',
+          background: 'linear-gradient(145deg, #ffffff 0%, #fef2f2 100%)',
+          borderRadius: '20px',
+          padding: '36px 32px', textAlign: 'center',
+          boxShadow: '0 25px 60px rgba(220,38,38,.4)',
+          border: '4px solid #dc2626',
+          animation: 'popupZoomIn 0.6s cubic-bezier(0.68, -0.55, 0.27, 1.55), pulseRed 2s infinite',
+          position: 'relative',
+          overflow: 'hidden',
+        }}>
+          <div style={{
+            position: 'absolute', top: 0, left: 0, right: 0, height: '6px',
+            background: 'linear-gradient(90deg, #dc2626, #f59e0b, #dc2626)',
+          }} />
+
+          <div style={{
+            fontSize: '70px', marginBottom: '8px',
+            display: 'inline-block',
+            animation: 'iconBounce 1.5s ease-in-out infinite',
+            filter: 'drop-shadow(0 4px 8px rgba(220,38,38,.3))',
+          }}>🚨</div>
+
+          <h2 style={{
+            margin: '0 0 6px 0', color: '#991b1b', fontSize: '24px',
+            fontWeight: 900, letterSpacing: '1px',
+            animation: 'slideUp 0.6s ease-out 0.3s backwards',
+          }}>
+            BELUM BAYAR IURAN BULANAN!!
+          </h2>
+
+          <div style={{
+            fontSize: '36px', fontWeight: 900, color: '#dc2626',
+            margin: '10px 0 18px',
+            animation: 'numberShake 0.8s ease-in-out 0.8s, slideUp 0.6s ease-out 0.4s backwards',
+            background: 'linear-gradient(135deg, #dc2626, #991b1b)',
+            WebkitBackgroundClip: 'text',
+            WebkitTextFillColor: 'transparent',
+            backgroundClip: 'text',
+          }}>
+            {belum.length} BULAN MENUNGGAK
+          </div>
+
+          <div style={{
+            backgroundColor: '#fee2e2', border: '2px solid #fca5a5',
+            borderRadius: '12px', padding: '16px 18px',
+            fontSize: '14px', color: '#7f1d1d', lineHeight: 1.7, textAlign: 'left',
+            animation: 'slideUp 0.6s ease-out 0.5s backwards',
+            boxShadow: 'inset 0 2px 8px rgba(220,38,38,.1)',
+          }}>
+            <div style={{ marginBottom: '10px' }}>
+              Anda belum membayar iuran bulan: <br />
+              <b style={{
+                color: '#991b1b', fontSize: '15px',
+                padding: '4px 10px', backgroundColor: '#fff',
+                borderRadius: '6px', display: 'inline-block', marginTop: '4px',
+                borderLeft: '3px solid #dc2626',
+              }}>
+                {belum.join(', ')}
+              </b>
+            </div>
+            <div style={{ marginBottom: '10px' }}>
+              Total tagihan: <b style={{
+                color: '#fff', fontSize: '18px', fontWeight: 900,
+                padding: '6px 14px',
+                background: 'linear-gradient(135deg, #dc2626, #991b1b)',
+                borderRadius: '8px', display: 'inline-block',
+                boxShadow: '0 4px 12px rgba(220,38,38,.4)',
+              }}>
+                Rp {Number(profil.data.total * belum.length).toLocaleString('id-ID')}
+              </b>
+            </div>
+            <div style={{ fontSize: '12px', paddingTop: '8px', borderTop: '1px dashed #fca5a5' }}>
+              <b>SEGERA LAKUKAN PEMBAYARAN!</b> Transfer ke rekening BNI "1910250198" (Tia Agustina)
+              atau cash ke Ruangan Subbagian Tata Usaha dan Keuangan di Lantai 2.
+            </div>
+          </div>
+
+          <button
+            onClick={() => setPopupDitutup(true)}
+            onMouseOver={(e) => {
+              e.currentTarget.style.transform = 'scale(1.08)'
+              e.currentTarget.style.boxShadow = '0 8px 24px rgba(220,38,38,.5)'
+            }}
+            onMouseOut={(e) => {
+              e.currentTarget.style.transform = 'scale(1)'
+              e.currentTarget.style.boxShadow = '0 6px 20px rgba(220,38,38,.4)'
+            }}
+            style={{
+              marginTop: '22px', padding: '14px 36px',
+              borderRadius: '12px', border: 'none',
+              background: 'linear-gradient(135deg, #dc2626, #b91c1c)',
+              color: '#fff',
+              fontSize: '15px', fontWeight: 800, cursor: 'pointer',
+              letterSpacing: '1px',
+              boxShadow: '0 6px 20px rgba(220,38,38,.4)',
+              animation: 'btnPulse 2s ease-in-out infinite',
+              transition: 'all 0.3s ease',
+            }}
+          >
+            ✋ SAYA MENGERTI
+          </button>
+        </div>
+      </div>
+    )
+
     return (
       <div style={{ ...pageStyle, backgroundImage: 'linear-gradient(rgba(245,248,252,.9), rgba(245,248,252,.94)), url(/kang-cepot.png)', backgroundSize: 'cover', backgroundPosition: 'center', backgroundAttachment: 'fixed' }}>
+        <style>{`
+          @keyframes popupZoomIn {
+            0% { opacity: 0; transform: scale(0.3) rotate(-8deg); }
+            50% { opacity: 1; transform: scale(1.1) rotate(2deg); }
+            70% { transform: scale(0.95) rotate(-1deg); }
+            100% { transform: scale(1) rotate(0deg); }
+          }
+          @keyframes overlayFade {
+            from { opacity: 0; }
+            to { opacity: 1; }
+          }
+          @keyframes iconBounce {
+            0%, 100% { transform: translateY(0) rotate(0deg); }
+            25% { transform: translateY(-15px) rotate(-15deg); }
+            50% { transform: translateY(0) rotate(15deg); }
+            75% { transform: translateY(-8px) rotate(-8deg); }
+          }
+          @keyframes pulseRed {
+            0%, 100% { box-shadow: 0 20px 50px rgba(220,38,38,.25), 0 0 0 0 rgba(220,38,38,.7); }
+            50% { box-shadow: 0 20px 50px rgba(220,38,38,.5), 0 0 0 20px rgba(220,38,38,0); }
+          }
+          @keyframes numberShake {
+            0%, 100% { transform: scale(1); }
+            10%, 30%, 50%, 70%, 90% { transform: scale(1.15); }
+            20%, 40%, 60%, 80% { transform: scale(0.95); }
+          }
+          @keyframes slideUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+          }
+          @keyframes btnPulse {
+            0%, 100% { transform: scale(1); box-shadow: 0 4px 12px rgba(220,38,38,.3); }
+            50% { transform: scale(1.05); box-shadow: 0 6px 20px rgba(220,38,38,.6); }
+          }
+        `}</style>
+
+        {popupTagihan}
+
         <div style={headerStyle}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
             <img src="/kang-cepot.png" alt="Kang Cepot" style={{ width: '70px', height: '70px', borderRadius: '50%', objectFit: 'cover', border: '4px solid #ffc72c', boxShadow: '0 4px 12px rgba(0,0,0,0.15)' }} />
@@ -111,7 +262,6 @@ function KangCepot({ user }) {
           </div>
         ) : (
           <>
-            {/* Rincian nominal */}
             <div style={cardStyle}>
               <div style={sectionHeader}>
                 <h2 style={sectionTitle}>💰 Rincian Iuran Bulanan Anda</h2>
@@ -125,7 +275,6 @@ function KangCepot({ user }) {
               </div>
             </div>
 
-            {/* Status 12 bulan */}
             <div style={cardStyle}>
               <div style={sectionHeader}>
                 <h2 style={sectionTitle}>📅 Status Bayar per Bulan</h2>
@@ -153,7 +302,7 @@ function KangCepot({ user }) {
     )
   }
 
-  // ===== ✨ TAMPILAN ADMIN (kode lama kamu, tidak diubah) =====
+  // ===== ✨ TAMPILAN ADMIN (tidak diubah) =====
   if (!isAdmin) {
     return <div style={pageStyle}>❌ Halaman ini hanya dapat diakses oleh Admin Keuangan, Superadmin, dan Pegawai.</div>
   }
