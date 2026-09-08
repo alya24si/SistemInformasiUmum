@@ -869,12 +869,13 @@ function DataAbsensi({ user }) {
               disabled={alpaPage === 0}
               className="btn"
               style={{
-                padding: '6px 10px',
+                padding: '6px 14px',
                 borderRadius: '6px',
-                border: '1px solid #cbd5e1',
-                backgroundColor: '#fff',
+                border: 'none',
+                backgroundColor: '#7ea6db',
+                color: '#fff',
                 cursor: alpaPage === 0 ? 'not-allowed' : 'pointer',
-                opacity: alpaPage === 0 ? 0.5 : 1,
+                opacity: alpaPage === 0 ? 0.6 : 1,
                 fontSize: '11px',
                 fontWeight: 600,
               }}
@@ -902,16 +903,17 @@ function DataAbsensi({ user }) {
               disabled={(alpaPage + 1) * 10 >= alpaList.length}
               className="btn"
               style={{
-                padding: '6px 10px',
+                padding: '6px 14px',
                 borderRadius: '6px',
-                border: '1px solid #cbd5e1',
-                backgroundColor: '#fff',
+                border: 'none',
+                backgroundColor: '#0b57d0',
+                color: '#fff',
                 cursor:
                   (alpaPage + 1) * 10 >= alpaList.length
                     ? 'not-allowed'
                     : 'pointer',
                 opacity:
-                  (alpaPage + 1) * 10 >= alpaList.length ? 0.5 : 1,
+                  (alpaPage + 1) * 10 >= alpaList.length ? 0.6 : 1,
                 fontSize: '11px',
                 fontWeight: 600,
               }}
@@ -1157,8 +1159,15 @@ function DataAbsensi({ user }) {
           </button>
         </div>
 
-        <div className="filter-row">
-
+        <div
+          style={{
+            display: 'flex',
+            flexWrap: 'wrap',
+            gap: '10px',
+            alignItems: 'center',
+            margin: '12px 0 16px',
+          }}
+        >
 
           {isAdmin && (
             <input
@@ -1168,6 +1177,14 @@ function DataAbsensi({ user }) {
               onChange={(e) =>
                 setSearch(e.target.value)
               }
+              style={{
+                flex: '1 1 240px',
+                minWidth: '200px',
+                padding: '8px 12px',
+                borderRadius: '8px',
+                border: '1px solid #cbd5e1',
+                fontSize: '13px',
+              }}
             />
           )}
 
@@ -1176,6 +1193,14 @@ function DataAbsensi({ user }) {
             onChange={(e) =>
               setFilterStatus(e.target.value)
             }
+            style={{
+              padding: '8px 12px',
+              borderRadius: '8px',
+              border: '1px solid #cbd5e1',
+              fontSize: '13px',
+              backgroundColor: '#fff',
+              color: '#334155',
+            }}
           >
 
             <option value="semua">
@@ -1198,6 +1223,14 @@ function DataAbsensi({ user }) {
             onChange={(e) =>
               setFilterBulan(e.target.value)
             }
+            style={{
+              padding: '8px 12px',
+              borderRadius: '8px',
+              border: '1px solid #cbd5e1',
+              fontSize: '13px',
+              backgroundColor: '#fff',
+              color: '#334155',
+            }}
           >
 
             <option value="semua">
@@ -1465,19 +1498,20 @@ function DataAbsensi({ user }) {
                 disabled={
                   currentPage === 0
                 }
+                className="btn"
                 style={{
-                  padding: '6px 10px',
+                  padding: '6px 14px',
                   borderRadius: '6px',
-                  border:
-                    '1px solid #cbd5e1',
-                  backgroundColor: '#fff',
+                  border: 'none',
+                  backgroundColor: '#7ea6db',
+                  color: '#fff',
                   cursor:
                     currentPage === 0
                       ? 'not-allowed'
                       : 'pointer',
                   opacity:
                     currentPage === 0
-                      ? 0.5
+                      ? 0.6
                       : 1,
                   fontSize: '11px',
                   fontWeight: 600,
@@ -1514,12 +1548,13 @@ function DataAbsensi({ user }) {
                   currentPage + 1 >=
                   totalPages
                 }
+                className="btn"
                 style={{
-                  padding: '6px 10px',
+                  padding: '6px 14px',
                   borderRadius: '6px',
-                  border:
-                    '1px solid #cbd5e1',
-                  backgroundColor: '#fff',
+                  border: 'none',
+                  backgroundColor: '#0b57d0',
+                  color: '#fff',
                   cursor:
                     currentPage + 1 >=
                     totalPages
@@ -1528,7 +1563,7 @@ function DataAbsensi({ user }) {
                   opacity:
                     currentPage + 1 >=
                     totalPages
-                      ? 0.5
+                      ? 0.6
                       : 1,
                   fontSize: '11px',
                   fontWeight: 600,

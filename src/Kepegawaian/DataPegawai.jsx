@@ -896,12 +896,28 @@ function DataPegawai() {
           </button>
         </div>
 
-        <div className="filter-row">
+        <div
+          style={{
+            display: 'flex',
+            flexWrap: 'wrap',
+            gap: '10px',
+            alignItems: 'center',
+            margin: '12px 0 16px',
+          }}
+        >
           <input
             type="text"
             placeholder="Cari nama atau NIP..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
+            style={{
+              flex: '1 1 240px',
+              minWidth: '200px',
+              padding: '8px 12px',
+              borderRadius: '8px',
+              border: '1px solid #cbd5e1',
+              fontSize: '13px',
+            }}
           />
 
           <select
@@ -909,6 +925,14 @@ function DataPegawai() {
             onChange={(e) =>
               setFilterEselonTiga(e.target.value)
             }
+            style={{
+              padding: '8px 12px',
+              borderRadius: '8px',
+              border: '1px solid #cbd5e1',
+              fontSize: '13px',
+              backgroundColor: '#fff',
+              color: '#334155',
+            }}
           >
             <option value="semua">Semua Eselon III</option>
             {daftarEselonTiga.map((nilai) => (
@@ -923,6 +947,14 @@ function DataPegawai() {
             onChange={(e) =>
               setFilterEselonEmpat(e.target.value)
             }
+            style={{
+              padding: '8px 12px',
+              borderRadius: '8px',
+              border: '1px solid #cbd5e1',
+              fontSize: '13px',
+              backgroundColor: '#fff',
+              color: '#334155',
+            }}
           >
             <option value="semua">Semua Eselon IV</option>
             {daftarEselonEmpat.map((nilai) => (
