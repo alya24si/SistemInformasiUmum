@@ -26,6 +26,18 @@ const formatTanggal = (tanggal) => {
   })
 }
 
+// Kolom mulai/selesai di database bertipe TIME, balikannya selalu "HH:MM:SS"
+// (misal "14:15:00") -- dipotong jadi "HH:MM" aja biar gak nampilin detik.
+// Pakai split(':') (bukan slice mentah) supaya tetap aman kalau ada data
+// lama yang jamnya cuma 1 digit tanpa nol di depan (mis. "9:15:00").
+const formatJam = (waktu) => {
+  if (!waktu) return '-'
+  const bagian = String(waktu).split(':')
+  if (bagian.length < 2) return String(waktu)
+  const [jam, menit] = bagian
+  return `${jam.padStart(2, '0')}:${menit.padStart(2, '0')}`
+}
+
 // Jam dropdown 06-22 (tanpa AM/PM) & menit cuma boleh 00/15/30/45
 const OPSI_JAM = Array.from({ length: 17 }, (_, i) =>
   String(i + 6).padStart(2, '0')
@@ -1308,7 +1320,7 @@ function BookingRuangan({ user }) {
 
                 <a
                   href={buatLinkWA(
-                    `Halo Admin RT, saya ${user.nama} (${bagianPengguna}) ingin bertanya soal pengajuan booking ruangan yang ditolak.\n\nRuangan: ${tolakInfo.ruangan}\nTanggal: ${formatTanggal(tolakInfo.tanggal)}\nJam: ${tolakInfo.mulai}–${tolakInfo.selesai}\n\nMohon informasinya, terima kasih.`
+                    `Halo Admin RT, saya ${user.nama} (${bagianPengguna}) ingin bertanya soal pengajuan booking ruangan yang ditolak.\n\nRuangan: ${tolakInfo.ruangan}\nTanggal: ${formatTanggal(tolakInfo.tanggal)}\nJam: ${formatJam(tolakInfo.mulai)}–${formatJam(tolakInfo.selesai)}\n\nMohon informasinya, terima kasih.`
                   )}
                   target="_blank"
                   rel="noopener noreferrer"
@@ -1568,8 +1580,8 @@ function BookingRuangan({ user }) {
                         </td>
 
                         <td>
-                          {item.mulai} -{' '}
-                          {item.selesai}
+                          {formatJam(item.mulai)} -{' '}
+                          {formatJam(item.selesai)}
                         </td>
 
                         <td>

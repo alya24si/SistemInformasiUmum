@@ -14,7 +14,7 @@ class BookingRuanganController extends Controller
             ->orderBy('b.id')
             ->get();
 
-        return response()->json(['success' => true, 'data' => $data]);
+        return response()->json(['success' => true, 'data' => $this->potongDetikJam($data)]);
     }
 
     // 2. AJUKAN booking baru (dengan validasi + cek bentrok jadwal)
@@ -134,7 +134,20 @@ class BookingRuanganController extends Controller
 
         $data = $query->orderBy('b.tanggal')->orderBy('b.mulai')->get();
 
-        return response()->json(['success' => true, 'data' => $data]);
+        return response()->json(['success' => true, 'data' => $this->potongDetikJam($data)]);
+    }
+
+    // helper: kolom "mulai"/"selesai" di database bertipe TIME, jadi
+    // MySQL balikin "HH:MM:SS" (ada detiknya). Booking gak pernah butuh
+    // presisi detik, jadi dipotong di sini biar semua tampilan di frontend
+    // (daftar booking, kalender, dll) otomatis dapat "HH:MM" yang bersih.
+    private function potongDetikJam($data)
+    {
+        return $data->map(function ($item) {
+            $item->mulai = substr($item->mulai, 0, 5);
+            $item->selesai = substr($item->selesai, 0, 5);
+            return $item;
+        });
     }
 
     // helper: cek jadwal bentrok di ruangan & tanggal yang sama

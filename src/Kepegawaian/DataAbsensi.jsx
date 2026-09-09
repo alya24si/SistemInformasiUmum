@@ -73,6 +73,18 @@ const formatTanggal = (tanggal) => {
   )
 }
 
+// Kolom jam_masuk/jam_pulang di database bertipe TIME, balikannya selalu
+// "HH:MM:SS" (misal "08:00:00") -- dipotong jadi "HH:MM" biar gak nampilin
+// detik. Pakai split(':') (bukan slice mentah) supaya tetap aman kalau ada
+// data lama yang jamnya cuma 1 digit tanpa nol di depan (mis. "8:00:00").
+const formatJam = (waktu) => {
+  if (!waktu) return '-'
+  const bagian = String(waktu).split(':')
+  if (bagian.length < 2) return String(waktu)
+  const [jam, menit] = bagian
+  return `${jam.padStart(2, '0')}:${menit.padStart(2, '0')}`
+}
+
 function DataAbsensi({ user }) {
   const isAdmin =
     user.role === 'admin_kepegawaian' ||
@@ -371,8 +383,8 @@ function DataAbsensi({ user }) {
       No: index + 1,
       'Nama Pegawai': d.nama,
       Tanggal: formatTanggal(d.tanggal),
-      'Jam Masuk': d.jam_masuk || '-',
-      'Jam Pulang': d.jam_pulang || '-',
+      'Jam Masuk': formatJam(d.jam_masuk),
+      'Jam Pulang': formatJam(d.jam_pulang),
       Penugasan: d.status_penugasan || '-',
       Status: d.status,
     }))
@@ -488,8 +500,8 @@ function DataAbsensi({ user }) {
     setForm({
       pegawai_id: String(absensi.pegawai_id),
       tanggal: absensi.tanggal,
-      jam_masuk: absensi.jam_masuk || '',
-      jam_pulang: absensi.jam_pulang || '',
+      jam_masuk: absensi.jam_masuk ? formatJam(absensi.jam_masuk) : '',
+      jam_pulang: absensi.jam_pulang ? formatJam(absensi.jam_pulang) : '',
       status_penugasan: absensi.status_penugasan || '',
       status: absensi.status,
     })
@@ -1061,7 +1073,9 @@ function DataAbsensi({ user }) {
                 }
               />
 
-              <select
+              <input
+                type="text"
+                placeholder="Status (mis. Hadir, Izin, TL3, PSW4)"
                 value={form.status}
                 onChange={(e) =>
                   setForm({
@@ -1069,25 +1083,8 @@ function DataAbsensi({ user }) {
                     status: e.target.value,
                   })
                 }
-              >
-
-                <option value="Hadir">
-                  Hadir
-                </option>
-
-                <option value="Izin">
-                  Izin
-                </option>
-
-                <option value="Sakit">
-                  Sakit
-                </option>
-
-                <option value="Tanpa Keterangan">
-                  Tanpa Keterangan (Alpa)
-                </option>
-
-              </select>
+                required
+              />
 
               <div style={{ display: 'flex', gap: '8px' }}>
                 <button
@@ -1355,13 +1352,11 @@ function DataAbsensi({ user }) {
                                 </td>
 
                                 <td>
-                                  {d.jam_masuk ||
-                                    '-'}
+                                  {formatJam(d.jam_masuk)}
                                 </td>
 
                                 <td>
-                                  {d.jam_pulang ||
-                                    '-'}
+                                  {formatJam(d.jam_pulang)}
                                 </td>
 
                                 <td>

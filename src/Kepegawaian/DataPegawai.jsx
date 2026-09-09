@@ -33,6 +33,11 @@ function DataPegawai() {
   const [currentPage, setCurrentPage] = useState(0)
   const [editId, setEditId] = useState(null)
 
+  // Dropdown custom buat Eselon III & Eselon IV di form (ganti native
+  // <datalist> biar warnanya konsisten sama tema web, gak ngikut dark mode browser)
+  const [dropdownEselonIiiTerbuka, setDropdownEselonIiiTerbuka] = useState(false)
+  const [dropdownEselonIvTerbuka, setDropdownEselonIvTerbuka] = useState(false)
+
   const [form, setForm] = useState({
     nip: '',
     nama: '',
@@ -360,7 +365,13 @@ function DataPegawai() {
             pangkat: String(cari(['pangkat'], ['pangkat', 'golongan']) ?? '').trim() || null,
             jabatan: String(cari(['jabatan'], ['jabatan']) ?? '').trim(),
             eselon_iii: eselonIii || null,
-            bagian: bagianEksplisit || eselonIii,
+            // Sebelumnya ada fallback "|| eselonIii" di sini — niatnya jaga-jaga
+            // kalau kolom Eselon IV gak ketemu di file. Tapi di data asli Kanwil,
+            // banyak pegawai (level pimpinan) yang MEMANG sengaja gak punya
+            // Eselon IV, dan fallback itu malah nyalin nama Eselon III ke situ,
+            // jadi daftar Eselon IV kecampur sama nama Eselon III. Sekarang
+            // dibiarkan kosong/null kalau memang gak ada di file.
+            bagian: bagianEksplisit || null,
             no_hp: String(
               cari(['nohp', 'hp', 'notelepon', 'telepon'], ['nohp', 'notelepon', 'telepon'])
                 ?? ''
@@ -748,35 +759,176 @@ function DataPegawai() {
               }
             />
 
-            <input
-              type="text"
-              placeholder="Eselon III"
-              value={form.eselon_iii}
-              onChange={(e) =>
-                setForm({
-                  ...form,
-                  eselon_iii: e.target.value,
-                })
-              }
-            />
+            <div style={{ position: 'relative' }}>
+              <input
+                type="text"
+                placeholder="Eselon III"
+                autoComplete="off"
+                value={form.eselon_iii}
+                onChange={(e) => {
+                  setForm({
+                    ...form,
+                    eselon_iii: e.target.value,
+                  })
+                  setDropdownEselonIiiTerbuka(true)
+                }}
+                onFocus={() => setDropdownEselonIiiTerbuka(true)}
+                onBlur={() =>
+                  setTimeout(() => setDropdownEselonIiiTerbuka(false), 120)
+                }
+              />
 
-            <select
-              required
-              value={form.bagian}
-              onChange={(e) =>
-                setForm({
-                  ...form,
-                  bagian: e.target.value,
-                })
-              }
-            >
-              <option value="">Pilih Eselon IV</option>
-              <option value="Bagian Umum">Bagian Umum</option>
-              <option value="Bidang Penindakan dan Penyidikan">Bidang Penindakan dan Penyidikan</option>
-              <option value="Bidang Kepabeanan dan Cukai">Bidang Kepabeanan dan Cukai</option>
-              <option value="Bidang Kepatuhan Internal">Bidang Kepatuhan Internal</option>
-              <option value="Bidang Fasilitas Kepabeanan dan Cukai">Bidang Fasilitas Kepabeanan dan Cukai</option>
-            </select>
+              {dropdownEselonIiiTerbuka && (
+                <div
+                  style={{
+                    position: 'absolute',
+                    top: 'calc(100% + 4px)',
+                    left: 0,
+                    right: 0,
+                    zIndex: 20,
+                    backgroundColor: '#fff',
+                    border: '1px solid #cbd5e1',
+                    borderRadius: '8px',
+                    boxShadow: '0 8px 20px rgba(15, 23, 42, 0.12)',
+                    maxHeight: '220px',
+                    overflowY: 'auto',
+                  }}
+                >
+                  {daftarEselonTiga
+                    .filter((nilai) =>
+                      nilai
+                        .toLowerCase()
+                        .includes((form.eselon_iii || '').toLowerCase())
+                    )
+                    .map((nilai) => (
+                      <div
+                        key={nilai}
+                        onMouseDown={() => {
+                          setForm({ ...form, eselon_iii: nilai })
+                          setDropdownEselonIiiTerbuka(false)
+                        }}
+                        style={{
+                          padding: '9px 11px',
+                          fontSize: '12px',
+                          color: '#334155',
+                          cursor: 'pointer',
+                        }}
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.backgroundColor = '#eff6ff'
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.backgroundColor = 'transparent'
+                        }}
+                      >
+                        {nilai}
+                      </div>
+                    ))}
+
+                  {daftarEselonTiga.filter((nilai) =>
+                    nilai
+                      .toLowerCase()
+                      .includes((form.eselon_iii || '').toLowerCase())
+                  ).length === 0 && (
+                    <div
+                      style={{
+                        padding: '9px 11px',
+                        fontSize: '12px',
+                        color: '#94a3b8',
+                      }}
+                    >
+                      Ketik untuk isi Eselon III baru
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+
+            <div style={{ position: 'relative' }}>
+              <input
+                type="text"
+                placeholder="Eselon IV"
+                required
+                autoComplete="off"
+                value={form.bagian}
+                onChange={(e) => {
+                  setForm({
+                    ...form,
+                    bagian: e.target.value,
+                  })
+                  setDropdownEselonIvTerbuka(true)
+                }}
+                onFocus={() => setDropdownEselonIvTerbuka(true)}
+                onBlur={() =>
+                  // delay dikit biar sempat kebaca klik di opsi (onMouseDown)
+                  // sebelum dropdown-nya ketutup duluan gara-gara blur
+                  setTimeout(() => setDropdownEselonIvTerbuka(false), 120)
+                }
+              />
+
+              {dropdownEselonIvTerbuka && (
+                <div
+                  style={{
+                    position: 'absolute',
+                    top: 'calc(100% + 4px)',
+                    left: 0,
+                    right: 0,
+                    zIndex: 20,
+                    backgroundColor: '#fff',
+                    border: '1px solid #cbd5e1',
+                    borderRadius: '8px',
+                    boxShadow: '0 8px 20px rgba(15, 23, 42, 0.12)',
+                    maxHeight: '220px',
+                    overflowY: 'auto',
+                  }}
+                >
+                  {daftarEselonEmpat
+                    .filter((nilai) =>
+                      nilai
+                        .toLowerCase()
+                        .includes((form.bagian || '').toLowerCase())
+                    )
+                    .map((nilai) => (
+                      <div
+                        key={nilai}
+                        onMouseDown={() => {
+                          setForm({ ...form, bagian: nilai })
+                          setDropdownEselonIvTerbuka(false)
+                        }}
+                        style={{
+                          padding: '9px 11px',
+                          fontSize: '12px',
+                          color: '#334155',
+                          cursor: 'pointer',
+                        }}
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.backgroundColor = '#eff6ff'
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.backgroundColor = 'transparent'
+                        }}
+                      >
+                        {nilai}
+                      </div>
+                    ))}
+
+                  {daftarEselonEmpat.filter((nilai) =>
+                    nilai
+                      .toLowerCase()
+                      .includes((form.bagian || '').toLowerCase())
+                  ).length === 0 && (
+                    <div
+                      style={{
+                        padding: '9px 11px',
+                        fontSize: '12px',
+                        color: '#94a3b8',
+                      }}
+                    >
+                      Ketik untuk isi Eselon IV baru
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
 
             <input
               type="tel"

@@ -13,6 +13,13 @@ const toDateString = (date) => {
 const namaHariSingkat = ["Min", "Sen", "Sel", "Rab", "Kam", "Jum", "Sab"];
 const namaBulan = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
 
+// Kolom mulai/selesai di database bertipe TIME, balikannya selalu "HH:MM:SS"
+// (misal "14:15:00") -- dipotong jadi "HH:MM" aja biar gak nampilin detik.
+const formatJam = (waktu) => {
+  if (!waktu) return "-";
+  return String(waktu).slice(0, 5);
+};
+
 const todayString = toDateString(new Date());
 
 // Bangun grid kalender bulanan: array minggu, tiap minggu array 7 hari (null jika di luar bulan)
@@ -188,7 +195,7 @@ function KalenderRuangan({ user }) {
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "12px", marginBottom: "18px", paddingLeft: "5px" }}>
                 <div>
                   <h3 style={{ margin: 0, fontSize: "17px", fontWeight: 650, color: "#172b4d" }}>{item.ruangan}</h3>
-                  <div style={{ display: "inline-flex", alignItems: "center", gap: "6px", marginTop: "9px", backgroundColor: "#eff6ff", color: "#0b72e7", padding: "6px 10px", borderRadius: "7px", fontSize: "12px", fontWeight: 700 }}><Clock size={13} /> {item.mulai} - {item.selesai}</div>
+                  <div style={{ display: "inline-flex", alignItems: "center", gap: "6px", marginTop: "9px", backgroundColor: "#eff6ff", color: "#0b72e7", padding: "6px 10px", borderRadius: "7px", fontSize: "12px", fontWeight: 700 }}><Clock size={13} /> {formatJam(item.mulai)} - {formatJam(item.selesai)}</div>
                 </div>
                 <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: "6px" }}>
                   <span style={{ backgroundColor: "#dcfce7", color: "#166534", padding: "5px 10px", borderRadius: "20px", fontSize: "11px", fontWeight: 600 }}>Disetujui</span>
