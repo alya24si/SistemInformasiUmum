@@ -35,6 +35,138 @@ const daftarTahun = Array.from(
 const formatRupiah = (angka) =>
   'Rp ' + Number(angka).toLocaleString('id-ID')
 
+// ✨ REVISI: Helper untuk format angka dengan titik di input
+const formatTitik = (angka) => {
+  const n = Number(String(angka).replace(/[^\d]/g, '')) || 0
+  return n.toLocaleString('id-ID')
+}
+
+const parseAngka = (str) => {
+  return Number(String(str || '').replace(/[^\d]/g, '')) || 0
+}
+
+/* ========================================================= */
+/* ✨ ICON SET (stroke flat style, seperti icon VS Code)      */
+/*    Murni pengganti emoji — tidak menyentuh logika apapun  */
+/* ========================================================= */
+const SvgIkon = ({ children, size = 18, style }) => (
+  <svg
+    width={size}
+    height={size}
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    style={{ verticalAlign: '-4px', ...style }}
+  >
+    {children}
+  </svg>
+)
+
+const IkonChart = (p) => (
+  <SvgIkon {...p}>
+    <path d="M3 3v18h18" />
+    <path d="M18 17V9" />
+    <path d="M13 17V5" />
+    <path d="M8 17v-3" />
+  </SvgIkon>
+)
+
+const IkonLock = (p) => (
+  <SvgIkon {...p}>
+    <rect width="18" height="11" x="3" y="11" rx="2" ry="2" />
+    <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+  </SvgIkon>
+)
+
+const IkonLandmark = (p) => (
+  <SvgIkon {...p}>
+    <line x1="3" x2="21" y1="22" y2="22" />
+    <line x1="6" x2="6" y1="18" y2="11" />
+    <line x1="10" x2="10" y1="18" y2="11" />
+    <line x1="14" x2="14" y1="18" y2="11" />
+    <line x1="18" x2="18" y1="18" y2="11" />
+    <polygon points="12 2 20 7 4 7" />
+  </SvgIkon>
+)
+
+const IkonCard = (p) => (
+  <SvgIkon {...p}>
+    <rect width="20" height="14" x="2" y="5" rx="2" />
+    <line x1="2" x2="22" y1="10" y2="10" />
+  </SvgIkon>
+)
+
+const IkonTrending = (p) => (
+  <SvgIkon {...p}>
+    <polyline points="22 7 13.5 15.5 8.5 10.5 2 17" />
+    <polyline points="16 7 22 7 22 13" />
+  </SvgIkon>
+)
+
+const IkonPlus = (p) => (
+  <SvgIkon {...p}>
+    <path d="M5 12h14" />
+    <path d="M12 5v14" />
+  </SvgIkon>
+)
+
+const IkonCalendar = (p) => (
+  <SvgIkon {...p}>
+    <path d="M8 2v4" />
+    <path d="M16 2v4" />
+    <rect width="18" height="18" x="3" y="4" rx="2" />
+    <path d="M3 10h18" />
+  </SvgIkon>
+)
+
+const IkonBriefcase = (p) => (
+  <SvgIkon {...p}>
+    <path d="M16 20V4a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16" />
+    <rect width="20" height="14" x="2" y="6" rx="2" />
+  </SvgIkon>
+)
+
+const IkonSearch = (p) => (
+  <SvgIkon {...p}>
+    <circle cx="11" cy="11" r="8" />
+    <path d="m21 21-4.3-4.3" />
+  </SvgIkon>
+)
+
+const IkonX = (p) => (
+  <SvgIkon {...p}>
+    <path d="M18 6 6 18" />
+    <path d="m6 6 12 12" />
+  </SvgIkon>
+)
+
+const IkonClipboard = (p) => (
+  <SvgIkon {...p}>
+    <rect width="8" height="4" x="8" y="2" rx="1" ry="1" />
+    <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2" />
+    <path d="M12 11h4" />
+    <path d="M12 16h4" />
+    <path d="M8 11h.01" />
+    <path d="M8 16h.01" />
+  </SvgIkon>
+)
+
+const IkonClock = (p) => (
+  <SvgIkon {...p}>
+    <circle cx="12" cy="12" r="10" />
+    <polyline points="12 6 12 12 16 14" />
+  </SvgIkon>
+)
+
+const IkonFolder = (p) => (
+  <SvgIkon {...p}>
+    <path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z" />
+  </SvgIkon>
+)
+
 const dataAwal = [
   {
     id: 1,
@@ -103,25 +235,36 @@ const dataAwal = [
   },
 ]
 
+// ✨ REVISI: Range baru + label lebih natural
 const statusAnggaran = (persen) => {
-  if (persen >= 60) {
+  const p = Math.min(persen, 100)
+
+  if (p >= 90) {
     return {
-      label: 'Aman',
+      label: 'Baik',
       cls: 'green',
     }
   }
 
-  if (persen >= 25) {
+  if (p >= 50) {
     return {
-      label: 'Waspada',
+      label: 'Cukup',
       cls: 'yellow',
     }
   }
 
   return {
-    label: 'Kritis',
+    label: 'Kurang',
     cls: 'red',
   }
+}
+
+// ✨ REVISI: Warna progress bar dinamis
+const warnaProgress = (persen) => {
+  const p = Math.min(persen, 100)
+  if (p >= 90) return 'linear-gradient(90deg, #16a34a, #4ade80)'
+  if (p >= 50) return 'linear-gradient(90deg, #eab308, #facc15)'
+  return 'linear-gradient(90deg, #dc2626, #f87171)'
 }
 
 function Anggaran({ user }) {
@@ -138,6 +281,9 @@ function Anggaran({ user }) {
     anggaran: null,
     riwayat: [],
   })
+
+  // ✨ REVISI: State untuk simpan nilai input pagu (dengan titik) per baris
+  const [paguInput, setPaguInput] = useState({})
 
   const muatData = async () => {
     const res = await fetch(API + '/anggaran')
@@ -216,16 +362,17 @@ function Anggaran({ user }) {
     0
   )
 
+  // ✨ REVISI: Cap maksimal 100%
   const persenTotal =
     totalPagu > 0
-      ? Math.round(
+      ? Math.min(Math.round(
           (totalRealisasi / totalPagu) * 100
-        )
+        ), 100)
       : 0
 
   const previewPagu =
     Number(form.unit || 0) *
-    Number(form.hargaSatuan || 0)
+    parseAngka(form.hargaSatuan)
 
     const tambahData = async (e) => {
     e.preventDefault()
@@ -241,7 +388,8 @@ function Anggaran({ user }) {
         deskripsi: form.deskripsi,
         unit: Number(form.unit),
         satuan: form.satuan,
-        harga_satuan: Number(form.hargaSatuan),
+        // ✨ REVISI: parse dulu baru kirim (hilangkan titik)
+        harga_satuan: parseAngka(form.hargaSatuan),
       }),
     })
 
@@ -268,7 +416,8 @@ function Anggaran({ user }) {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-          jumlah: Number(formRealisasi.jumlah),
+          // ✨ REVISI: parse dulu baru kirim
+          jumlah: parseAngka(formRealisasi.jumlah),
           bulan: formRealisasi.bulan,
         }),
       }
@@ -283,11 +432,13 @@ function Anggaran({ user }) {
     muatData()
   }
 
+  // ✨ REVISI: update pagu dengan parsing (karena input sudah ada titiknya)
   const updatePagu = (id, nilai) => {
+    const angkaBersih = parseAngka(nilai)
     setData(
       data.map((d) =>
         d.id === id
-          ? { ...d, pagu: Number(nilai) || 0 }
+          ? { ...d, pagu: angkaBersih }
           : d
       )
     )
@@ -295,7 +446,7 @@ function Anggaran({ user }) {
     fetch(API + '/anggaran/' + id + '/pagu', {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ pagu: Number(nilai) || 0 }),
+      body: JSON.stringify({ pagu: angkaBersih }),
     })
   }
 
@@ -356,7 +507,7 @@ function Anggaran({ user }) {
 
       {/* HEADER */}
       <div className="page-title">
-        <h1>💰 Penyerapan Anggaran</h1>
+        <h1><IkonChart size={22} /> Penyerapan Anggaran</h1>
 
         <p>
           Data dari bagian keuangan. Pagu diupload
@@ -367,7 +518,7 @@ function Anggaran({ user }) {
       {/* MODE TAMU */}
       {!isAdmin && (
         <div className="guest-note">
-          👁️ Mode tamu: Anda hanya melihat data
+          <IkonLock size={15} /> Mode tamu: Anda hanya melihat data
           bidang <b>{user.bidang}</b>.
         </div>
       )}
@@ -376,7 +527,9 @@ function Anggaran({ user }) {
       <div className="stats-grid">
 
         <div className="stat-card">
-          <div className="stat-icon">🏦</div>
+          <div className="stat-icon">
+            <IkonLandmark size={22} style={{ color: '#005ca9' }} />
+          </div>
 
           <div className="stat-info">
             <h4>Total Pagu</h4>
@@ -399,7 +552,9 @@ function Anggaran({ user }) {
         </div>
 
         <div className="stat-card gold">
-          <div className="stat-icon">💵</div>
+          <div className="stat-icon">
+            <IkonCard size={22} style={{ color: '#b45309' }} />
+          </div>
 
           <div className="stat-info">
             <h4>Total Realisasi</h4>
@@ -420,7 +575,9 @@ function Anggaran({ user }) {
         </div>
 
         <div className="stat-card green">
-          <div className="stat-icon">📊</div>
+          <div className="stat-icon">
+            <IkonTrending size={22} style={{ color: '#15803d' }} />
+          </div>
 
           <div className="stat-info">
             <h4>Penyerapan</h4>
@@ -445,7 +602,7 @@ function Anggaran({ user }) {
           <div className="card">
 
             <h3>
-              ➕ Upload Pagu Tahunan
+              <IkonPlus size={16} /> Tambah Baris Anggaran
               (unit × harga satuan)
             </h3>
 
@@ -562,17 +719,19 @@ function Anggaran({ user }) {
                 }
               />
 
+              {/* ✨ REVISI: Input Harga Satuan dengan titik otomatis */}
               <input
-                type="number"
+                type="text"
                 placeholder="Harga Satuan (Rp)"
                 required
                 value={form.hargaSatuan}
-                onChange={(e) =>
+                onChange={(e) => {
+                  const raw = e.target.value.replace(/[^\d]/g, '')
                   setForm({
                     ...form,
-                    hargaSatuan: e.target.value,
+                    hargaSatuan: raw ? formatTitik(raw) : '',
                   })
-                }
+                }}
               />
 
               <button
@@ -597,7 +756,7 @@ function Anggaran({ user }) {
           <div className="card">
 
             <h3>
-              📅 Input Realisasi Bulan Ini
+              <IkonCalendar size={16} /> Input Realisasi Bulan Ini
             </h3>
 
             <form
@@ -648,17 +807,19 @@ function Anggaran({ user }) {
                 ))}
               </select>
 
+              {/* ✨ REVISI: Input Jumlah Realisasi dengan titik otomatis */}
               <input
-                type="number"
+                type="text"
                 placeholder="Jumlah realisasi bulan ini (Rp)"
                 required
                 value={formRealisasi.jumlah}
-                onChange={(e) =>
+                onChange={(e) => {
+                  const raw = e.target.value.replace(/[^\d]/g, '')
                   setFormRealisasi({
                     ...formRealisasi,
-                    jumlah: e.target.value,
+                    jumlah: raw ? formatTitik(raw) : '',
                   })
-                }
+                }}
               />
 
               <button
@@ -679,7 +840,7 @@ function Anggaran({ user }) {
       <div className="card">
 
         <h3>
-          💰 Rekapitulasi Penyerapan Anggaran
+          <IkonBriefcase size={16} /> Rekapitulasi Penyerapan Anggaran
         </h3>
 
         {/* FILTER */}
@@ -734,6 +895,14 @@ function Anggaran({ user }) {
         <div className="filter-info">
           Menampilkan {dataFiltered.length} dari{' '}
           {milikUser.length} baris
+        </div>
+
+        {/* ✨ REVISI: LEGENDA STATUS (tambahan baru, tidak mengubah logika lain) */}
+        <div style={{ display: 'flex', gap: '14px', padding: '10px 14px', background: '#f8fafc', borderRadius: '10px', marginBottom: '14px', fontSize: '12px', color: '#475569', flexWrap: 'wrap', border: '1px solid #e2e8f0' }}>
+          <span style={{ fontWeight: 700, color: '#002b5c' }}>Keterangan Status:</span>
+          <span><span style={{ display: 'inline-block', width: '10px', height: '10px', borderRadius: '50%', background: '#16a34a', marginRight: '5px' }}></span>Baik (≥90%)</span>
+          <span><span style={{ display: 'inline-block', width: '10px', height: '10px', borderRadius: '50%', background: '#eab308', marginRight: '5px' }}></span>Cukup (50-89%)</span>
+          <span><span style={{ display: 'inline-block', width: '10px', height: '10px', borderRadius: '50%', background: '#dc2626', marginRight: '5px' }}></span>Kurang (&lt;50%)</span>
         </div>
 
         {/* TABLE */}
@@ -818,14 +987,16 @@ function Anggaran({ user }) {
                     {dataPaginated.map(
                       (d) => {
 
-                        const persen =
+                        // ✨ REVISI: hitung persen asli + cap max 100
+                        const persenAsli =
                           d.pagu > 0
-                            ? Math.round(
-                                (d.realisasi /
-                                  d.pagu) *
-                                  100
-                              )
+                            ? (d.realisasi /
+                              d.pagu) *
+                              100
                             : 0
+
+                        const persen =
+                          Math.min(Math.round(persenAsli), 100)
 
                         const sisa =
                           d.pagu -
@@ -833,8 +1004,14 @@ function Anggaran({ user }) {
 
                         const st =
                           statusAnggaran(
-                            persen
+                            persenAsli
                           )
+
+                        // ✨ REVISI: Ambil nilai input pagu dari state (jika ada, pakai itu; kalau tidak, format dari d.pagu)
+                        const nilaiPaguDisplay =
+                          paguInput[d.id] !== undefined
+                            ? paguInput[d.id]
+                            : formatTitik(d.pagu)
 
                         return (
                           <tr
@@ -876,16 +1053,29 @@ function Anggaran({ user }) {
 
                               {isAdmin ? (
                                 <input
-                                  type="number"
+                                  type="text"
                                   className="pagu-input"
-                                  value={d.pagu}
-                                  onChange={(e) =>
-                                    updatePagu(
-                                      d.id,
-                                      e.target
-                                        .value
-                                    )
-                                  }
+                                  value={nilaiPaguDisplay}
+                                  onChange={(e) => {
+                                    const raw = e.target.value.replace(/[^\d]/g, '')
+                                    const formatted = raw ? formatTitik(raw) : ''
+                                    setPaguInput({
+                                      ...paguInput,
+                                      [d.id]: formatted,
+                                    })
+                                  }}
+                                  onBlur={() => {
+                                    // ✨ Saat blur (lepas fokus), simpan ke server
+                                    if (paguInput[d.id] !== undefined) {
+                                      updatePagu(d.id, paguInput[d.id])
+                                      // Reset state lokal supaya ambil dari data lagi
+                                      setPaguInput((prev) => {
+                                        const baru = { ...prev }
+                                        delete baru[d.id]
+                                        return baru
+                                      })
+                                    }
+                                  }}
                                 />
                               ) : (
                                 formatRupiah(
@@ -915,11 +1105,10 @@ function Anggaran({ user }) {
                                   className="progress-bar"
                                   style={{
                                     width:
-                                      Math.min(
-                                        persen,
-                                        100
-                                      ) +
+                                      persen +
                                       '%',
+                                    // ✨ REVISI: warna dinamis
+                                    background: warnaProgress(persenAsli),
                                   }}
                                 ></div>
 
@@ -927,6 +1116,12 @@ function Anggaran({ user }) {
 
                               <small>
                                 {persen}%
+                                {/* ✨ REVISI: label kalau melebihi pagu */}
+                                {persenAsli > 100 && (
+                                  <span style={{ color: '#dc2626', fontSize: '10px', marginLeft: '4px', fontWeight: 700 }}>
+                                    (melebihi pagu)
+                                  </span>
+                                )}
                               </small>
 
                             </td>
@@ -954,7 +1149,7 @@ function Anggaran({ user }) {
                                     color: '#fff',
                                   }}
                                 >
-                                  👁️ Lihat
+                                  <IkonSearch size={13} /> Lihat
                                 </button>
 
                                 {isAdmin && (
@@ -966,7 +1161,7 @@ function Anggaran({ user }) {
                                       )
                                     }
                                   >
-                                    🗑
+                                    <IkonX size={13} />
                                   </button>
                                 )}
                               </div>
@@ -1151,7 +1346,7 @@ function Anggaran({ user }) {
             >
               <div>
                 <h3 style={{ margin: 0, fontSize: '16px' }}>
-                  📅 Histori Realisasi
+                  <IkonClipboard size={17} /> Histori Realisasi
                 </h3>
                 <p
                   style={{
@@ -1176,9 +1371,12 @@ function Anggaran({ user }) {
                   borderRadius: '8px',
                   fontSize: '18px',
                   cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
                 }}
               >
-                ✕
+                <IkonX size={16} />
               </button>
             </div>
 
@@ -1265,7 +1463,7 @@ function Anggaran({ user }) {
                     fontSize: '13px',
                   }}
                 >
-                  ⏳ Memuat riwayat...
+                  <IkonClock size={15} /> Memuat riwayat...
                 </div>
               ) : riwayatModal.riwayat.length === 0 ? (
                 <div
@@ -1279,7 +1477,7 @@ function Anggaran({ user }) {
                     border: '1px dashed #cbd5e1',
                   }}
                 >
-                  📭 Belum ada realisasi tercatat untuk anggaran ini.
+                  <IkonFolder size={16} /> Belum ada realisasi tercatat untuk anggaran ini.
                 </div>
               ) : (
                 <table className="table" style={{ minWidth: '100%' }}>

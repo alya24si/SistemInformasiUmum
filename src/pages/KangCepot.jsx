@@ -39,6 +39,151 @@ Total : ${formatTitik(d.total)}
 Mohon agar dapat mentransfer ke nomor rekening BNI "1910250198" (Tia Agustina) atau secara cash ke Ruangan Subbagian Tata Usaha dan Keuangan di Lantai 2.
 Terima kasih 🙏🏻`
 
+/* ========================================================= */
+/* ✨ ICON SET (stroke flat style, seperti icon VS Code)      */
+/* ========================================================= */
+const SvgIkon = ({ children, size = 18, style }) => (
+  <svg
+    width={size}
+    height={size}
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    style={{ verticalAlign: '-4px', ...style }}
+  >
+    {children}
+  </svg>
+)
+
+const IkonAlert = (p) => (
+  <SvgIkon {...p}>
+    <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z" />
+    <path d="M12 9v4" />
+    <path d="M12 17h.01" />
+  </SvgIkon>
+)
+
+const IkonHand = (p) => (
+  <SvgIkon {...p}>
+    <path d="M18 11V6a2 2 0 0 0-4 0v5" />
+    <path d="M14 10V4a2 2 0 0 0-4 0v2" />
+    <path d="M10 10.5V6a2 2 0 0 0-4 0v8" />
+    <path d="M18 8a2 2 0 1 1 4 0v6a8 8 0 0 1-8 8h-2c-2.8 0-4.5-.86-5.99-2.34l-3.6-3.6a2 2 0 0 1 2.83-2.82L7 15" />
+  </SvgIkon>
+)
+
+const IkonWallet = (p) => (
+  <SvgIkon {...p}>
+    <path d="M19 7V4a1 1 0 0 0-1-1H5a2 2 0 0 0 0 4h15a1 1 0 0 1 1 1v4h-3a2 2 0 0 0 0 4h3a1 1 0 0 0 1-1v-2a1 1 0 0 0-1-1" />
+    <path d="M3 5v14a2 2 0 0 0 2 2h15a1 1 0 0 0 1-1v-4" />
+  </SvgIkon>
+)
+
+const IkonClock = (p) => (
+  <SvgIkon {...p}>
+    <circle cx="12" cy="12" r="10" />
+    <polyline points="12 6 12 12 16 14" />
+  </SvgIkon>
+)
+
+const IkonFolder = (p) => (
+  <SvgIkon {...p}>
+    <path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z" />
+  </SvgIkon>
+)
+
+const IkonCalendar = (p) => (
+  <SvgIkon {...p}>
+    <path d="M8 2v4" />
+    <path d="M16 2v4" />
+    <rect width="18" height="18" x="3" y="4" rx="2" />
+    <path d="M3 10h18" />
+  </SvgIkon>
+)
+
+const IkonCheck = (p) => (
+  <SvgIkon {...p}>
+    <path d="M20 6 9 17l-5-5" />
+  </SvgIkon>
+)
+
+const IkonX = (p) => (
+  <SvgIkon {...p}>
+    <path d="M18 6 6 18" />
+    <path d="m6 6 12 12" />
+  </SvgIkon>
+)
+
+const IkonLock = (p) => (
+  <SvgIkon {...p}>
+    <rect width="18" height="11" x="3" y="11" rx="2" ry="2" />
+    <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+  </SvgIkon>
+)
+
+const IkonUpload = (p) => (
+  <SvgIkon {...p}>
+    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+    <polyline points="17 8 12 3 7 8" />
+    <line x1="12" x2="12" y1="3" y2="15" />
+  </SvgIkon>
+)
+
+const IkonPlus = (p) => (
+  <SvgIkon {...p}>
+    <path d="M5 12h14" />
+    <path d="M12 5v14" />
+  </SvgIkon>
+)
+
+const IkonSave = (p) => (
+  <SvgIkon {...p}>
+    <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" />
+    <polyline points="17 21 17 13 7 13 7 21" />
+    <polyline points="7 3 7 8 15 8" />
+  </SvgIkon>
+)
+
+const IkonPencil = (p) => (
+  <SvgIkon {...p}>
+    <path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" />
+    <path d="m15 5 4 4" />
+  </SvgIkon>
+)
+
+const IkonClipboard = (p) => (
+  <SvgIkon {...p}>
+    <rect width="8" height="4" x="8" y="2" rx="1" ry="1" />
+    <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2" />
+  </SvgIkon>
+)
+
+const IkonSearch = (p) => (
+  <SvgIkon {...p}>
+    <circle cx="11" cy="11" r="8" />
+    <path d="m21 21-4.3-4.3" />
+  </SvgIkon>
+)
+
+const IkonMessage = (p) => (
+  <SvgIkon {...p}>
+    <path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z" />
+  </SvgIkon>
+)
+
+const IkonTrash = (p) => (
+  <SvgIkon {...p}>
+    <path d="M3 6h18" />
+    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6" />
+    <path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+    <line x1="10" x2="10" y1="11" y2="17" />
+    <line x1="14" x2="14" y1="11" y2="17" />
+  </SvgIkon>
+)
+
 function KangCepot({ user }) {
   const isAdmin = user.role === 'admin_keuangan' || user.role === 'superadmin'
 
@@ -109,11 +254,13 @@ function KangCepot({ user }) {
           }} />
 
           <div style={{
-            fontSize: '70px', marginBottom: '8px',
+            marginBottom: '8px',
             display: 'inline-block',
             animation: 'iconBounce 1.5s ease-in-out infinite',
             filter: 'drop-shadow(0 4px 8px rgba(220,38,38,.3))',
-          }}>🚨</div>
+          }}>
+            <IkonAlert size={70} style={{ color: '#dc2626', verticalAlign: 'middle' }} />
+          </div>
 
           <h2 style={{
             margin: '0 0 6px 0', color: '#991b1b', fontSize: '24px',
@@ -192,7 +339,7 @@ function KangCepot({ user }) {
               transition: 'all 0.3s ease',
             }}
           >
-            ✋ SAYA MENGERTI
+            <IkonHand size={16} /> SAYA MENGERTI
           </button>
         </div>
       </div>
@@ -242,18 +389,22 @@ function KangCepot({ user }) {
           <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
             <img src="/kang-cepot.png" alt="Kang Cepot" style={{ width: '70px', height: '70px', borderRadius: '50%', objectFit: 'cover', border: '4px solid #ffc72c', boxShadow: '0 4px 12px rgba(0,0,0,0.15)' }} />
             <div>
-              <h1 style={{ ...titleStyle, color: '#002b5c' }}>🟢 KANG CEPOT — Iuran Saya</h1>
+              <h1 style={{ ...titleStyle, color: '#002b5c' }}>
+                <IkonWallet size={26} style={{ color: '#16a34a' }} /> KANG CEPOT — Iuran Saya
+              </h1>
               <p style={subtitleStyle}>Data iuran pribadi Anda tahun {profil?.tahun || tahunIni}.</p>
             </div>
           </div>
         </div>
 
         {profil === null ? (
-          <div style={cardStyle}><div style={{ padding: '40px', textAlign: 'center', color: '#94a3b8' }}>⏳ Memuat data iuran Anda...</div></div>
+          <div style={cardStyle}><div style={{ padding: '40px', textAlign: 'center', color: '#94a3b8' }}><IkonClock size={16} /> Memuat data iuran Anda...</div></div>
         ) : profil === false ? (
           <div style={cardStyle}>
             <div style={{ padding: '40px', textAlign: 'center' }}>
-              <div style={{ fontSize: '48px', marginBottom: '12px' }}>📭</div>
+              <div style={{ marginBottom: '12px' }}>
+                <IkonFolder size={44} style={{ color: '#94a3b8' }} />
+              </div>
               <div style={{ fontSize: '16px', fontWeight: 700, color: '#172b4d', marginBottom: '8px' }}>Data Iuran Belum Terdaftar</div>
               <div style={{ fontSize: '13px', color: '#64748b' }}>
                 NIP <b>{user.nip}</b> belum tercatat di sistem iuran. Hubungi Subbagian Tata Usaha & Keuangan untuk didaftarkan.
@@ -264,7 +415,7 @@ function KangCepot({ user }) {
           <>
             <div style={cardStyle}>
               <div style={sectionHeader}>
-                <h2 style={sectionTitle}>💰 Rincian Iuran Bulanan Anda</h2>
+                <h2 style={sectionTitle}><IkonWallet size={17} /> Rincian Iuran Bulanan Anda</h2>
                 <p style={sectionSubtitle}>{profil.data.nama} • NIP {profil.data.nip}</p>
               </div>
               <div style={{ padding: '20px', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '12px' }}>
@@ -277,22 +428,22 @@ function KangCepot({ user }) {
 
             <div style={cardStyle}>
               <div style={sectionHeader}>
-                <h2 style={sectionTitle}>📅 Status Bayar per Bulan</h2>
-                <p style={sectionSubtitle}>Bulan ❌ = belum tercatat bayar. Hubungi Subbagian TU & Keuangan bila ada ketidaksesuaian.</p>
+                <h2 style={sectionTitle}><IkonCalendar size={17} /> Status Bayar per Bulan</h2>
+                <p style={sectionSubtitle}>Bulan <IkonX size={11} style={{ color: '#dc2626' }} /> = belum tercatat bayar. Hubungi Subbagian TU & Keuangan bila ada ketidaksesuaian.</p>
               </div>
               <div style={{ padding: '20px', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '10px' }}>
                 {daftarBulan.map((b) => {
                   const st = bulananMap[b] === 'sudah'
                   return (
                     <div key={b} style={{ padding: '12px', borderRadius: '10px', border: st ? '2px solid #16a34a' : '2px solid #dc2626', backgroundColor: st ? '#dcfce7' : '#fee2e2', color: st ? '#166534' : '#991b1b', fontWeight: 700, fontSize: '13px', textAlign: 'center' }}>
-                      {b}<br />{st ? '✅ SUDAH' : '❌ BELUM'}
+                      {b}<br />{st ? <><IkonCheck size={12} /> SUDAH</> : <><IkonX size={12} /> BELUM</>}
                     </div>
                   )
                 })}
               </div>
               {belum.length > 0 && (
                 <div style={{ margin: '0 20px 20px', padding: '14px 18px', backgroundColor: '#fee2e2', border: '1px solid #dc2626', borderRadius: '10px', color: '#7f1d1d', fontSize: '13px', fontWeight: 600 }}>
-                  ⚠️ Anda belum bayar iuran bulan: <b>{belum.join(', ')}</b>. Mohon transfer ke rekening BNI "1910250198" (Tia Agustina) atau cash ke Ruangan Subbagian TU & Keuangan Lt. 2.
+                  <IkonAlert size={14} /> Anda belum bayar iuran bulan: <b>{belum.join(', ')}</b>. Mohon transfer ke rekening BNI "1910250198" (Tia Agustina) atau cash ke Ruangan Subbagian TU & Keuangan Lt. 2.
                 </div>
               )}
             </div>
@@ -304,7 +455,7 @@ function KangCepot({ user }) {
 
   // ===== ✨ TAMPILAN ADMIN (tidak diubah) =====
   if (!isAdmin) {
-    return <div style={pageStyle}>❌ Halaman ini hanya dapat diakses oleh Admin Keuangan, Superadmin, dan Pegawai.</div>
+    return <div style={pageStyle}><IkonLock size={16} /> Halaman ini hanya dapat diakses oleh Admin Keuangan, Superadmin, dan Pegawai.</div>
   }
 
   const handleFile = async (e) => {
@@ -400,7 +551,7 @@ function KangCepot({ user }) {
 
   const kirimWa = (d) => {
     if (!d.no_hp) { alert('Nomor HP pegawai ini belum diisi!'); return }
-    if (d.total <= 0) { alert('Isi dulu nominal iuran lewat tombol ✏️ Edit!'); return }
+    if (d.total <= 0) { alert('Isi dulu nominal iuran lewat tombol Edit!'); return }
     window.open('https://wa.me/' + nomorWa(d.no_hp) + '?text=' + encodeURIComponent(buatPesan(d)), '_blank')
   }
 
@@ -413,14 +564,41 @@ function KangCepot({ user }) {
     setKelola({ id: d.id, nama: d.nama, loading: false, bulan: map })
   }
 
+  // ✨ FIX 1: Optimistic update dengan functional state (fix race condition)
   const toggleBulan = async (bulan) => {
-    const baru = kelola.bulan[bulan] === 'sudah' ? 'belum' : 'sudah'
-    await fetch(API + '/iuran/' + kelola.id + '/bulanan', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ bulan, status: baru }),
-    })
-    setKelola({ ...kelola, bulan: { ...kelola.bulan, [bulan]: baru } })
+    const statusSekarang = kelola.bulan[bulan] || 'belum'
+    const statusBaru = statusSekarang === 'sudah' ? 'belum' : 'sudah'
+
+    // Update UI DULU dengan functional update (selalu pakai state TERBARU)
+    setKelola((prev) => ({
+      ...prev,
+      bulan: { ...prev.bulan, [bulan]: statusBaru },
+    }))
+
+    try {
+      const res = await fetch(API + '/iuran/' + kelola.id + '/bulanan', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ bulan, status: statusBaru }),
+      })
+
+      // Rollback kalau server error
+      if (!res.ok) {
+        setKelola((prev) => ({
+          ...prev,
+          bulan: { ...prev.bulan, [bulan]: statusSekarang },
+        }))
+        alert('Gagal menyimpan status. Silakan coba lagi.')
+      }
+    } catch (err) {
+      // Rollback kalau network error
+      setKelola((prev) => ({
+        ...prev,
+        bulan: { ...prev.bulan, [bulan]: statusSekarang },
+      }))
+      alert('Koneksi gagal. Status dikembalikan ke semula.')
+    }
+
     muatData()
   }
 
@@ -434,7 +612,9 @@ function KangCepot({ user }) {
         <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
           <img src="/kang-cepot.png" alt="Kang Cepot" style={{ width: '70px', height: '70px', borderRadius: '50%', objectFit: 'cover', border: '4px solid #ffc72c' }} />
           <div>
-            <h1 style={{ ...titleStyle, color: '#002b5c' }}>🟢 KANG CEPOT</h1>
+            <h1 style={{ ...titleStyle, color: '#002b5c' }}>
+              <IkonWallet size={26} style={{ color: '#16a34a' }} /> KANG CEPOT
+            </h1>
             <p style={subtitleStyle}>Tagihan iuran via WhatsApp + pantauan bayar per bulan (tahun {tahunIni}).</p>
           </div>
         </div>
@@ -444,10 +624,12 @@ function KangCepot({ user }) {
         <div style={sectionHeader}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
             <div>
-              <h2 style={sectionTitle}>📥 Upload Excel Iuran</h2>
+              <h2 style={sectionTitle}><IkonUpload size={17} /> Upload Excel Iuran</h2>
               <p style={sectionSubtitle}>Kolom dibaca: NAMA | NIP | NO HP | DPP | BAPORS | DKM/PWK.</p>
             </div>
-            <button onClick={() => setShowForm(!showForm)} style={btnTambah}>{showForm ? '✖️ Tutup Form' : '➕ Tambah Pegawai Baru'}</button>
+            <button onClick={() => setShowForm(!showForm)} style={btnTambah}>
+              {showForm ? <><IkonX size={14} /> Tutup Form</> : <><IkonPlus size={14} /> Tambah Pegawai Baru</>}
+            </button>
           </div>
         </div>
 
@@ -460,13 +642,13 @@ function KangCepot({ user }) {
               <div>
                 <label style={labelStyle}>Status Bayar</label>
                 <select value={formTambah.status_bayar} onChange={(e) => setFormTambah({ ...formTambah, status_bayar: e.target.value })} style={inputStyle}>
-                  <option value="belum">❌ Belum Bayar</option>
-                  <option value="sudah">✅ Sudah Bayar</option>
+                  <option value="belum">Belum Bayar</option>
+                  <option value="sudah">Sudah Bayar</option>
                 </select>
               </div>
             </div>
             <div style={{ display: 'flex', gap: '8px', marginTop: '16px' }}>
-              <button type="submit" style={btnSimpan}>💾 Simpan</button>
+              <button type="submit" style={btnSimpan}><IkonSave size={14} /> Simpan</button>
               <button type="button" onClick={() => setShowForm(false)} style={btnBatal}>Batal</button>
             </div>
           </form>
@@ -480,7 +662,7 @@ function KangCepot({ user }) {
 
       {editing && (
         <div style={{ ...cardStyle, border: '2px solid #f59e0b', background: '#fef3c7' }}>
-          <div style={sectionHeader}><h2 style={{ ...sectionTitle, color: '#92400e' }}>✏️ Edit Iuran: {editing.nama}</h2></div>
+          <div style={sectionHeader}><h2 style={{ ...sectionTitle, color: '#92400e' }}><IkonPencil size={16} /> Edit Iuran: {editing.nama}</h2></div>
           <form onSubmit={simpanEdit} style={{ padding: '20px' }}>
             <div style={formGrid}>
               <div><label style={labelStyle}>Nama</label><input type="text" required value={formEdit.nama} onChange={(e) => setFormEdit({ ...formEdit, nama: e.target.value })} style={inputStyle} /></div>
@@ -491,14 +673,14 @@ function KangCepot({ user }) {
               <div>
                 <label style={labelStyle}>Status Bayar</label>
                 <select value={formEdit.status_bayar} onChange={(e) => setFormEdit({ ...formEdit, status_bayar: e.target.value })} style={inputStyle}>
-                  <option value="belum">❌ Belum Bayar</option>
-                  <option value="sudah">✅ Sudah Bayar</option>
+                  <option value="belum">Belum Bayar</option>
+                  <option value="sudah">Sudah Bayar</option>
                 </select>
               </div>
             </div>
             <div style={{ marginTop: '16px', fontSize: '18px', fontWeight: 800, color: '#92400e' }}>TOTAL OTOMATIS: {formatTitik(totalEdit)}</div>
             <div style={{ display: 'flex', gap: '8px', marginTop: '16px' }}>
-              <button type="submit" style={btnSimpan}>💾 Simpan</button>
+              <button type="submit" style={btnSimpan}><IkonSave size={14} /> Simpan</button>
               <button type="button" onClick={() => setEditing(null)} style={btnBatal}>Batal</button>
             </div>
           </form>
@@ -507,16 +689,18 @@ function KangCepot({ user }) {
 
       <div style={cardStyle}>
         <div style={sectionHeader}>
-          <h2 style={sectionTitle}>📋 Daftar Iuran Pegawai</h2>
-          <p style={sectionSubtitle}>📅 Kelola = atur bayar per bulan. 🟢 WA = kirim tagihan otomatis.</p>
+          <h2 style={sectionTitle}><IkonClipboard size={17} /> Daftar Iuran Pegawai</h2>
+          <p style={sectionSubtitle}>
+            <IkonCalendar size={12} /> Kelola = atur bayar per bulan. <IkonMessage size={12} /> WA = kirim tagihan otomatis.
+          </p>
         </div>
 
         <div style={{ padding: '16px 20px 0', display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap' }}>
-          <span style={{ fontSize: '13px', fontWeight: 600, color: '#334155' }}>🔍 Filter Status:</span>
+          <span style={{ fontSize: '13px', fontWeight: 600, color: '#334155' }}><IkonSearch size={14} /> Filter Status:</span>
           <select value={filterStatus} onChange={(e) => setFilterStatus(e.target.value)} style={{ ...inputStyle, width: 'auto' }}>
             <option value="semua">Semua</option>
-            <option value="sudah">✅ Sudah Bayar</option>
-            <option value="belum">❌ Belum Bayar</option>
+            <option value="sudah">Sudah Bayar</option>
+            <option value="belum">Belum Bayar</option>
           </select>
           <span style={{ fontSize: '12px', color: '#64748b' }}>Menampilkan {dataFiltered.length} dari {data.length} pegawai</span>
         </div>
@@ -539,7 +723,7 @@ function KangCepot({ user }) {
             </thead>
             <tbody>
               {dataFiltered.length === 0 ? (
-                <tr><td colSpan="10" style={emptyStyle}>Tidak ada data. Upload Excel atau tambah pegawai manual. 📥</td></tr>
+                <tr><td colSpan="10" style={emptyStyle}><IkonUpload size={15} /> Tidak ada data. Upload Excel atau tambah pegawai manual.</td></tr>
               ) : (
                 dataFiltered.map((d, i) => {
                   const siapWa = d.total > 0 && d.no_hp
@@ -553,7 +737,7 @@ function KangCepot({ user }) {
                           <span>{d.no_hp || '—'}</span>
                           <button onClick={() => kirimWa(d)} disabled={!siapWa}
                             style={{ padding: '5px 10px', borderRadius: '8px', border: 'none', backgroundColor: siapWa ? '#25d366' : '#cbd5e1', color: '#fff', fontSize: '12px', fontWeight: 700, cursor: siapWa ? 'pointer' : 'not-allowed', opacity: siapWa ? 1 : 0.6 }}>
-                            🟢 WA
+                            <IkonMessage size={12} /> WA
                           </button>
                         </div>
                       </td>
@@ -563,14 +747,14 @@ function KangCepot({ user }) {
                       <td style={{ ...tdStyle, textAlign: 'center', fontWeight: 800, color: '#dc2626' }}>{formatTitik(d.total)}</td>
                       <td style={tdStyle}>
                         <span style={{ padding: '5px 10px', borderRadius: '20px', fontSize: '11px', fontWeight: 700, backgroundColor: d.status_bayar === 'sudah' ? '#dcfce7' : '#fee2e2', color: d.status_bayar === 'sudah' ? '#166534' : '#991b1b' }}>
-                          {d.status_bayar === 'sudah' ? '✅ SUDAH' : '❌ BELUM'}
+                          {d.status_bayar === 'sudah' ? <><IkonCheck size={10} /> SUDAH</> : <><IkonX size={10} /> BELUM</>}
                         </span>
                       </td>
                       <td style={tdStyle}>
                         <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
-                          <button onClick={() => bukaKelola(d)} style={btnKelola}>📅 Kelola</button>
-                          <button onClick={() => mulaiEdit(d)} style={btnEdit}>✏️ Edit</button>
-                          <button onClick={() => hapus(d.id)} style={btnHapus}>🗑</button>
+                          <button onClick={() => bukaKelola(d)} style={btnKelola}><IkonCalendar size={11} /> Kelola</button>
+                          <button onClick={() => mulaiEdit(d)} style={btnEdit}><IkonPencil size={11} /> Edit</button>
+                          <button onClick={() => hapus(d.id)} style={btnHapus}><IkonTrash size={12} /></button>
                         </div>
                       </td>
                     </tr>
@@ -585,18 +769,55 @@ function KangCepot({ user }) {
       {kelola && (
         <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,31,69,.75)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }} onClick={() => setKelola(null)}>
           <div onClick={(e) => e.stopPropagation()} style={{ width: '680px', maxWidth: '94%', maxHeight: '85vh', overflowY: 'auto', background: '#fff', borderRadius: '16px', padding: '24px' }}>
-            <h3 style={{ margin: '0 0 6px 0', color: '#002b5c', fontSize: '18px' }}>📅 Kelola Iuran Bulanan — {kelola.nama}</h3>
+            <h3 style={{ margin: '0 0 6px 0', color: '#002b5c', fontSize: '18px' }}>
+              <IkonCalendar size={17} /> Kelola Iuran Bulanan — {kelola.nama}
+            </h3>
             <p style={{ margin: '0 0 16px 0', color: '#64748b', fontSize: '13px' }}>Klik bulan untuk mengubah status sudah/belum bayar (tahun {tahunIni}).</p>
             {kelola.loading ? (
-              <p style={{ textAlign: 'center', color: '#64748b' }}>⏳ Memuat...</p>
+              <p style={{ textAlign: 'center', color: '#64748b' }}><IkonClock size={15} /> Memuat...</p>
             ) : (
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '10px' }}>
                 {daftarBulan.map((b) => {
                   const st = kelola.bulan[b] === 'sudah'
                   return (
-                    <button key={b} onClick={() => toggleBulan(b)}
-                      style={{ padding: '12px', borderRadius: '10px', border: st ? '2px solid #16a34a' : '2px solid #dc2626', backgroundColor: st ? '#dcfce7' : '#fee2e2', color: st ? '#166534' : '#991b1b', fontWeight: 700, fontSize: '13px', cursor: 'pointer' }}>
-                      {b}<br />{st ? '✅ SUDAH' : '❌ BELUM'}
+                    <button
+                      key={b}
+                      onClick={() => toggleBulan(b)}
+                      style={{
+                        padding: '12px',
+                        borderRadius: '10px',
+                        border: st ? '2px solid #16a34a' : '2px solid #dc2626',
+                        backgroundColor: st ? '#dcfce7' : '#fee2e2',
+                        color: st ? '#166534' : '#991b1b',
+                        fontWeight: 700,
+                        fontSize: '13px',
+                        cursor: 'pointer',
+                        transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+                        transform: 'scale(1)',
+                        boxShadow: st
+                          ? '0 2px 6px rgba(22, 163, 74, 0.15)'
+                          : '0 2px 6px rgba(220, 38, 38, 0.1)',
+                      }}
+                      onMouseOver={(e) => {
+                        e.currentTarget.style.transform = 'scale(1.04)'
+                        e.currentTarget.style.boxShadow = st
+                          ? '0 4px 12px rgba(22, 163, 74, 0.3)'
+                          : '0 4px 12px rgba(220, 38, 38, 0.25)'
+                      }}
+                      onMouseOut={(e) => {
+                        e.currentTarget.style.transform = 'scale(1)'
+                        e.currentTarget.style.boxShadow = st
+                          ? '0 2px 6px rgba(22, 163, 74, 0.15)'
+                          : '0 2px 6px rgba(220, 38, 38, 0.1)'
+                      }}
+                      onMouseDown={(e) => {
+                        e.currentTarget.style.transform = 'scale(0.96)'
+                      }}
+                      onMouseUp={(e) => {
+                        e.currentTarget.style.transform = 'scale(1.04)'
+                      }}
+                    >
+                      {b}<br />{st ? <><IkonCheck size={12} /> SUDAH</> : <><IkonX size={12} /> BELUM</>}
                     </button>
                   )
                 })}

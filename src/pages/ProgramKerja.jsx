@@ -30,6 +30,132 @@ const hitungTarget = (p) =>
 const hitungRealisasi = (p) =>
   (p.kegiatan || []).reduce((a, k) => a + k.realisasi, 0)
 
+/* ========================================================= */
+/* ✨ ICON SET (stroke flat style, seperti icon VS Code)      */
+/* ========================================================= */
+const SvgIkon = ({ children, size = 18, style }) => (
+  <svg
+    width={size}
+    height={size}
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    style={{ verticalAlign: '-4px', ...style }}
+  >
+    {children}
+  </svg>
+)
+
+const IkonTarget = (p) => (
+  <SvgIkon {...p}>
+    <circle cx="12" cy="12" r="10" />
+    <circle cx="12" cy="12" r="6" />
+    <circle cx="12" cy="12" r="2" />
+  </SvgIkon>
+)
+
+const IkonCheck = (p) => (
+  <SvgIkon {...p}>
+    <path d="M20 6 9 17l-5-5" />
+  </SvgIkon>
+)
+
+const IkonChart = (p) => (
+  <SvgIkon {...p}>
+    <path d="M3 3v18h18" />
+    <path d="M18 17V9" />
+    <path d="M13 17V5" />
+    <path d="M8 17v-3" />
+  </SvgIkon>
+)
+
+const IkonClipboard = (p) => (
+  <SvgIkon {...p}>
+    <rect width="8" height="4" x="8" y="2" rx="1" ry="1" />
+    <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2" />
+  </SvgIkon>
+)
+
+const IkonEye = (p) => (
+  <SvgIkon {...p}>
+    <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z" />
+    <circle cx="12" cy="12" r="3" />
+  </SvgIkon>
+)
+
+const IkonCalendar = (p) => (
+  <SvgIkon {...p}>
+    <path d="M8 2v4" />
+    <path d="M16 2v4" />
+    <rect width="18" height="18" x="3" y="4" rx="2" />
+    <path d="M3 10h18" />
+  </SvgIkon>
+)
+
+const IkonBuilding = (p) => (
+  <SvgIkon {...p}>
+    <rect width="16" height="20" x="4" y="2" rx="2" ry="2" />
+    <path d="M9 22v-4h6v4" />
+    <path d="M8 6h.01" />
+    <path d="M16 6h.01" />
+    <path d="M12 6h.01" />
+    <path d="M12 10h.01" />
+    <path d="M12 14h.01" />
+    <path d="M16 10h.01" />
+    <path d="M16 14h.01" />
+    <path d="M8 10h.01" />
+    <path d="M8 14h.01" />
+  </SvgIkon>
+)
+
+const IkonPencil = (p) => (
+  <SvgIkon {...p}>
+    <path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" />
+    <path d="m15 5 4 4" />
+  </SvgIkon>
+)
+
+const IkonPlus = (p) => (
+  <SvgIkon {...p}>
+    <path d="M5 12h14" />
+    <path d="M12 5v14" />
+  </SvgIkon>
+)
+
+const IkonSave = (p) => (
+  <SvgIkon {...p}>
+    <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" />
+    <polyline points="17 21 17 13 7 13 7 21" />
+    <polyline points="7 3 7 8 15 8" />
+  </SvgIkon>
+)
+
+const IkonTrash = (p) => (
+  <SvgIkon {...p}>
+    <path d="M3 6h18" />
+    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6" />
+    <path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+    <line x1="10" x2="10" y1="11" y2="17" />
+    <line x1="14" x2="14" y1="11" y2="17" />
+  </SvgIkon>
+)
+
+const IkonX = (p) => (
+  <SvgIkon {...p}>
+    <path d="M18 6 6 18" />
+    <path d="m6 6 12 12" />
+  </SvgIkon>
+)
+
+const IkonPlay = (p) => (
+  <SvgIkon {...p}>
+    <polygon points="6 3 20 12 6 21 6 3" />
+  </SvgIkon>
+)
+
 function ProgramKerja({ user }) {
   const isAdmin =
     user.role === 'admin_keuangan' ||
@@ -297,14 +423,16 @@ function ProgramKerja({ user }) {
 
     return (
       <div className="card" style={{ borderLeft: '4px solid #3b82f6' }}>
-        <h3>🎯 Ringkasan Target vs Realisasi Anggaran</h3>
+        <h3><IkonTarget size={16} /> Ringkasan Target vs Realisasi Anggaran</h3>
         <p style={{ color: '#64748b', fontSize: '13px', marginBottom: '16px' }}>
           Total target anggaran yang direncanakan dibanding yang sudah terlaksana.
         </p>
 
         <div className="stats-grid" style={{ marginBottom: '16px' }}>
           <div className="stat-card">
-            <div className="stat-icon">🎯</div>
+            <div className="stat-icon">
+              <IkonTarget size={22} style={{ color: '#005ca9' }} />
+            </div>
             <div className="stat-info">
               <h4>Total Target</h4>
               <div className="stat-value" style={{ fontSize: '15px' }}>{formatRupiah(totalTarget)}</div>
@@ -312,7 +440,9 @@ function ProgramKerja({ user }) {
             </div>
           </div>
           <div className="stat-card green">
-            <div className="stat-icon">✅</div>
+            <div className="stat-icon">
+              <IkonCheck size={22} style={{ color: '#15803d' }} />
+            </div>
             <div className="stat-info">
               <h4>Sudah Terlaksana</h4>
               <div className="stat-value" style={{ fontSize: '15px' }}>{formatRupiah(totalSudah)}</div>
@@ -320,7 +450,9 @@ function ProgramKerja({ user }) {
             </div>
           </div>
           <div className="stat-card gold">
-            <div className="stat-icon">📊</div>
+            <div className="stat-icon">
+              <IkonChart size={22} style={{ color: '#b45309' }} />
+            </div>
             <div className="stat-info">
               <h4>Selisih</h4>
               <div className="stat-value" style={{ fontSize: '15px', color: totalSelisih > 0 ? '#d97706' : '#16a34a' }}>
@@ -415,7 +547,7 @@ function ProgramKerja({ user }) {
   return (
     <div className="page">
       <div className="page-title">
-        <h1>📋 Monitoring Program Kerja</h1>
+        <h1><IkonClipboard size={22} /> Monitoring Program Kerja</h1>
         <p>
           Program kerja dilaporkan di awal tahun, lalu target anggaran
           dan realisasi per bulan diperbarui secara berkala.
@@ -424,13 +556,15 @@ function ProgramKerja({ user }) {
 
       {!isAdmin && (
         <div className="guest-note">
-          👁️ Mode tamu: Anda hanya melihat data bidang <b>{user.bidang}</b>.
+          <IkonEye size={15} /> Mode tamu: Anda hanya melihat data bidang <b>{user.bidang}</b>.
         </div>
       )}
 
       <div className="stats-grid">
         <div className="stat-card">
-          <div className="stat-icon">📋</div>
+          <div className="stat-icon">
+            <IkonClipboard size={22} style={{ color: '#005ca9' }} />
+          </div>
           <div className="stat-info">
             <h4>Total Program</h4>
             <div className="stat-value">{totalProgram}</div>
@@ -440,7 +574,9 @@ function ProgramKerja({ user }) {
           </div>
         </div>
         <div className="stat-card gold">
-          <div className="stat-icon">🏢</div>
+          <div className="stat-icon">
+            <IkonBuilding size={22} style={{ color: '#b45309' }} />
+          </div>
           <div className="stat-info">
             <h4>Bidang Melapor</h4>
             <div className="stat-value">{totalBidang}</div>
@@ -448,7 +584,9 @@ function ProgramKerja({ user }) {
           </div>
         </div>
         <div className="stat-card green">
-          <div className="stat-icon">📅</div>
+          <div className="stat-icon">
+            <IkonCalendar size={22} style={{ color: '#15803d' }} />
+          </div>
           <div className="stat-info">
             <h4>Total Kegiatan</h4>
             <div className="stat-value">{totalKegiatan}</div>
@@ -456,7 +594,9 @@ function ProgramKerja({ user }) {
           </div>
         </div>
         <div className="stat-card">
-          <div className="stat-icon">✅</div>
+          <div className="stat-icon">
+            <IkonCheck size={22} style={{ color: '#005ca9' }} />
+          </div>
           <div className="stat-info">
             <h4>Program Selesai</h4>
             <div className="stat-value">{totalSelesai}</div>
@@ -468,7 +608,7 @@ function ProgramKerja({ user }) {
       {isAdmin && editingProgram && (
         <div ref={panelEditProgramRef} className="card" style={{ border: '2px solid #f59e0b', background: '#fef3c7' }}>
           <h3>
-            ✏️ Edit Program: <span style={{ color: '#92400e' }}>{editingProgram.program}</span>
+            <IkonPencil size={16} /> Edit Program: <span style={{ color: '#92400e' }}>{editingProgram.program}</span>
           </h3>
           <form onSubmit={updateProgram} style={{ marginTop: '12px' }}>
             <div className="form-row">
@@ -482,8 +622,12 @@ function ProgramKerja({ user }) {
               <input type="text" placeholder="Deskripsi program" value={formEditProgram.deskripsi} onChange={(e) => setFormEditProgram({ ...formEditProgram, deskripsi: e.target.value })} />
               <input type="text" placeholder="Target (contoh: 4 Kegiatan)" required value={formEditProgram.target} onChange={(e) => setFormEditProgram({ ...formEditProgram, target: e.target.value })} />
               <div style={{ display: 'flex', gap: '6px' }}>
-                <button type="submit" className="btn" style={{ background: '#f59e0b' }}>💾 Update</button>
-                <button type="button" className="btn" onClick={batalEditProgram} style={{ background: '#e2e8f0', color: '#0f172a' }}>Batal</button>
+                <button type="submit" className="btn" style={{ background: '#f59e0b' }}>
+                  <IkonSave size={13} /> Update
+                </button>
+                <button type="button" className="btn" onClick={batalEditProgram} style={{ background: '#e2e8f0', color: '#0f172a' }}>
+                  <IkonX size={13} /> Batal
+                </button>
               </div>
             </div>
           </form>
@@ -492,7 +636,7 @@ function ProgramKerja({ user }) {
 
       {isAdmin && !editingProgram && (
         <div className="card">
-          <h3>➕ Lapor Program Kerja (Awal Tahun)</h3>
+          <h3><IkonPlus size={16} /> Lapor Program Kerja (Awal Tahun)</h3>
           <form onSubmit={tambahProgram} className="form-row">
             <select value={formProgram.tahun} onChange={(e) => setFormProgram({ ...formProgram, tahun: e.target.value })}>
               {daftarTahun.map((t) => (<option key={t} value={t}>Tahun {t}</option>))}
@@ -509,7 +653,7 @@ function ProgramKerja({ user }) {
       )}
 
       <div className="card">
-        <h3>📋 Daftar Program Kerja & Kalender Realisasi</h3>
+        <h3><IkonClipboard size={16} /> Daftar Program Kerja & Kalender Realisasi</h3>
         <div className="filter-row">
           <select value={filterTahun} onChange={(e) => { setFilterTahun(e.target.value); setCurrentPage(0); setRingkasanPage(0) }}>
             <option value="semua">Semua Tahun</option>
@@ -565,9 +709,15 @@ function ProgramKerja({ user }) {
                             <td>
                               {isAdmin && (
                                 <>
-                                  <button className="btn" style={{ padding: '4px 8px', fontSize: '11px', marginRight: '4px' }} onClick={() => mulaiEditProgram(p)}>✏️ Edit</button>
-                                  <button className="btn" style={{ padding: '4px 8px', fontSize: '11px', marginRight: '4px' }} onClick={() => bukaKelola(p.id)}>Kelola</button>
-                                  <button className="btn-danger" onClick={() => hapusProgram(p.id)}>🗑</button>
+                                  <button className="btn" style={{ padding: '4px 8px', fontSize: '11px', marginRight: '4px' }} onClick={() => mulaiEditProgram(p)}>
+                                    <IkonPencil size={11} /> Edit
+                                  </button>
+                                  <button className="btn" style={{ padding: '4px 8px', fontSize: '11px', marginRight: '4px' }} onClick={() => bukaKelola(p.id)}>
+                                    <IkonPlay size={11} /> Kelola
+                                  </button>
+                                  <button className="btn-danger" onClick={() => hapusProgram(p.id)}>
+                                    <IkonTrash size={12} />
+                                  </button>
                                 </>
                               )}
                             </td>
@@ -633,7 +783,7 @@ function ProgramKerja({ user }) {
       {selectedProgram && (
         <div ref={panelKelolaRef} className="card" style={{ border: '2px solid #3b82f6' }}>
           <h3>
-            📅 Kegiatan Bulanan: <span style={{ color: '#3b82f6' }}>{selectedProgram.program}</span>
+            <IkonCalendar size={16} /> Kegiatan Bulanan: <span style={{ color: '#3b82f6' }}>{selectedProgram.program}</span>
           </h3>
           <p style={{ color: '#64748b', fontSize: '13px', marginBottom: '16px' }}>
             {selectedProgram.bidang} • {selectedProgram.tahun} • Target: {selectedProgram.target}
@@ -642,7 +792,7 @@ function ProgramKerja({ user }) {
           {isAdmin && (
             <form onSubmit={simpanKegiatan} style={{ marginBottom: '20px', padding: '16px', background: editingKegiatan ? '#fef3c7' : '#f8fafc', borderRadius: '10px', border: editingKegiatan ? '2px solid #f59e0b' : '1px solid #e2e8f0' }}>
               <div style={{ fontWeight: 700, marginBottom: '10px', color: editingKegiatan ? '#92400e' : '#0f172a' }}>
-                {editingKegiatan ? `✏️ Edit Kegiatan: ${editingKegiatan.bulan}` : '➕ Tambah Kegiatan Baru'}
+                {editingKegiatan ? <><IkonPencil size={14} /> Edit Kegiatan: {editingKegiatan.bulan}</> : <><IkonPlus size={14} /> Tambah Kegiatan Baru</>}
               </div>
               <div className="form-row">
                 <select value={formKegiatan.bulan} onChange={(e) => setFormKegiatan({ ...formKegiatan, bulan: e.target.value })}>
@@ -670,10 +820,12 @@ function ProgramKerja({ user }) {
                 />
                 <div style={{ display: 'flex', gap: '6px' }}>
                   <button type="submit" className="btn" style={{ background: editingKegiatan ? '#f59e0b' : undefined }}>
-                    {editingKegiatan ? '💾 Update' : '➕ Tambah'}
+                    {editingKegiatan ? <><IkonSave size={13} /> Update</> : <><IkonPlus size={13} /> Tambah</>}
                   </button>
                   {editingKegiatan && (
-                    <button type="button" className="btn" onClick={batalEdit} style={{ background: '#e2e8f0', color: '#0f172a' }}>Batal</button>
+                    <button type="button" className="btn" onClick={batalEdit} style={{ background: '#e2e8f0', color: '#0f172a' }}>
+                      <IkonX size={13} /> Batal
+                    </button>
                   )}
                 </div>
               </div>
@@ -713,8 +865,12 @@ function ProgramKerja({ user }) {
                         <td>
                           {isAdmin && (
                             <>
-                              <button className="btn" onClick={() => mulaiEdit(k)} style={{ padding: '4px 8px', fontSize: '11px', marginRight: '4px' }}>✏️ Edit</button>
-                              <button className="btn-danger" onClick={() => hapusKegiatan(k.id)}>🗑</button>
+                              <button className="btn" onClick={() => mulaiEdit(k)} style={{ padding: '4px 8px', fontSize: '11px', marginRight: '4px' }}>
+                                <IkonPencil size={11} /> Edit
+                              </button>
+                              <button className="btn-danger" onClick={() => hapusKegiatan(k.id)}>
+                                <IkonTrash size={12} />
+                              </button>
                             </>
                           )}
                         </td>
@@ -733,7 +889,7 @@ function ProgramKerja({ user }) {
           </div>
 
           <button className="btn" style={{ marginTop: '16px' }} onClick={() => { setSelectedId(null); setEditingKegiatan(null) }}>
-            Tutup
+            <IkonX size={13} /> Tutup
           </button>
         </div>
       )}
