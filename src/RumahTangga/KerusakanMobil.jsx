@@ -4,6 +4,7 @@ import {
   Plus,
   ClipboardList,
   Clock,
+  RefreshCw,
   CheckCircle2,
   Trash2,
 } from 'lucide-react'
@@ -316,7 +317,7 @@ function KerusakanMobil({ user }) {
         </div>
 
         <div className="stat-card">
-          <div className="stat-icon"><Wrench size={20} /></div>
+          <div className="stat-icon"><RefreshCw size={20} /></div>
 
           <div className="stat-info">
             <h4>Diproses</h4>

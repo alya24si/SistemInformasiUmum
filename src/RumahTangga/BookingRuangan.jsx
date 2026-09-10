@@ -1,9 +1,12 @@
 import { useEffect, useState } from 'react'
 import {
-  Building2,
+  CalendarCheck,
   Plus,
+  ClipboardList,
+  Clock,
   CheckCircle2,
   XCircle,
+  MessageCircle,
 } from 'lucide-react'
 
 const API = 'http://localhost:8000/api'
@@ -444,7 +447,7 @@ function BookingRuangan({ user }) {
       {/* HEADER */}
       <div className="page-title">
         <h1 style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <Building2 size={22} /> Booking Ruangan
+          <CalendarCheck size={22} /> Booking Ruangan
         </h1>
 
         <p>
@@ -499,7 +502,7 @@ function BookingRuangan({ user }) {
 
         <div className="stat-card">
           <div className="stat-icon">
-            📋
+            <ClipboardList size={20} />
           </div>
 
           <div className="stat-info">
@@ -519,7 +522,7 @@ function BookingRuangan({ user }) {
 
         <div className="stat-card green">
           <div className="stat-icon">
-            ✅
+            <CheckCircle2 size={20} />
           </div>
 
           <div className="stat-info">
@@ -537,7 +540,7 @@ function BookingRuangan({ user }) {
 
         <div className="stat-card gold">
           <div className="stat-icon">
-            ⏳
+            <Clock size={20} />
           </div>
 
           <div className="stat-info">
@@ -555,7 +558,7 @@ function BookingRuangan({ user }) {
 
         <div className="stat-card">
           <div className="stat-icon">
-            ❌
+            <XCircle size={20} />
           </div>
 
           <div className="stat-info">
@@ -1337,7 +1340,7 @@ function BookingRuangan({ user }) {
                     textDecoration: 'none',
                   }}
                 >
-                  💬 Hubungi Admin via WhatsApp
+                  <MessageCircle size={16} /> Hubungi Admin via WhatsApp
                 </a>
               </div>
             )}
@@ -1416,10 +1419,11 @@ function BookingRuangan({ user }) {
       {/* TABLE */}
       <div className="card">
 
-        <h3>
+        <h3 style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <ClipboardList size={18} />{' '}
           {isAdminRT
-            ? '📋 Seluruh Booking'
-            : '📋 Booking Saya'}
+            ? 'Seluruh Booking'
+            : 'Booking Saya'}
         </h3>
 
         <div

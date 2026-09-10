@@ -298,7 +298,7 @@ function DataRuangan({ user }) {
         </div>
 
         <div className="stat-card gold">
-          <div className="stat-icon">📅</div>
+          <div className="stat-icon">👥</div>
 
           <div className="stat-info">
             <h4>Digunakan</h4>

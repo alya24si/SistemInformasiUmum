@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import {
-  Wrench,
-  Settings,
+  Hammer,
+  RefreshCw,
   CheckCircle2,
   Plus,
   ClipboardList,
@@ -281,7 +281,7 @@ function PerbaikanMobil({ user }) {
 
       <div className="page-title">
         <h1 style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <Wrench size={22} /> Perbaikan Mobil
+          <Hammer size={22} /> Perbaikan Mobil
         </h1>
 
         <p>
@@ -347,7 +347,7 @@ function PerbaikanMobil({ user }) {
 
         <div className="stat-card">
           <div className="stat-icon">
-            <Wrench size={20} />
+            <Hammer size={20} />
           </div>
 
           <div className="stat-info">
@@ -365,7 +365,7 @@ function PerbaikanMobil({ user }) {
 
         <div className="stat-card gold">
           <div className="stat-icon">
-            <Settings size={20} />
+            <RefreshCw size={20} />
           </div>
 
           <div className="stat-info">

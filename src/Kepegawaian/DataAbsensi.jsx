@@ -4,8 +4,8 @@ import {
   ClipboardList,
   Users,
   CheckCircle2,
-  FileText,
   AlertTriangle,
+  UserX,
   Upload,
   Download,
   MessageCircle,
@@ -595,7 +595,7 @@ function DataAbsensi({ user }) {
         </div>
 
         <div className="stat-card gold">
-          <div className="stat-icon"><FileText size={20} /></div>
+          <div className="stat-icon"><AlertTriangle size={20} /></div>
 
           <div className="stat-info">
             <h4>Bermasalah</h4>
@@ -611,7 +611,7 @@ function DataAbsensi({ user }) {
         </div>
 
         <div className="stat-card">
-          <div className="stat-icon"><AlertTriangle size={20} /></div>
+          <div className="stat-icon"><UserX size={20} /></div>
 
           <div className="stat-info">
             <h4>Tanpa Keterangan</h4>
