@@ -3,8 +3,44 @@ import * as XLSX from 'xlsx'
 
 const API = 'http://localhost:8000/api'
 
-const BATAS_WARNING1 = 10
-const BATAS_WARNING2 = 20
+/* ========================================================= */
+/* ✨ KONVERSI WAKTU: input dalam MENIT                       */
+/*    1 hari kerja = 8.5 jam = 510 menit                     */
+/* ========================================================= */
+const MENIT_PER_HARI = 510
+
+const menitKeHari = (menit) => menit / MENIT_PER_HARI
+const bulatkan2 = (n) => Math.round(n * 100) / 100
+
+const formatDurasi = (menit) => {
+  const hari = Math.floor(menit / MENIT_PER_HARI)
+  const sisa = menit - hari * MENIT_PER_HARI
+  const jam = Math.floor(sisa / 60)
+  const mnt = sisa % 60
+  const bagian = []
+  if (hari > 0) bagian.push(`${hari} hari`)
+  if (jam > 0) bagian.push(`${jam} jam`)
+  if (mnt > 0 || bagian.length === 0) bagian.push(`${mnt} menit`)
+  return bagian.join(' ')
+}
+
+/* ========================================================= */
+/* ✨ BATAS WARNING (dalam HARI KERJA, sesuai aturan gambar)  */
+/*    3 hari  -> teguran lisan          (WARNING 1)           */
+/*    4 hari+ -> teguran tertulis /     (WARNING 2)           */
+/*               pernyataan tidak puas                        */
+/* ========================================================= */
+const BATAS_WARNING1 = 3
+const BATAS_WARNING2 = 4
+
+// ✨ Kalimat sanksi PERSIS seperti pada gambar (sesuai rentang hari)
+const kalimatSanksi = (hari) => {
+  if (hari >= 7)
+    return 'Pernyataan tidak puas secara tertulis bagi PNS yang tidak Masuk Kerja tanpa alasan yang sah secara kumulatif selama 7 (tujuh) sampai dengan 10 (sepuluh) hari kerja dalam 1 (satu) tahun.'
+  if (hari >= 4)
+    return 'Teguran tertulis bagi PNS yang tidak Masuk Kerja tanpa alasan yang sah secara kumulatif selama 4 (empat) sampai dengan 6 (enam) hari kerja dalam 1 (satu) tahun.'
+  return 'Teguran lisan bagi PNS yang tidak Masuk Kerja tanpa alasan yang sah secara kumulatif selama 3 (tiga) hari kerja dalam 1 (satu) tahun.'
+}
 
 const cariKolom = (row, ...kemungkinan) => {
   for (const key of Object.keys(row)) {
@@ -30,6 +66,12 @@ function Pelanggaran({ user }) {
   const [loadingTambah, setLoadingTambah] = useState(false)
   const [errorTambah, setErrorTambah] = useState('')
   const [infoTambah, setInfoTambah] = useState('')
+
+  // ✨ State: simpan nilai input menit per-baris saat sedang mengetik
+  const [inputMenit, setInputMenit] = useState({})
+
+  // ✨ State: simpan value dropdown "Tambah..." per-baris
+  const [dropdownTambah, setDropdownTambah] = useState({})
 
   const muatData = async () => {
     const res = await fetch(API + '/pelanggaran')
@@ -69,6 +111,7 @@ function Pelanggaran({ user }) {
   }, [])
 
   const catatanku = !isAdmin ? dataPelanggaran.find((d) => d.nip === user.nip) : null
+  const hariAku = catatanku ? menitKeHari(catatanku.total) : 0
 
   const handleFile = async (e) => {
     const file = e.target.files[0]
@@ -127,7 +170,7 @@ function Pelanggaran({ user }) {
     e.target.value = ''
   }
 
-  // ✨ BARU: Admin update jumlah pelanggaran manual
+  // ✨ Admin update total MENIT manual (input per-menit)
   const updateJumlah = (id, nilai) => {
     const angka = Number(nilai) || 0
     setDataPelanggaran(
@@ -140,6 +183,27 @@ function Pelanggaran({ user }) {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ jumlah: angka }),
     })
+  }
+
+  // ✨ Tambahkan menit ke total existing (dari dropdown)
+  const tambahMenit = (id, menitTambah) => {
+    if (!menitTambah || menitTambah === '') return
+    const current = dataPelanggaran.find((d) => d.id === id)?.total || 0
+    const baru = current + Number(menitTambah)
+
+    setDataPelanggaran(
+      dataPelanggaran.map((d) =>
+        d.id === id ? { ...d, total: baru } : d
+      )
+    )
+
+    fetch(API + '/pelanggaran/' + id + '/jumlah', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ jumlah: baru }),
+    })
+
+    setDropdownTambah((prev) => ({ ...prev, [id]: '' }))
   }
 
   const tambahPegawai = async (e) => {
@@ -176,43 +240,49 @@ function Pelanggaran({ user }) {
     }
   }
 
-  const statusBadge = (total) =>
-    total >= BATAS_WARNING2
+  // ✨ Status badge berbasis HARI KERJA (konversi dari menit)
+  const statusBadge = (totalMenit) => {
+    const hari = menitKeHari(totalMenit)
+    return hari >= BATAS_WARNING2
       ? { backgroundColor: '#450a0a', color: '#fecaca', label: '🚨 WARNING 2' }
-      : total >= BATAS_WARNING1
+      : hari >= BATAS_WARNING1
         ? { backgroundColor: '#fee2e2', color: '#991b1b', label: '⚠️ WARNING 1' }
         : { backgroundColor: '#fef3c7', color: '#92400e', label: 'Pantauan' }
+  }
 
-  const totalPelanggaranSemua = dataPelanggaran.reduce((a, b) => a + b.total, 0)
-  const jumlahWarning1 = dataPelanggaran.filter((d) => d.total >= BATAS_WARNING1 && d.total < BATAS_WARNING2).length
-  const jumlahWarning2 = dataPelanggaran.filter((d) => d.total >= BATAS_WARNING2).length
+  const totalMenitSemua = dataPelanggaran.reduce((a, b) => a + b.total, 0)
+  const jumlahWarning1 = dataPelanggaran.filter((d) => {
+    const h = menitKeHari(d.total)
+    return h >= BATAS_WARNING1 && h < BATAS_WARNING2
+  }).length
+  const jumlahWarning2 = dataPelanggaran.filter((d) => menitKeHari(d.total) >= BATAS_WARNING2).length
 
   return (
     <div style={pageStyle}>
-      {!isAdmin && catatanku && showWarning && catatanku.total >= BATAS_WARNING2 && (
+      {/* 🚨 WARNING 2 (>= 4 hari kerja) */}
+      {!isAdmin && catatanku && showWarning && hariAku >= BATAS_WARNING2 && (
         <div className="warning-overlay">
           <div className="warning-card warning-card-2">
             <div className="warning-icon">🚨</div>
             <div className="warning-title">WARNING 2!</div>
-            <div className="warning-hours">{catatanku.total} PELANGGARAN</div>
+            <div className="warning-hours">{bulatkan2(hariAku)} HARI KERJA</div>
             <p className="warning-text">
-              Anda telah terakumulasi pelanggaran melebihi batas serius.<br />
-              <b>APABILA MASIH MELAKUKAN PELANGGARAN, MAKA ANDA AKAN DIUSULKAN MENDAPAT SANKSI BERAT HINGGA PEMUTUSAN HUBUNGAN KERJA (PHK) SESUAI KETENTUAN YANG BERLAKU.</b>
+              <b>{kalimatSanksi(hariAku)}</b>
             </p>
             <button className="warning-btn" onClick={() => setShowWarning(false)}>SAYA MENGERTI</button>
           </div>
         </div>
       )}
 
-      {!isAdmin && catatanku && showWarning && catatanku.total >= BATAS_WARNING1 && catatanku.total < BATAS_WARNING2 && (
+      {/* ⚠️ WARNING 1 (>= 3 hari kerja) */}
+      {!isAdmin && catatanku && showWarning && hariAku >= BATAS_WARNING1 && hariAku < BATAS_WARNING2 && (
         <div className="warning-overlay">
           <div className="warning-card">
             <div className="warning-icon">⚠️</div>
             <div className="warning-title">WARNING 1!</div>
-            <div className="warning-hours">{catatanku.total} PELANGGARAN</div>
+            <div className="warning-hours">{bulatkan2(hariAku)} HARI KERJA</div>
             <p className="warning-text">
-              Anda terdeteksi telah melakukan pelanggaran melebihi batas normal.<br />
-              <b>APABILA MASIH MELAKUKAN PELANGGARAN, MAKA ANDA AKAN MENDAPAT TEGURAN LISAN.</b>
+              <b>{kalimatSanksi(hariAku)}</b>
             </p>
             <button className="warning-btn" onClick={() => setShowWarning(false)}>SAYA MENGERTI</button>
           </div>
@@ -224,8 +294,8 @@ function Pelanggaran({ user }) {
           <h1 style={titleStyle}>Pelanggaran</h1>
           <p style={subtitleStyle}>
             {isAdmin
-              ? 'Upload Excel rekap pelanggaran, lalu edit "Jumlah Pelanggaran" sesuai keputusan admin.'
-              : 'Data pelanggaran kehadiran pribadi Anda.'}
+              ? 'Upload Excel rekap pelanggaran (dalam MENIT), lalu edit kolom "Total Menit" sesuai keputusan admin. 510 menit = 1 hari kerja.'
+              : 'Data pelanggaran kehadiran pribadi Anda (dalam menit & hari kerja).'}
           </p>
         </div>
       </div>
@@ -241,8 +311,8 @@ function Pelanggaran({ user }) {
               <div>
                 <h2 style={sectionTitle}>📥 Upload Excel Pelanggaran</h2>
                 <p style={sectionSubtitle}>
-                  Format kolom: <b>NAMA | NIP | TK | TL 1 | TL 2 | TL 3 | PSW 1 | PSW 2 | PSW 3 | PSW 4</b>.
-                  Setelah upload, edit kolom <b>Jumlah Pelanggaran</b> di tabel bawah untuk nilai final.
+                  Format kolom: <b>NAMA | NIP | TK | TL 1 | TL 2 | TL 3 | PSW 1 | PSW 2 | PSW 3 | PSW 4</b> (satuan <b>menit</b>).
+                  Setelah upload, edit kolom <b>Total Menit</b> di tabel bawah untuk nilai final.
                 </p>
               </div>
               <button
@@ -295,13 +365,13 @@ function Pelanggaran({ user }) {
 
       <div style={summaryGrid}>
         {isAdmin && <SummaryCard title="Pegawai Terdeteksi" value={dataPelanggaran.length} />}
-        <SummaryCard
-          title={isAdmin ? 'Total Jumlah Pelanggaran' : 'Jumlah Pelanggaran Anda'}
-          value={isAdmin ? totalPelanggaranSemua : (catatanku ? catatanku.total : 0)}
+         <SummaryCard
+          title={isAdmin ? 'Total Hari Kerja Terlambat' : 'Hari Kerja Terlambat Anda'}
+          value={`${bulatkan2(menitKeHari(isAdmin ? totalMenitSemua : (catatanku ? catatanku.total : 0)))} hari`}
         />
         {isAdmin && <SummaryCard title="Pegawai WARNING 1" value={jumlahWarning1} />}
         {isAdmin && <SummaryCard title="Pegawai WARNING 2" value={jumlahWarning2} />}
-        {!isAdmin && <SummaryCard title="Batas Warning" value={`${BATAS_WARNING1} (Level 1) • ${BATAS_WARNING2} (Level 2)`} />}
+        {!isAdmin && <SummaryCard title="Batas Warning" value={`${BATAS_WARNING1} hari (W1) • ${BATAS_WARNING2} hari (W2)`} />}
       </div>
 
       <div style={cardStyle}>
@@ -309,7 +379,9 @@ function Pelanggaran({ user }) {
           <div>
             <h2 style={sectionTitle}>{isAdmin ? 'Daftar Pegawai yang Melakukan Pelanggaran' : 'Riwayat Pelanggaran Saya'}</h2>
             <p style={sectionSubtitle}>
-              {isAdmin ? 'Klik kolom "Jumlah Pelanggaran" untuk mengedit nilai final.' : 'Rincian pelanggaran Anda dari setiap upload.'}
+              {isAdmin
+                ? 'Edit kolom "Total Menit" atau gunakan dropdown "Tambah..." untuk menambah menit ke akumulasi yang ada.'
+                : 'Rincian pelanggaran Anda dari setiap upload.'}
             </p>
           </div>
         </div>
@@ -330,7 +402,7 @@ function Pelanggaran({ user }) {
                     <th style={{ ...thStyle, textAlign: 'center' }}>PSW 2</th>
                     <th style={{ ...thStyle, textAlign: 'center' }}>PSW 3</th>
                     <th style={{ ...thStyle, textAlign: 'center' }}>PSW 4</th>
-                    <th style={{ ...thStyle, textAlign: 'center' }}>Jumlah Pelanggaran</th>
+                    <th style={{ ...thStyle, textAlign: 'center' }}>Total Menit</th>
                     <th style={thStyle}>Status</th>
                     <th style={thStyle}>Aksi</th>
                   </tr>
@@ -356,6 +428,11 @@ function Pelanggaran({ user }) {
                       <>
                         {dataPaginated.map((d) => {
                           const st = statusBadge(d.total)
+                          const nilaiDisplay =
+                            inputMenit[d.id] !== undefined
+                              ? inputMenit[d.id]
+                              : String(d.total)
+
                           return (
                             <tr key={d.id}>
                               <td style={tdStyle}>{d.nip}</td>
@@ -370,10 +447,25 @@ function Pelanggaran({ user }) {
                               <td style={{ ...tdStyle, textAlign: 'center', color: d.psw4 > 0 ? '#dc2626' : '#94a3b8', fontWeight: d.psw4 > 0 ? 700 : 400 }}>{d.psw4}</td>
                               <td style={{ ...tdStyle, textAlign: 'center', padding: '8px' }}>
                                 <input
-                                  type="number"
-                                  min="0"
-                                  value={d.total}
-                                  onChange={(e) => updateJumlah(d.id, e.target.value)}
+                                  type="text"
+                                  inputMode="numeric"
+                                  pattern="[0-9]*"
+                                  value={nilaiDisplay}
+                                  onChange={(e) => {
+                                    const raw = e.target.value.replace(/[^\d]/g, '')
+                                    const bersih = raw === '' ? '' : String(Number(raw))
+                                    setInputMenit({ ...inputMenit, [d.id]: bersih })
+                                  }}
+                                  onBlur={() => {
+                                    if (inputMenit[d.id] !== undefined) {
+                                      updateJumlah(d.id, inputMenit[d.id])
+                                      setInputMenit((prev) => {
+                                        const baru = { ...prev }
+                                        delete baru[d.id]
+                                        return baru
+                                      })
+                                    }
+                                  }}
                                   style={{
                                     width: '90px',
                                     padding: '8px 10px',
@@ -387,6 +479,40 @@ function Pelanggaran({ user }) {
                                     outline: 'none',
                                   }}
                                 />
+                                <div style={{ fontSize: '10px', color: '#1e40af', fontWeight: 700, marginTop: '4px' }}>
+                                  = {bulatkan2(menitKeHari(d.total))} hari
+                                </div>
+                                <div style={{ fontSize: '10px', color: '#94a3b8' }}>{formatDurasi(d.total)}</div>
+
+                                {/* ✨ DROPDOWN TAMBAH MENIT (kelipatan 5) */}
+                                <select
+                                  value={dropdownTambah[d.id] || ''}
+                                  onChange={(e) => tambahMenit(d.id, e.target.value)}
+                                  style={{
+                                    marginTop: '6px',
+                                    width: '90px',
+                                    padding: '4px 4px',
+                                    border: '1px solid #16a34a',
+                                    borderRadius: '6px',
+                                    fontSize: '11px',
+                                    color: '#166534',
+                                    backgroundColor: '#f0fdf4',
+                                    cursor: 'pointer',
+                                    fontWeight: 600,
+                                  }}
+                                >
+                                  <option value="">+ Tambah...</option>
+                                  <option value="5">+ 5 menit</option>
+                                  <option value="10">+ 10 menit</option>
+                                  <option value="15">+ 15 menit</option>
+                                  <option value="20">+ 20 menit</option>
+                                  <option value="25">+ 25 menit</option>
+                                  <option value="30">+ 30 menit</option>
+                                  <option value="45">+ 45 menit</option>
+                                  <option value="60">+ 60 menit (1 jam)</option>
+                                  <option value="90">+ 90 menit (1.5 jam)</option>
+                                  <option value="120">+ 120 menit (2 jam)</option>
+                                </select>
                               </td>
                               <td style={tdStyle}><span style={{ ...badgeStyle, ...st }}>{st.label}</span></td>
                               <td style={tdStyle}><button style={btnHapus} onClick={() => hapus(d.id)}>🗑 Hapus</button></td>
@@ -420,11 +546,13 @@ function Pelanggaran({ user }) {
             </>
           ) : catatanku ? (
             <>
-              {/* ✨ INFO: Jumlah Pelanggaran Final (yang sudah di-update admin) */}
               <div style={{ padding: '16px 20px', backgroundColor: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: '10px', marginBottom: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
                 <div>
-                  <div style={{ fontSize: '12px', color: '#1e40af', fontWeight: 600, marginBottom: '4px' }}>JUMLAH PELANGGARAN AKHIR ANDA</div>
-                  <div style={{ fontSize: '28px', fontWeight: 800, color: '#dc2626' }}>{catatanku.total}</div>
+                  <div style={{ fontSize: '12px', color: '#1e40af', fontWeight: 600, marginBottom: '4px' }}>AKUMULASI KETERLAMBATAN ANDA</div>
+                  <div style={{ fontSize: '28px', fontWeight: 800, color: '#dc2626' }}>{bulatkan2(hariAku)} hari kerja</div>
+                  <div style={{ fontSize: '12px', color: '#64748b', marginTop: '2px' }}>
+                    = {formatDurasi(catatanku.total)} ({catatanku.total} menit)
+                  </div>
                 </div>
                 <div>
                   <span style={{ ...badgeStyle, ...statusBadge(catatanku.total), fontSize: '13px', padding: '8px 14px' }}>
@@ -446,7 +574,7 @@ function Pelanggaran({ user }) {
                     <th style={{ ...thStyle, textAlign: 'center' }}>PSW 2</th>
                     <th style={{ ...thStyle, textAlign: 'center' }}>PSW 3</th>
                     <th style={{ ...thStyle, textAlign: 'center' }}>PSW 4</th>
-                    <th style={{ ...thStyle, textAlign: 'center' }}>Jumlah Pelanggaran</th>
+                    <th style={{ ...thStyle, textAlign: 'center' }}>Akumulasi</th>
                     <th style={thStyle}>Sumber</th>
                   </tr>
                 </thead>
@@ -471,7 +599,10 @@ function Pelanggaran({ user }) {
                             <td style={{ ...tdStyle, textAlign: 'center', color: r.psw2 > 0 ? '#dc2626' : '#94a3b8', fontWeight: r.psw2 > 0 ? 700 : 400 }}>{r.psw2}</td>
                             <td style={{ ...tdStyle, textAlign: 'center', color: r.psw3 > 0 ? '#dc2626' : '#94a3b8', fontWeight: r.psw3 > 0 ? 700 : 400 }}>{r.psw3}</td>
                             <td style={{ ...tdStyle, textAlign: 'center', color: r.psw4 > 0 ? '#dc2626' : '#94a3b8', fontWeight: r.psw4 > 0 ? 700 : 400 }}>{r.psw4}</td>
-                            <td style={{ ...tdStyle, textAlign: 'center', fontWeight: 700, color: '#dc2626' }}>{catatanku.total}</td>
+                                                        <td style={{ ...tdStyle, textAlign: 'center' }}>
+                              <div style={{ fontWeight: 700, color: '#dc2626' }}>{bulatkan2(menitKeHari(catatanku.total))} hari</div>
+                              <div style={{ fontSize: '10px', color: '#94a3b8' }}>{formatDurasi(catatanku.total)}</div>
+                            </td>
                             <td style={tdStyle}>{r.sumber}</td>
                           </tr>
                         ))}

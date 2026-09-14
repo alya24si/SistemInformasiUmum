@@ -263,15 +263,15 @@ function KangCepot({ user }) {
           </div>
 
           <h2 style={{
-            margin: '0 0 6px 0', color: '#991b1b', fontSize: '24px',
+            margin: '0 0 6px 0', color: '#991b1b', fontSize: '20px',
             fontWeight: 900, letterSpacing: '1px',
             animation: 'slideUp 0.6s ease-out 0.3s backwards',
           }}>
-            BELUM BAYAR IURAN BULANAN!!
+            ANDA MEMILIKI KEWAJIBAN YANG BELUM DIPENUHI
           </h2>
 
           <div style={{
-            fontSize: '36px', fontWeight: 900, color: '#dc2626',
+            fontSize: '28px', fontWeight: 900, color: '#dc2626',
             margin: '10px 0 18px',
             animation: 'numberShake 0.8s ease-in-out 0.8s, slideUp 0.6s ease-out 0.4s backwards',
             background: 'linear-gradient(135deg, #dc2626, #991b1b)',
@@ -279,7 +279,7 @@ function KangCepot({ user }) {
             WebkitTextFillColor: 'transparent',
             backgroundClip: 'text',
           }}>
-            {belum.length} BULAN MENUNGGAK
+            {belum.length} BULAN TAGIHAN IURAN BULANAN
           </div>
 
           <div style={{
@@ -312,8 +312,7 @@ function KangCepot({ user }) {
               </b>
             </div>
             <div style={{ fontSize: '12px', paddingTop: '8px', borderTop: '1px dashed #fca5a5' }}>
-              <b>SEGERA LAKUKAN PEMBAYARAN!</b> Transfer ke rekening BNI "1910250198" (Tia Agustina)
-              atau cash ke Ruangan Subbagian Tata Usaha dan Keuangan di Lantai 2.
+              <b>SEGERA LAKUKAN PEMBAYARAN!</b> Mohon menghubungi staff Ruangan Subbagian TU &amp; Keuangan Lt. 2. untuk informasi lebih lanjut.
             </div>
           </div>
 
@@ -443,7 +442,7 @@ function KangCepot({ user }) {
               </div>
               {belum.length > 0 && (
                 <div style={{ margin: '0 20px 20px', padding: '14px 18px', backgroundColor: '#fee2e2', border: '1px solid #dc2626', borderRadius: '10px', color: '#7f1d1d', fontSize: '13px', fontWeight: 600 }}>
-                  <IkonAlert size={14} /> Anda belum bayar iuran bulan: <b>{belum.join(', ')}</b>. Mohon transfer ke rekening BNI "1910250198" (Tia Agustina) atau cash ke Ruangan Subbagian TU & Keuangan Lt. 2.
+                  <IkonAlert size={14} /> Anda belum bayar iuran bulan: <b>{belum.join(', ')}</b>. Mohon menghubungi staff Ruangan Subbagian TU &amp; Keuangan Lt. 2. untuk informasi lebih lanjut.
                 </div>
               )}
             </div>
