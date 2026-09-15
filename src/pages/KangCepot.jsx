@@ -36,7 +36,7 @@ Keagamaan: ${formatTitik(d.keagamaan)}
 
 Total : ${formatTitik(d.total)}
 
-Mohon agar dapat mentransfer ke nomor rekening BNI "1910250198" (Tia Agustina) atau secara cash ke Ruangan Subbagian Tata Usaha dan Keuangan di Lantai 2.
+Mohon hubungi Subbagian Tata Usaha dan Keuangan di Lantai 2 untuk informasi lebih lanjut
 Terima kasih 🙏🏻`
 
 /* ========================================================= */
