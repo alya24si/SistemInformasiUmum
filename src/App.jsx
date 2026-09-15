@@ -3,6 +3,7 @@ import { Routes, Route, Navigate } from 'react-router-dom'
 import Sidebar from './components/Sidebar'
 import Header from './components/Header'
 import NotifikasiRumahTangga from './components/NotifikasiRumahTangga'
+import NotifikasiKGB from './components/NotifikasiKGB'
 import Login from './pages/Login'
 import ProgramKerja from './pages/ProgramKerja'
 import Anggaran from './pages/Anggaran'
@@ -91,6 +92,8 @@ function App() {
       {/* 🔔 Notifikasi Rumah Tangga -- widget mengambang, cuma tampil buat
           Admin Rumah Tangga / Superadmin */}
       <NotifikasiRumahTangga user={user} />
+
+      <NotifikasiKGB user={user} />
     </div>
   )
 }
