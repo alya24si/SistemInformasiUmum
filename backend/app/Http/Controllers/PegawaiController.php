@@ -61,6 +61,7 @@ class PegawaiController extends Controller
             'bagian'     => 'required|string',
             'no_hp'      => 'required|string',
             'tanggal_masuk' => 'nullable|date',
+            'tmt_pangkat'   => 'nullable',
         ]);
 
         $id = DB::table('pegawai')->insertGetId([
@@ -72,6 +73,7 @@ class PegawaiController extends Controller
             'bagian'     => $request->bagian,
             'no_hp'      => $request->no_hp,
             'tanggal_masuk' => $this->normalisasiTanggal($request->tanggal_masuk),
+            'tmt_pangkat'   => $this->normalisasiTanggal($request->tmt_pangkat),
         ]);
 
         return response()->json(['success' => true, 'id' => $id], 201);
@@ -89,6 +91,7 @@ class PegawaiController extends Controller
             'bagian'     => 'required|string',
             'no_hp'      => 'required|string',
             'tanggal_masuk' => 'nullable|date',
+            'tmt_pangkat'   => 'nullable',
         ]);
 
         $row = DB::table('pegawai')->where('id', $id)->first();
@@ -109,6 +112,10 @@ class PegawaiController extends Controller
 
         if ($request->has('tanggal_masuk')) {
             $payload['tanggal_masuk'] = $this->normalisasiTanggal($request->tanggal_masuk);
+        }
+
+        if ($request->has('tmt_pangkat')) {
+            $payload['tmt_pangkat'] = $this->normalisasiTanggal($request->tmt_pangkat);
         }
 
         DB::table('pegawai')->where('id', $id)->update($payload);
@@ -134,6 +141,7 @@ class PegawaiController extends Controller
             'data.*.bagian'     => 'nullable|string',
             'data.*.no_hp'      => 'nullable|string',
             'data.*.tanggal_masuk' => 'nullable',
+            'data.*.tmt_pangkat'   => 'nullable',
             'hapus_lama'        => 'nullable|boolean',
         ]);
 
@@ -173,6 +181,12 @@ class PegawaiController extends Controller
                 $payload['tanggal_masuk'] = $this->normalisasiTanggal($baris['tanggal_masuk']);
             } elseif (!$sudahAda) {
                 $payload['tanggal_masuk'] = null;
+            }
+
+            if (array_key_exists('tmt_pangkat', $baris) && $baris['tmt_pangkat'] !== null) {
+                $payload['tmt_pangkat'] = $this->normalisasiTanggal($baris['tmt_pangkat']);
+            } elseif (!$sudahAda) {
+                $payload['tmt_pangkat'] = null;
             }
 
             if ($sudahAda) {
