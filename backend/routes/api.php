@@ -6,7 +6,6 @@ use App\Http\Controllers\BookingRuanganController;
 use App\Http\Controllers\KerusakanRuanganController;
 use App\Http\Controllers\KerusakanMobilController;
 use App\Http\Controllers\PegawaiController;
-use App\Http\Controllers\KenaikanGajiBerkalaController;
 use App\Http\Controllers\PerbaikanRuanganController;
 use App\Http\Controllers\PerbaikanMobilController;
 use App\Http\Controllers\ProgramKerjaController;
@@ -89,13 +88,6 @@ Route::delete('/pegawai/{id}', [PegawaiController::class, 'destroy']);
 Route::put('/pegawai/{id}/hapus-masa-kerja', [PegawaiController::class, 'hapusMasaKerja']);
 Route::put('/pegawai/{id}/hapus-tmt-pangkat', [PegawaiController::class, 'hapusTmtPangkat']);
 Route::put('/pelanggaran/{id}/jumlah', [PelanggaranController::class, 'updateJumlah']);
-
-// ===== Kenaikan Gaji Berkala (tabel & controller sendiri, terpisah dari pegawai) =====
-Route::get('/kenaikan_gaji_berkala', [KenaikanGajiBerkalaController::class, 'index']);
-Route::post('/kenaikan_gaji_berkala', [KenaikanGajiBerkalaController::class, 'store']);
-Route::post('/kenaikan_gaji_berkala/import', [KenaikanGajiBerkalaController::class, 'import']);
-Route::put('/kenaikan_gaji_berkala/{id}', [KenaikanGajiBerkalaController::class, 'update']);
-Route::delete('/kenaikan_gaji_berkala/{id}', [KenaikanGajiBerkalaController::class, 'destroy']);
 
 // ===== API ABSENSI =====
 Route::get('/absensi', [AbsensiController::class, 'index']);
