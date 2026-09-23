@@ -66,7 +66,7 @@ function NotifikasiKGB({ user }) {
     // Udah pernah ditutup di sesi/tab ini -- gak usah fetch/tampil lagi.
     if (sessionStorage.getItem(KUNCI_SESSION)) return
 
-    fetch(`${API_URL}/kenaikan_gaji_berkala`)
+    fetch(`${API_URL}/pegawai`)
       .then((res) => res.json())
       .then((res) => {
         const data = res.data || []
@@ -272,4 +272,4 @@ function NotifikasiKGB({ user }) {
   )
 }
 
-export default NotifikasiKGB   
+export default NotifikasiKGB

@@ -47,6 +47,7 @@ function MasaKerja({ user }) {
     bagian: '',
     no_hp: '',
     tanggal_masuk: '',
+    tmt_pangkat: '',
   })
 
   // Hitung masa kerja (tahun/bulan/hari) dari tanggal masuk sampai hari ini.
@@ -212,6 +213,7 @@ function MasaKerja({ user }) {
     bagian: '',
     no_hp: '',
     tanggal_masuk: '',
+    tmt_pangkat: '',
   }
 
   const simpanData = (e) => {
@@ -262,6 +264,12 @@ function MasaKerja({ user }) {
       bagian: pegawai.bagian,
       no_hp: pegawai.no_hp || '',
       tanggal_masuk: pegawai.tanggal_masuk || '',
+      // tmt_pangkat SENGAJA ikut di-load & dikirim balik apa adanya --
+      // halaman ini gak punya kontrol buat ngedit field itu, tapi karena
+      // simpanData ngirim seluruh objek form (bukan cuma yang berubah),
+      // field ini harus tetap dibawa biar gak ke-reset jadi kosong pas
+      // admin edit pegawai lewat halaman Masa Kerja (mis. cuma ganti No HP).
+      tmt_pangkat: pegawai.tmt_pangkat || '',
     })
     setEditId(pegawai.id)
     setShowForm(true)
@@ -455,7 +463,7 @@ function MasaKerja({ user }) {
       Jabatan: pegawai.jabatan || '',
       'Eselon IV': pegawai.bagian || '',
       'Eselon III': pegawai.eselon_iii || '',
-      TMT: formatTanggalMasuk(pegawai.tanggal_masuk),
+      'TMT Penugasan': formatTanggalMasuk(pegawai.tanggal_masuk),
       'Masa Kerja': formatMasaKerja(pegawai.tanggal_masuk),
       'No HP': pegawai.no_hp || '',
     }))
@@ -961,7 +969,7 @@ function MasaKerja({ user }) {
                   color: '#64748b',
                 }}
               >
-                TMT
+                TMT Penugasan
               </label>
               <input
                 type="date"
@@ -971,6 +979,32 @@ function MasaKerja({ user }) {
                   setForm({
                     ...form,
                     tanggal_masuk: e.target.value,
+                  })
+                }
+              />
+            </div>
+
+            <div style={{ alignSelf: 'flex-end' }}>
+              <label
+                style={{
+                  display: 'block',
+                  marginBottom: '4px',
+                  fontSize: '11px',
+                  color: '#64748b',
+                }}
+              >
+                TMT Pangkat{' '}
+                <span style={{ fontWeight: 400, color: '#94a3b8' }}>
+                  (opsional)
+                </span>
+              </label>
+              <input
+                type="date"
+                value={form.tmt_pangkat}
+                onChange={(e) =>
+                  setForm({
+                    ...form,
+                    tmt_pangkat: e.target.value,
                   })
                 }
               />
@@ -1141,7 +1175,7 @@ function MasaKerja({ user }) {
                 <th>Jabatan</th>
                 <th>Eselon IV</th>
                 <th>Eselon III</th>
-                <th>TMT</th>
+                <th>TMT Penugasan</th>
                 <th>Masa Kerja</th>
                 <th>No. HP</th>
                 {isAdmin && <th>Aksi</th>}

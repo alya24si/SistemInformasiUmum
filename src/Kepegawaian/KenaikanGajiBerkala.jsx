@@ -8,7 +8,6 @@ import {
   Users,
   X,
   Upload,
-  Plus,
   Pencil,
   Download,
   Clock,
@@ -25,7 +24,8 @@ const API_URL = 'http://127.0.0.1:8000/api'
 // tanpa perlu admin update manual.
 // Contoh: TMT Pangkat awal 1 Okt 2026 -> KGB pertama 1 Okt 2030.
 // Begitu tanggal 1 Okt 2030 lewat, TMT Pangkat yang ditampilkan otomatis
-  const tambahTahun = (tanggal, jumlahTahun) => {
+// jadi 1 Okt 2030, dan KGB berikutnya otomatis jadi 1 Okt 2034.
+const tambahTahun = (tanggal, jumlahTahun) => {
   const hasil = new Date(tanggal)
   hasil.setFullYear(hasil.getFullYear() + jumlahTahun)
   return hasil
@@ -67,10 +67,10 @@ const formatTanggal = (tanggal) => {
 }
 
 function KenaikanGajiBerkala({ user }) {
-  // Disamakan dengan MasaKerja.jsx: card Import/Tambah/Edit/Hapus selalu
-  // ditampilkan (gak digantung ke string role tertentu), biar konsisten dan
-  // gak hilang gara-gara nilai user.role di app kamu beda dengan yang dicek
-  // di sini.
+  // Halaman ini TIDAK punya "Tambah Data Pegawai" -- pegawai baru selalu
+  // didaftarkan lewat halaman Masa Kerja. Di sini cuma bisa Edit (termasuk
+  // isi/ubah TMT Pangkat) & "hapus" (kosongkan TMT Pangkat doang, gak
+  // menghapus baris pegawainya) untuk pegawai yang sudah ada.
   const isAdmin = true
 
   const [data, setData] = useState([])
@@ -99,9 +99,11 @@ function KenaikanGajiBerkala({ user }) {
   }
   const [form, setForm] = useState(formKosong)
 
+  // Satu sumber data yang sama dengan halaman Masa Kerja (tabel `pegawai`)
+  // -- biar nama/jabatan/dll pegawai gak pernah nyimpang antara 2 halaman.
   const ambilData = () => {
     setLoading(true)
-    fetch(`${API_URL}/kenaikan_gaji_berkala`)
+    fetch(`${API_URL}/pegawai`)
       .then((res) => res.json())
       .then((res) => {
         setData(res.data || [])
@@ -142,9 +144,7 @@ function KenaikanGajiBerkala({ user }) {
       ...pegawai,
       kgb: hitungKGB(pegawai.tmt_pangkat),
     }))
-    // Urutkan yang KGB-nya paling deket duluan, biar admin gampang lihat
-    // siapa yang perlu ditindaklanjuti lebih dulu. Yang gak ada TMT Pangkat
-    // (kgb null) ditaruh di paling bawah.
+ 
     .sort((a, b) => {
       if (!a.kgb && !b.kgb) return 0
       if (!a.kgb) return 1
@@ -177,29 +177,23 @@ function KenaikanGajiBerkala({ user }) {
     startIndex + ITEMS_PER_PAGE
   )
 
-  // ================== TAMBAH / EDIT DATA PEGAWAI ==================
+  // ================== EDIT DATA PEGAWAI (TMT Pangkat) ==================
+  // Halaman ini gak pernah bikin baris pegawai baru -- form cuma kebuka
+  // lewat tombol Edit di tabel, jadi editId selalu terisi di sini.
   const simpanData = (e) => {
     e.preventDefault()
 
-    const isEdit = editId !== null
-    const url = isEdit ? `${API_URL}/kenaikan_gaji_berkala/${editId}` : `${API_URL}/kenaikan_gaji_berkala`
-    const method = isEdit ? 'PUT' : 'POST'
+    if (editId === null) return
 
-    // SENGAJA cuma kirim "tmt_pangkat" di sini (bukan "tanggal_masuk"),
-    // supaya nilai TMT/Masa Kerja pegawai yang dikelola dari halaman Masa
-    // Kerja gak ketiban/kehapus gara-gara disimpan dari halaman ini.
-    fetch(url, {
-      method,
+    fetch(`${API_URL}/pegawai/${editId}`, {
+      method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(form),
     })
       .then((res) => res.json())
       .then((res) => {
         if (!res.success) {
-          alert(
-            res.message ||
-              `Gagal ${isEdit ? 'memperbarui' : 'menyimpan'} data pegawai.`
-          )
+          alert(res.message || 'Gagal memperbarui data pegawai.')
           return
         }
 
@@ -208,9 +202,7 @@ function KenaikanGajiBerkala({ user }) {
         setEditId(null)
         setShowForm(false)
       })
-      .catch(() =>
-        alert(`Gagal ${isEdit ? 'memperbarui' : 'menyimpan'} data pegawai.`)
-      )
+      .catch(() => alert('Gagal memperbarui data pegawai.'))
   }
 
   const mulaiEdit = (pegawai) => {
@@ -234,15 +226,8 @@ function KenaikanGajiBerkala({ user }) {
     setShowForm(false)
   }
 
-  // PENTING: tombol "Hapus" di halaman KGB ini SENGAJA gak manggil endpoint
-  // DELETE (yang bakal ngehapus seluruh baris pegawai dari tabel -- otomatis
-  // ikut ngilangin pegawai itu dari halaman Masa Kerja juga, karena satu
-  // tabel database yang sama dipakai bareng). Di sini "Hapus" artinya cuma
-  // "kosongkan TMT Pangkat & KGB pegawai ini", jadi dikirim sebagai
-  // PUT/update dengan tmt_pangkat dikosongkan. Identitas pegawai + data
-  // Masa Kerja-nya TETAP UTUH.
-  // Kalau memang mau menghapus pegawai itu sepenuhnya dari sistem, itu tetap
-  // dilakukan lewat halaman Masa Kerja.
+  // Endpoint khusus di backend yang cuma ngosongin kolom tmt_pangkat --
+  // baris pegawainya sendiri (dan data Masa Kerja-nya) TIDAK ikut terhapus.
   const hapusData = (pegawai) => {
     if (
       !window.confirm(
@@ -254,19 +239,8 @@ function KenaikanGajiBerkala({ user }) {
       return
     }
 
-    fetch(`${API_URL}/kenaikan_gaji_berkala/${pegawai.id}`, {
+    fetch(`${API_URL}/pegawai/${pegawai.id}/hapus-tmt-pangkat`, {
       method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        nip: pegawai.nip,
-        nama: pegawai.nama,
-        pangkat: pegawai.pangkat || '',
-        jabatan: pegawai.jabatan,
-        eselon_iii: pegawai.eselon_iii || '',
-        bagian: pegawai.bagian,
-        no_hp: pegawai.no_hp || '',
-        tmt_pangkat: '',
-      }),
     })
       .then((res) => res.json())
       .then((res) => {
@@ -280,26 +254,17 @@ function KenaikanGajiBerkala({ user }) {
   }
 
   // ================== IMPORT EXCEL ==================
+  // CATATAN: gak ada opsi "hapus semua data lama" di sini (beda dengan
+  // halaman Masa Kerja) -- karena "semua data lama" itu artinya SELURUH
+  // baris pegawai (satu tabel yang sama dipakai kedua halaman), bukan cuma
+  // TMT Pangkat. Menghapus itu dari konteks import KGB terlalu berisiko,
+  // jadi import di sini SELALU update/tambah, gak pernah hapus massal.
   const [importing, setImporting] = useState(false)
   const [importInfo, setImportInfo] = useState(null)
-  const [hapusLamaSebelumImport, setHapusLamaSebelumImport] = useState(false)
 
   const handleUploadPegawai = (e) => {
     const file = e.target.files[0]
     if (!file) return
-
-    if (hapusLamaSebelumImport) {
-      const yakin = window.confirm(
-        'Checkbox "Hapus semua data pegawai lama" AKTIF.\n\n' +
-          'SEMUA data pegawai (dan otomatis SEMUA data absensi terkait) yang sudah ada ' +
-          'di database akan dihapus permanen, lalu diganti total dengan isi file ini.\n\n' +
-          'Lanjutkan?'
-      )
-      if (!yakin) {
-        e.target.value = ''
-        return
-      }
-    }
 
     setImporting(true)
     setImportInfo(null)
@@ -322,13 +287,6 @@ function KenaikanGajiBerkala({ user }) {
           return
         }
 
-        // Kolom yang didukung: NIP, Nama, Pangkat, Jabatan, Eselon III,
-        // Eselon IV/Bagian, No HP, TMT Pangkat.
-        // CATATAN PENTING: kolom tanggal di sini dibaca sebagai TMT PANGKAT
-        // (tmt_pangkat), BUKAN TMT/tanggal masuk (yang dipakai di halaman
-        // Masa Kerja). Makanya dicari dulu header "TMT Pangkat" secara
-        // spesifik; kalau file cuma punya kolom "TMT" polos, itu juga
-        // dianggap TMT Pangkat selama diimport dari halaman ini.
         const dataSiapKirim = rows.map((baris) => {
           const cari = (kunciPersis, kunciFallback = []) => {
             for (const key of Object.keys(baris)) {
@@ -369,12 +327,11 @@ function KenaikanGajiBerkala({ user }) {
           }
         })
 
-        fetch(`${API_URL}/kenaikan_gaji_berkala/import`, {
+        fetch(`${API_URL}/pegawai/import`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             data: dataSiapKirim,
-            hapus_lama: hapusLamaSebelumImport,
           }),
         })
           .then((res) => res.json())
@@ -383,13 +340,9 @@ function KenaikanGajiBerkala({ user }) {
               setImportInfo({
                 type: 'success',
                 text:
-                  (res.hapus_lama
-                    ? `${res.dihapus} data pegawai lama dihapus, lalu `
-                    : '') +
                   `${res.ditambah} pegawai baru ditambahkan, ${res.diupdate} pegawai diperbarui` +
                   (res.dilewati > 0 ? `, ${res.dilewati} baris dilewati (NIP/Nama kosong).` : '.'),
               })
-              setHapusLamaSebelumImport(false)
               ambilData()
             } else {
               setImportInfo({
@@ -682,42 +635,11 @@ function KenaikanGajiBerkala({ user }) {
             <Upload size={18} /> Import Data Pegawai (TMT Pangkat)
           </h3>
 
-          <label
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px',
-              fontSize: '13px',
-              color: hapusLamaSebelumImport ? '#dc2626' : '#374151',
-              marginBottom: '10px',
-              cursor: importing ? 'not-allowed' : 'pointer',
-            }}
-          >
-            <input
-              type="checkbox"
-              checked={hapusLamaSebelumImport}
-              onChange={(e) => setHapusLamaSebelumImport(e.target.checked)}
-              disabled={importing}
-            />
-            Hapus semua data pegawai lama sebelum import ini
-          </label>
-
-          {hapusLamaSebelumImport && (
-            <p
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '6px',
-                fontSize: '12.5px',
-                color: '#dc2626',
-                marginTop: '-4px',
-                marginBottom: '10px',
-              }}
-            >
-              <AlertTriangle size={14} />
-              Semua data pegawai lama (dan absensi terkait) akan dihapus permanen dan diganti total dengan isi file ini.
-            </p>
-          )}
+          <p style={{ margin: '5px 0 14px', color: '#64748b', fontSize: '13px' }}>
+            Kolom NIP dipakai buat mencocokkan pegawai yang sudah ada --
+            data lain di file (nama, jabatan, dll) selain kolom TMT Pangkat
+            gak wajib diisi.
+          </p>
 
           <div className="form-row">
             <input
@@ -756,7 +678,7 @@ function KenaikanGajiBerkala({ user }) {
         </div>
       )}
 
-      {isAdmin && (
+      {isAdmin && showForm && (
         <div className="card">
           <div
             style={{
@@ -768,9 +690,7 @@ function KenaikanGajiBerkala({ user }) {
           >
             <div>
               <h3 style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                {editId !== null
-                  ? (<><Pencil size={18} /> Edit Data Pegawai</>)
-                  : (<><Plus size={18} /> Tambah Data Pegawai</>)}
+                <Pencil size={18} /> Edit Data Pegawai
               </h3>
 
               <p style={{ margin: '5px 0 0', color: '#64748b', fontSize: '13px' }}>
@@ -781,29 +701,22 @@ function KenaikanGajiBerkala({ user }) {
             <button
               type="button"
               className="btn"
-              onClick={() => {
-                if (showForm) {
-                  batalEdit()
-                } else {
-                  setShowForm(true)
-                }
-              }}
+              onClick={batalEdit}
               style={{ display: 'flex', alignItems: 'center', gap: '6px' }}
             >
-              {showForm ? 'Tutup' : (<><Plus size={16} /> Tambah Data Pegawai</>)}
+              Tutup
             </button>
           </div>
 
-          {showForm && (
-            <form
-              onSubmit={simpanData}
-              className="form-row"
-              style={{
-                marginTop: '20px',
-                paddingTop: '20px',
-                borderTop: '1px solid #e2e8f0',
-              }}
-            >
+          <form
+            onSubmit={simpanData}
+            className="form-row"
+            style={{
+              marginTop: '20px',
+              paddingTop: '20px',
+              borderTop: '1px solid #e2e8f0',
+            }}
+          >
               <input
                 type="text"
                 placeholder="NIP"
@@ -986,29 +899,26 @@ function KenaikanGajiBerkala({ user }) {
                   className="btn"
                   style={{ width: 'auto', height: 'auto', padding: '8px 16px', fontSize: '13px' }}
                 >
-                  {editId !== null ? 'Simpan Perubahan' : 'Simpan Data Pegawai'}
+                  Simpan Perubahan
                 </button>
 
-                {editId !== null && (
-                  <button
-                    type="button"
-                    onClick={batalEdit}
-                    className="btn"
-                    style={{
-                      width: 'auto',
-                      height: 'auto',
-                      padding: '8px 16px',
-                      fontSize: '13px',
-                      backgroundColor: '#94a3b8',
-                      color: '#fff',
-                    }}
-                  >
-                    Batal
-                  </button>
-                )}
+                <button
+                  type="button"
+                  onClick={batalEdit}
+                  className="btn"
+                  style={{
+                    width: 'auto',
+                    height: 'auto',
+                    padding: '8px 16px',
+                    fontSize: '13px',
+                    backgroundColor: '#94a3b8',
+                    color: '#fff',
+                  }}
+                >
+                  Batal
+                </button>
               </div>
-            </form>
-          )}
+          </form>
         </div>
       )}
 
