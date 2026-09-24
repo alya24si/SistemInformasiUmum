@@ -137,10 +137,6 @@ class BookingRuanganController extends Controller
         return response()->json(['success' => true, 'data' => $this->potongDetikJam($data)]);
     }
 
-    // helper: kolom "mulai"/"selesai" di database bertipe TIME, jadi
-    // MySQL balikin "HH:MM:SS" (ada detiknya). Booking gak pernah butuh
-    // presisi detik, jadi dipotong di sini biar semua tampilan di frontend
-    // (daftar booking, kalender, dll) otomatis dapat "HH:MM" yang bersih.
     private function potongDetikJam($data)
     {
         return $data->map(function ($item) {
