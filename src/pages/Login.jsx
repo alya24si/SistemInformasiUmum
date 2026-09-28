@@ -55,7 +55,7 @@ function Login({ onLogin }) {
     <div className="login-wrap">
       <form onSubmit={submit} className="login-card">
         <div className="logo-circle">BC</div>
-        <h1>SI Umum</h1>
+        <h1>Melayu</h1>
         <p>Kanwil DJBC Riau</p>
         <input
           type="text"

@@ -347,7 +347,7 @@ function Sidebar({ user }) {
       <div className="sidebar-logo">
         <div className="logo-circle">BC</div>
         <div>
-          <h2>SI Umum</h2>
+          <h2>Melayu</h2>
           <p>Kanwil DJBC Riau</p>
         </div>
       </div>

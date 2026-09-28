@@ -29,7 +29,7 @@ function Header({ user, onLogout }) {
   return (
     <header className="header">
       <div className="header-left">
-        <h1>Sistem Informasi Umum</h1>
+        <h1>Melayani Umum</h1>
         <p>Kementerian Keuangan RI — Direktorat Jenderal Bea dan Cukai</p>
       </div>
       <div className="header-right">
