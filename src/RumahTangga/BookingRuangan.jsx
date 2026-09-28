@@ -12,7 +12,7 @@ import {
 const API = 'http://localhost:8000/api'
 
 // Nomor WA Admin Rumah Tangga (format internasional, tanpa + atau spasi)
-const WA_ADMIN_RT = '6282387398764'
+const WA_ADMIN_RT = '628563080114'
 
 const buatLinkWA = (pesan) =>
   `https://wa.me/${WA_ADMIN_RT}?text=${encodeURIComponent(pesan)}`
