@@ -13,7 +13,7 @@ return new class extends Migration
     {
         if (! Schema::hasColumn('pegawai', 'tmt_pangkat')) {
             Schema::table('pegawai', function (Blueprint $table) {
-                $table->date('tmt_pangkat')->nullable()->after('tanggal_masuk');
+                $table->date('tmt_pangkat')->nullable();
             });
         }
     }

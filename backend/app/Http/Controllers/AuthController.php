@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Str;
 
 class AuthController extends Controller
 {
@@ -35,6 +36,13 @@ class AuthController extends Controller
             }
         }
 
+        // ✨ BARU: buat token unik untuk sesi login ini
+        $token = hash('sha256', Str::random(60));
+
+        DB::table('users')
+            ->where('id', $user->id)
+            ->update(['api_token' => $token]);
+
         return response()->json([
             'success' => true,
             'user' => [
@@ -45,6 +53,18 @@ class AuthController extends Controller
                 'bidang'   => $bidang,
                 'nip'      => $user->nip,
             ],
+            'token' => $token,   // ✨ BARU: token dikirim ke frontend
         ]);
+    }
+
+    // ✨ BARU: endpoint logout (dipakai nanti setelah route dikunci)
+    public function logout(Request $request)
+    {
+        $user = $request->attributes->get('user');
+        if ($user) {
+            DB::table('users')->where('id', $user->id)->update(['api_token' => null]);
+        }
+
+        return response()->json(['success' => true, 'message' => 'Berhasil logout.']);
     }
 }
