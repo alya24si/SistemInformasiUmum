@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import * as XLSX from 'xlsx'
+import { api } from '../api' // ✨ BARU: Import kurir pintar
 import {
   ClipboardList,
   Users,
@@ -116,21 +117,21 @@ function DataAbsensi({ user }) {
   const [alpaPage, setAlpaPage] = useState(0)
 
   const ambilAbsensi = () => {
-    fetch(`${API_URL}/absensi`)
+    api('/absensi') // ✨ UBAH: fetch -> api
       .then((res) => res.json())
       .then((res) => setData(res.data || []))
       .catch(() => alert('Gagal mengambil data absensi.'))
   }
 
   const ambilPegawai = () => {
-    fetch(`${API_URL}/pegawai`)
+    api('/pegawai') // ✨ UBAH: fetch -> api
       .then((res) => res.json())
       .then((res) => setPegawaiList(res.data || []))
       .catch(() => alert('Gagal mengambil data pegawai.'))
   }
 
   const ambilAlpaBerturut = () => {
-    fetch(`${API_URL}/absensi/alpa-berturut`)
+    api('/absensi/alpa-berturut') // ✨ UBAH: fetch -> api
       .then((res) => res.json())
       .then((res) => setAlpaList(res.data || []))
       .catch(() => alert('Gagal mengambil data pegawai yang alpa.'))
@@ -274,7 +275,7 @@ function DataAbsensi({ user }) {
           }
         })
 
-        fetch(`${API_URL}/absensi/import`, {
+        api('/absensi/import', { // ✨ UBAH: fetch -> api
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -458,13 +459,14 @@ function DataAbsensi({ user }) {
 
     const isEdit = editId !== null
 
+    // ✨ UBAH: path relatif saja, api() yang akan menambahkan API_URL
     const url = isEdit
-      ? `${API_URL}/absensi/${editId}`
-      : `${API_URL}/absensi`
+      ? '/absensi/' + editId
+      : '/absensi'
 
     const method = isEdit ? 'PUT' : 'POST'
 
-    fetch(url, {
+    api(url, { // ✨ UBAH: fetch -> api
       method,
       headers: {
         'Content-Type': 'application/json',
@@ -524,7 +526,7 @@ function DataAbsensi({ user }) {
       return
     }
 
-    fetch(`${API_URL}/absensi/${id}`, {
+    api('/absensi/' + id, { // ✨ UBAH: fetch -> api
       method: 'DELETE',
     })
       .then((res) => res.json())

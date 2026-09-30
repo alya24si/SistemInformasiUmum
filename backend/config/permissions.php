@@ -45,14 +45,16 @@ return [
         'perbaikan.create', 'perbaikan.manage',
     ]),
 
-    'pegawai' => array_merge($dasar, [
-        'pelanggaran.view_own',
+        'pegawai' => array_merge($dasar, [
+        'pelanggaran.view',      // ✨ BARU: pegawai boleh lihat data pelanggaran
+        'pelanggaran.view_own',   // ✨ BARU: hanya data miliknya sendiri
         'absensi.view_own',
         'iuran.view_own',
     ]),
 
-    'guest' => array_merge($dasar, [
+        'guest' => array_merge($dasar, [
         'program_kerja.view',
         'anggaran.view',
+        'anggaran.riwayat_view',   // ← baris ini WAJIB ada
     ]),
 ];

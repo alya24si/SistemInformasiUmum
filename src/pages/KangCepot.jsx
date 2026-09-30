@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import * as XLSX from 'xlsx'
+import { api } from '../api'
 
 const API = 'http://localhost:8000/api'
 
@@ -199,7 +200,7 @@ function KangCepot({ user }) {
   const [popupDitutup, setPopupDitutup] = useState(false)
 
   const muatData = async () => {
-    const res = await fetch(API + '/iuran')
+    const res = await api('/iuran')
     const json = await res.json()
     if (json.success) {
       setData(json.data.map((d) => ({
@@ -215,7 +216,7 @@ function KangCepot({ user }) {
 
   useEffect(() => {
     if (user.role === 'pegawai' && user.nip) {
-      fetch(API + '/iuran/profil/' + user.nip)
+      api('/iuran/profil/' + user.nip)
         .then((r) => r.json())
         .then((j) => { setProfil(j.success ? j : false) })
         .catch(() => setProfil(false))
@@ -483,7 +484,7 @@ function KangCepot({ user }) {
       })
 
       if (hasil.length > 0) {
-        await fetch(API + '/iuran/import', {
+        await api('/iuran/import', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ rows: hasil }),
@@ -498,7 +499,7 @@ function KangCepot({ user }) {
 
   const tambahPegawai = async (e) => {
     e.preventDefault()
-    const res = await fetch(API + '/iuran', {
+    const res = await api('/iuran', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(formTambah),
@@ -528,7 +529,7 @@ function KangCepot({ user }) {
   const simpanEdit = async (e) => {
     e.preventDefault()
     if (!editing) return
-    await fetch(API + '/iuran/' + editing.id, {
+    await api('/iuran/' + editing.id, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -543,7 +544,7 @@ function KangCepot({ user }) {
 
   const hapus = async (id) => {
     if (window.confirm('Yakin ingin menghapus data iuran ini?')) {
-      await fetch(API + '/iuran/' + id, { method: 'DELETE' })
+      await api('/iuran/' + id, { method: 'DELETE' })
       muatData()
     }
   }
@@ -556,7 +557,7 @@ function KangCepot({ user }) {
 
   const bukaKelola = async (d) => {
     setKelola({ id: d.id, nama: d.nama, loading: true, bulan: {} })
-    const res = await fetch(API + '/iuran/' + d.id + '/bulanan')
+    const res = await api('/iuran/' + d.id + '/bulanan')
     const json = await res.json()
     const map = {}
     if (json.success) json.data.forEach((b) => { map[b.bulan] = b.status })
@@ -575,7 +576,7 @@ function KangCepot({ user }) {
     }))
 
     try {
-      const res = await fetch(API + '/iuran/' + kelola.id + '/bulanan', {
+      const res = await api('/iuran/' + kelola.id + '/bulanan', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ bulan, status: statusBaru }),

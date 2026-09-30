@@ -17,24 +17,28 @@ use App\Http\Controllers\IuranController;
 
 
 // ===== Keuangan =====
-// ===== API ANGGARAN =====
-Route::get('/anggaran', [AnggaranController::class, 'index']);
-Route::post('/anggaran', [AnggaranController::class, 'store']);
-Route::put('/anggaran/{id}/pagu', [AnggaranController::class, 'updatePagu']);
-Route::post('/anggaran/{id}/realisasi', [AnggaranController::class, 'tambahRealisasi']);
-Route::delete('/anggaran/{id}', [AnggaranController::class, 'destroy']);
-Route::get('/anggaran/{id}/realisasi', [AnggaranController::class, 'riwayatRealisasi']);
+// ===== API ANGGARAN - SECURED =====
+Route::middleware(['auth.api'])->group(function () {
+    Route::middleware('permission:anggaran.view')->get('/anggaran', [AnggaranController::class, 'index']);
+    Route::middleware('permission:anggaran.create')->post('/anggaran', [AnggaranController::class, 'store']);
+    Route::middleware('permission:anggaran.update_pagu')->put('/anggaran/{id}/pagu', [AnggaranController::class, 'updatePagu']);
+    Route::middleware('permission:anggaran.input_realisasi')->post('/anggaran/{id}/realisasi', [AnggaranController::class, 'tambahRealisasi']);
+    Route::middleware('permission:anggaran.delete')->delete('/anggaran/{id}', [AnggaranController::class, 'destroy']);
+    Route::middleware('permission:anggaran.riwayat_view')->get('/anggaran/{id}/realisasi', [AnggaranController::class, 'riwayatRealisasi']);
+});
 
-// ===== API PROGRAM KERJA =====
-Route::get('/program_kerja', [ProgramKerjaController::class, 'index']);
-Route::post('/program_kerja', [ProgramKerjaController::class, 'store']);
-Route::put('/program_kerja/{id}', [ProgramKerjaController::class, 'update']);
-Route::delete('/program_kerja/{id}', [ProgramKerjaController::class, 'destroy']);
+// ===== API PROGRAM KERJA - SECURED =====
+Route::middleware(['auth.api'])->group(function () {
+    Route::middleware('permission:program_kerja.view')->get('/program_kerja', [ProgramKerjaController::class, 'index']);
+    Route::middleware('permission:program_kerja.manage')->post('/program_kerja', [ProgramKerjaController::class, 'store']);
+    Route::middleware('permission:program_kerja.manage')->put('/program_kerja/{id}', [ProgramKerjaController::class, 'update']);
+    Route::middleware('permission:program_kerja.manage')->delete('/program_kerja/{id}', [ProgramKerjaController::class, 'destroy']);
 
-// ===== API KEGIATAN PROGRAM (tambah/edit/hapus kegiatan per bulan) =====
-Route::post('/kegiatan_program', [ProgramKerjaController::class, 'storeKegiatan']);
-Route::put('/kegiatan_program/{id}', [ProgramKerjaController::class, 'updateKegiatan']);
-Route::delete('/kegiatan_program/{id}', [ProgramKerjaController::class, 'destroyKegiatan']);
+    // Kegiatan program per bulan
+    Route::middleware('permission:program_kerja.kegiatan_manage')->post('/kegiatan_program', [ProgramKerjaController::class, 'storeKegiatan']);
+    Route::middleware('permission:program_kerja.kegiatan_manage')->put('/kegiatan_program/{id}', [ProgramKerjaController::class, 'updateKegiatan']);
+    Route::middleware('permission:program_kerja.kegiatan_manage')->delete('/kegiatan_program/{id}', [ProgramKerjaController::class, 'destroyKegiatan']);
+});
 
 // ===== Rumah Tangga =====
 // ===== API RUANGAN =====
@@ -78,45 +82,60 @@ Route::get('/perbaikan_mobil/belum_diperbaiki', [PerbaikanMobilController::class
 Route::post('/perbaikan_mobil', [PerbaikanMobilController::class, 'store']);
 Route::put('/perbaikan_mobil/{id}/selesai', [PerbaikanMobilController::class, 'selesai']);
 Route::delete('/perbaikan_mobil/{id}', [PerbaikanMobilController::class, 'destroy']);
+
+
 // ===== Kepegawaian =====
-// ===== API PEGAWAI =====
-Route::get('/pegawai', [PegawaiController::class, 'index']);
-Route::post('/pegawai', [PegawaiController::class, 'store']);
-Route::post('/pegawai/import', [PegawaiController::class, 'import']);
-Route::put('/pegawai/{id}', [PegawaiController::class, 'update']);
-Route::delete('/pegawai/{id}', [PegawaiController::class, 'destroy']);
-Route::put('/pegawai/{id}/hapus-masa-kerja', [PegawaiController::class, 'hapusMasaKerja']);
-Route::put('/pegawai/{id}/hapus-tmt-pangkat', [PegawaiController::class, 'hapusTmtPangkat']);
-Route::put('/pelanggaran/{id}/jumlah', [PelanggaranController::class, 'updateJumlah']);
 
-// ===== API ABSENSI =====
-Route::get('/absensi', [AbsensiController::class, 'index']);
-Route::get('/absensi/alpa-berturut', [AbsensiController::class, 'alpaBerturut']);
-Route::post('/absensi', [AbsensiController::class, 'store']);
-Route::post('/absensi/import', [AbsensiController::class, 'import']);
-Route::put('/absensi/{id}', [AbsensiController::class, 'update']);
-Route::delete('/absensi/{id}', [AbsensiController::class, 'destroy']);
+// ===== API PEGAWAI - SECURED =====
+Route::middleware(['auth.api'])->group(function () {
+    Route::middleware('permission:pegawai.view')->get('/pegawai', [PegawaiController::class, 'index']);
+    Route::middleware('permission:pegawai.create')->post('/pegawai', [PegawaiController::class, 'store']);
+    Route::middleware('permission:pegawai.import')->post('/pegawai/import', [PegawaiController::class, 'import']);
+    Route::middleware('permission:pegawai.update')->put('/pegawai/{id}', [PegawaiController::class, 'update']);
+    Route::middleware('permission:pegawai.delete')->delete('/pegawai/{id}', [PegawaiController::class, 'destroy']);
+    Route::middleware('permission:pegawai.update')->put('/pegawai/{id}/hapus-masa-kerja', [PegawaiController::class, 'hapusMasaKerja']);
+    Route::middleware('permission:pegawai.update')->put('/pegawai/{id}/hapus-tmt-pangkat', [PegawaiController::class, 'hapusTmtPangkat']);
+});
 
-// ===== API pelanggaran =====
-Route::get('/pelanggaran', [PelanggaranController::class, 'index']);
-Route::post('/pelanggaran/import', [PelanggaranController::class, 'import']);
-Route::delete('/pelanggaran/{id}', [PelanggaranController::class, 'destroy']);
-Route::post('/pelanggaran/tambah-pegawai', [PelanggaranController::class, 'tambahPegawai']);
+// ===== API ABSENSI - SECURED =====
+Route::middleware(['auth.api'])->group(function () {
+    Route::middleware('permission:absensi.view')->get('/absensi', [AbsensiController::class, 'index']);
+    Route::middleware('permission:absensi.view')->get('/absensi/alpa-berturut', [AbsensiController::class, 'alpaBerturut']);
+    Route::middleware('permission:absensi.create')->post('/absensi', [AbsensiController::class, 'store']);
+    Route::middleware('permission:absensi.import')->post('/absensi/import', [AbsensiController::class, 'import']);
+    Route::middleware('permission:absensi.update')->put('/absensi/{id}', [AbsensiController::class, 'update']);
+    Route::middleware('permission:absensi.delete')->delete('/absensi/{id}', [AbsensiController::class, 'destroy']);
+});
 
-
-// ===== API IURAN (KANG CEPOT) =====
-// ===== API IURAN (KANG CEPOT) =====
-Route::get('/iuran', [IuranController::class, 'index']);
-Route::post('/iuran/import', [IuranController::class, 'import']);
-Route::post('/iuran', [IuranController::class, 'store']);
-Route::put('/iuran/{id}', [IuranController::class, 'update']);
-Route::delete('/iuran/{id}', [IuranController::class, 'destroy']);
-Route::get('/iuran/{id}/bulanan', [IuranController::class, 'bulanan']);
-Route::post('/iuran/{id}/bulanan', [IuranController::class, 'updateBulan']);
-Route::get('/iuran/tagihan/{nip}', [IuranController::class, 'tagihan']);
-Route::get('/iuran/profil/{nip}', [IuranController::class, 'profil']);  // ✨ YANG INI HARUS ADA
+// ===== API PELANGGARAN - SECURED =====
+Route::middleware(['auth.api'])->group(function () {
+    Route::middleware('permission:pelanggaran.view')->get('/pelanggaran', [PelanggaranController::class, 'index']);
+    Route::middleware('permission:pelanggaran.import')->post('/pelanggaran/import', [PelanggaranController::class, 'import']);
+    Route::middleware('permission:pelanggaran.delete')->delete('/pelanggaran/{id}', [PelanggaranController::class, 'destroy']);
+    Route::middleware('permission:pelanggaran.update_jumlah')->put('/pelanggaran/{id}/jumlah', [PelanggaranController::class, 'updateJumlah']);
+    Route::middleware('permission:pelanggaran.tambah_pegawai')->post('/pelanggaran/tambah-pegawai', [PelanggaranController::class, 'tambahPegawai']);
+});
 
 
+// ===== API IURAN (KANG CEPOT) - SECURED =====
+Route::middleware(['auth.api'])->group(function () {
+    
+    // 1. Lihat Daftar Iuran (Khusus Admin Keuangan & Superadmin)
+    Route::middleware('permission:iuran.view')->get('/iuran', [IuranController::class, 'index']);
 
-// ===== Login =====
+    // 2. Aksi Ubah/Hapus/Import (Khusus Admin Keuangan & Superadmin)
+    Route::middleware('permission:iuran.import')->post('/iuran/import', [IuranController::class, 'import']);
+    Route::middleware('permission:iuran.create')->post('/iuran', [IuranController::class, 'store']);
+    Route::middleware('permission:iuran.update')->put('/iuran/{id}', [IuranController::class, 'update']);
+    Route::middleware('permission:iuran.delete')->delete('/iuran/{id}', [IuranController::class, 'destroy']);
+    Route::middleware('permission:iuran.kelola_bulanan')->get('/iuran/{id}/bulanan', [IuranController::class, 'bulanan']);
+    Route::middleware('permission:iuran.kelola_bulanan')->post('/iuran/{id}/bulanan', [IuranController::class, 'updateBulan']);
+
+    // 3. Lihat Profil Sendiri (Pegawai) - Tidak perlu permission khusus, nanti difilter di controller
+    Route::get('/iuran/tagihan/{nip}', [IuranController::class, 'tagihan']);
+    Route::get('/iuran/profil/{nip}', [IuranController::class, 'profil']);  // ✨ YANG INI HARUS ADA
+});
+
+// ===== Login & Logout =====
 Route::post('/login', [AuthController::class, 'login']);
+Route::middleware('auth.api')->post('/logout', [AuthController::class, 'logout']);

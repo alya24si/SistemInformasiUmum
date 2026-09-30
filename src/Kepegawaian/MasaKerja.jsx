@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import * as XLSX from 'xlsx'
+import { api } from '../api' // ✨ BARU: Import kurir pintar
 import {
   Users,
   CheckCircle2,
@@ -110,7 +111,7 @@ function MasaKerja({ user }) {
   const ambilData = () => {
     setLoading(true)
 
-    fetch(`${API_URL}/pegawai`)
+    api('/pegawai') // ✨ UBAH: fetch -> api
       .then((res) => res.json())
       .then((res) => {
         setData(res.data || [])
@@ -221,13 +222,14 @@ function MasaKerja({ user }) {
 
     const isEdit = editId !== null
 
+    // ✨ UBAH: path relatif saja, api() yang akan menambahkan API_URL
     const url = isEdit
-      ? `${API_URL}/pegawai/${editId}`
-      : `${API_URL}/pegawai`
+      ? '/pegawai/' + editId
+      : '/pegawai'
 
     const method = isEdit ? 'PUT' : 'POST'
 
-    fetch(url, {
+    api(url, { // ✨ UBAH: fetch -> api
       method,
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(form),
@@ -292,7 +294,7 @@ function MasaKerja({ user }) {
       return
     }
 
-    fetch(`${API_URL}/pegawai/${id}/hapus-masa-kerja`, { method: 'PUT' })
+    api('/pegawai/' + id + '/hapus-masa-kerja', { method: 'PUT' }) // ✨ UBAH: fetch -> api
       .then((res) => res.json())
       .then(() => ambilData())
       .catch(() => alert('Gagal menghapus data Masa Kerja.'))
@@ -403,7 +405,7 @@ function MasaKerja({ user }) {
           }
         })
 
-        fetch(`${API_URL}/pegawai/import`, {
+        api('/pegawai/import', { // ✨ UBAH: fetch -> api
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({

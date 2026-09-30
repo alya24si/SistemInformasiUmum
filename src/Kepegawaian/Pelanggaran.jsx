@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import * as XLSX from 'xlsx'
+import { api } from '../api' // ✨ BARU: Import kurir pintar
 
 const API = 'http://localhost:8000/api'
 
@@ -74,7 +75,7 @@ function Pelanggaran({ user }) {
   const [dropdownTambah, setDropdownTambah] = useState({})
 
   const muatData = async () => {
-    const res = await fetch(API + '/pelanggaran')
+    const res = await api('/pelanggaran') // ✨ UBAH: fetch -> api
     const json = await res.json()
     if (json.success) {
       setDataPelanggaran(
@@ -156,7 +157,7 @@ function Pelanggaran({ user }) {
       })
 
       if (hasil.length > 0) {
-        await fetch(API + '/pelanggaran/import', {
+        await api('/pelanggaran/import', { // ✨ UBAH: fetch -> api
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ rows: hasil }),
@@ -178,7 +179,7 @@ function Pelanggaran({ user }) {
         d.id === id ? { ...d, total: angka } : d
       )
     )
-    fetch(API + '/pelanggaran/' + id + '/jumlah', {
+    api('/pelanggaran/' + id + '/jumlah', { // ✨ UBAH: fetch -> api
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ jumlah: angka }),
@@ -197,7 +198,7 @@ function Pelanggaran({ user }) {
       )
     )
 
-    fetch(API + '/pelanggaran/' + id + '/jumlah', {
+    api('/pelanggaran/' + id + '/jumlah', { // ✨ UBAH: fetch -> api
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ jumlah: baru }),
@@ -213,7 +214,7 @@ function Pelanggaran({ user }) {
     setLoadingTambah(true)
 
     try {
-      const res = await fetch(API + '/pelanggaran/tambah-pegawai', {
+      const res = await api('/pelanggaran/tambah-pegawai', { // ✨ UBAH: fetch -> api
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(formPegawai),
@@ -235,7 +236,7 @@ function Pelanggaran({ user }) {
 
   const hapus = async (id) => {
     if (window.confirm('Yakin ingin menghapus catatan pelanggaran ini?')) {
-      await fetch(API + '/pelanggaran/' + id, { method: 'DELETE' })
+      await api('/pelanggaran/' + id, { method: 'DELETE' }) // ✨ UBAH: fetch -> api
       muatData()
     }
   }

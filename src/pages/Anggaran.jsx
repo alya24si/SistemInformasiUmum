@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { api } from '../api' // ✨ BARU: Import kurir pintar
 
 const API = 'http://localhost:8000/api'
 
@@ -286,7 +287,7 @@ function Anggaran({ user }) {
   const [paguInput, setPaguInput] = useState({})
 
   const muatData = async () => {
-    const res = await fetch(API + '/anggaran')
+    const res = await api('/anggaran') // ✨ UBAH: fetch -> api
     const json = await res.json()
     if (json.success) {
       setData(
@@ -377,7 +378,7 @@ function Anggaran({ user }) {
     const tambahData = async (e) => {
     e.preventDefault()
 
-    await fetch(API + '/anggaran', {
+    await api('/anggaran', { // ✨ UBAH: fetch -> api
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -410,8 +411,8 @@ function Anggaran({ user }) {
    const tambahRealisasi = async (e) => {
     e.preventDefault()
 
-    await fetch(
-      API + '/anggaran/' + formRealisasi.id + '/realisasi',
+    await api( // ✨ UBAH: fetch -> api
+      '/anggaran/' + formRealisasi.id + '/realisasi',
       {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -443,7 +444,7 @@ function Anggaran({ user }) {
       )
     )
 
-    fetch(API + '/anggaran/' + id + '/pagu', {
+    api('/anggaran/' + id + '/pagu', { // ✨ UBAH: fetch -> api
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ pagu: angkaBersih }),
@@ -456,7 +457,7 @@ function Anggaran({ user }) {
         'Yakin ingin menghapus baris anggaran ini?'
       )
     ) {
-      await fetch(API + '/anggaran/' + id, {
+      await api('/anggaran/' + id, { // ✨ UBAH: fetch -> api
         method: 'DELETE',
       })
       muatData()
@@ -473,7 +474,7 @@ function Anggaran({ user }) {
     })
 
     try {
-      const res = await fetch(API + '/anggaran/' + d.id + '/realisasi')
+      const res = await api('/anggaran/' + d.id + '/realisasi') // ✨ UBAH: fetch -> api
       const json = await res.json()
       if (json.success) {
         setRiwayatModal({

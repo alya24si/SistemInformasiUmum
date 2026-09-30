@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, Fragment } from 'react'
+import { api } from '../api' // ✨ BARU
 
 const API = 'http://localhost:8000/api'
 const daftarBidang = ['Umum', 'P2', 'KI', 'Pabean', 'Fasilitas']
@@ -195,7 +196,7 @@ function ProgramKerja({ user }) {
   })
 
   const muatData = async () => {
-    const res = await fetch(API + '/program_kerja')
+    const res = await api('/program_kerja')
     const json = await res.json()
     if (json.success) {
       setPrograms(
@@ -316,7 +317,7 @@ function ProgramKerja({ user }) {
 
   const tambahProgram = async (e) => {
     e.preventDefault()
-    await fetch(API + '/program_kerja', {
+    await api('/program_kerja', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -341,7 +342,7 @@ function ProgramKerja({ user }) {
     e.preventDefault()
     if (!editingProgram) return
 
-    await fetch(API + '/program_kerja/' + editingProgram.id, {
+    await api('/program_kerja/' + editingProgram.id, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -362,7 +363,7 @@ function ProgramKerja({ user }) {
         'Yakin ingin menghapus program ini? Semua kegiatan bulanannya ikut terhapus.'
       )
     ) {
-      await fetch(API + '/program_kerja/' + id, { method: 'DELETE' })
+      await api('/program_kerja/' + id, { method: 'DELETE' })
       setSelectedId(null)
       setEditingKegiatan(null)
       setEditingProgram(null)
@@ -382,13 +383,13 @@ function ProgramKerja({ user }) {
     }
 
     if (editingKegiatan) {
-      await fetch(API + '/kegiatan_program/' + editingKegiatan.id, {
+      await api('/kegiatan_program/' + editingKegiatan.id, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
       })
     } else {
-      await fetch(API + '/kegiatan_program', {
+      await api('/kegiatan_program', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
@@ -402,7 +403,7 @@ function ProgramKerja({ user }) {
 
   const hapusKegiatan = async (id) => {
     if (window.confirm('Yakin ingin menghapus kegiatan bulan ini?')) {
-      await fetch(API + '/kegiatan_program/' + id, { method: 'DELETE' })
+      await api('/kegiatan_program/' + id, { method: 'DELETE' })
       if (editingKegiatan && editingKegiatan.id === id) batalEdit()
       muatData()
     }

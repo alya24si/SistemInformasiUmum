@@ -40,6 +40,7 @@ function Login({ onLogin }) {
 
       if (json.success) {
         localStorage.setItem('user', JSON.stringify(json.user))
+        localStorage.setItem('token', json.token)   // ✨ BARU: simpan token
         onLogin(json.user)
       } else {
         setError(json.message || 'Username atau password salah!')

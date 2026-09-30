@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import * as XLSX from 'xlsx'
+import { api } from '../api' // ✨ BARU: Import kurir pintar
 import {
   CalendarClock,
   Search,
@@ -103,7 +104,7 @@ function KenaikanGajiBerkala({ user }) {
   // -- biar nama/jabatan/dll pegawai gak pernah nyimpang antara 2 halaman.
   const ambilData = () => {
     setLoading(true)
-    fetch(`${API_URL}/pegawai`)
+    api('/pegawai') // ✨ UBAH: fetch -> api
       .then((res) => res.json())
       .then((res) => {
         setData(res.data || [])
@@ -185,7 +186,7 @@ function KenaikanGajiBerkala({ user }) {
 
     if (editId === null) return
 
-    fetch(`${API_URL}/pegawai/${editId}`, {
+    api('/pegawai/' + editId, { // ✨ UBAH: fetch -> api
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(form),
@@ -239,7 +240,7 @@ function KenaikanGajiBerkala({ user }) {
       return
     }
 
-    fetch(`${API_URL}/pegawai/${pegawai.id}/hapus-tmt-pangkat`, {
+    api('/pegawai/' + pegawai.id + '/hapus-tmt-pangkat', { // ✨ UBAH: fetch -> api
       method: 'PUT',
     })
       .then((res) => res.json())
@@ -327,7 +328,7 @@ function KenaikanGajiBerkala({ user }) {
           }
         })
 
-        fetch(`${API_URL}/pegawai/import`, {
+        api('/pegawai/import', { // ✨ UBAH: fetch -> api
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
