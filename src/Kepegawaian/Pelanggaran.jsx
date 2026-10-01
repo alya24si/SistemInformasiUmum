@@ -366,7 +366,7 @@ function Pelanggaran({ user }) {
 
       <div style={summaryGrid}>
         {isAdmin && <SummaryCard title="Pegawai Terdeteksi" value={dataPelanggaran.length} />}
-         <SummaryCard
+        <SummaryCard
           title={isAdmin ? 'Total Hari Kerja Terlambat' : 'Hari Kerja Terlambat Anda'}
           value={`${bulatkan2(menitKeHari(isAdmin ? totalMenitSemua : (catatanku ? catatanku.total : 0)))} hari`}
         />
@@ -600,9 +600,14 @@ function Pelanggaran({ user }) {
                             <td style={{ ...tdStyle, textAlign: 'center', color: r.psw2 > 0 ? '#dc2626' : '#94a3b8', fontWeight: r.psw2 > 0 ? 700 : 400 }}>{r.psw2}</td>
                             <td style={{ ...tdStyle, textAlign: 'center', color: r.psw3 > 0 ? '#dc2626' : '#94a3b8', fontWeight: r.psw3 > 0 ? 700 : 400 }}>{r.psw3}</td>
                             <td style={{ ...tdStyle, textAlign: 'center', color: r.psw4 > 0 ? '#dc2626' : '#94a3b8', fontWeight: r.psw4 > 0 ? 700 : 400 }}>{r.psw4}</td>
-                                                        <td style={{ ...tdStyle, textAlign: 'center' }}>
-                              <div style={{ fontWeight: 700, color: '#dc2626' }}>{bulatkan2(menitKeHari(catatanku.total))} hari</div>
-                              <div style={{ fontSize: '10px', color: '#94a3b8' }}>{formatDurasi(catatanku.total)}</div>
+                            <td style={{ ...tdStyle, textAlign: 'center' }}>
+                              {/* Tampilkan HANYA nilai menit yang ditambahkan di baris riwayat ini saja */}
+                              <div style={{ fontWeight: 700, color: '#dc2626' }}>
+                                {bulatkan2(menitKeHari(Number(r.total) || 0))} hari
+                              </div>
+                              <div style={{ fontSize: '10px', color: '#94a3b8' }}>
+                                {formatDurasi(Number(r.total) || 0)}
+                              </div>
                             </td>
                             <td style={tdStyle}>{r.sumber}</td>
                           </tr>

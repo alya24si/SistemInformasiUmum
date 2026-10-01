@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { api } from '../api'; // ✨ BARU: Import kurir pintar
 import { AlertTriangle, Clock, CalendarDays } from "lucide-react";
 
 const API = 'http://localhost:8000/api'
@@ -83,7 +84,7 @@ function KalenderRuangan({ user }) {
       setErrorMsg("");
 
       try {
-        const res = await fetch(API + '/booking_ruangan/kalender');
+        const res = await api('/booking_ruangan/kalender'); // ✨ UBAH: fetch -> api
         const json = await res.json();
         setBookingDisetujui(json?.data || []);
       } catch (err) {

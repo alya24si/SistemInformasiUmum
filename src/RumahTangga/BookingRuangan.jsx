@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { api } from '../api' // ✨ BARU: Import kurir pintar
 import {
   CalendarCheck,
   Plus,
@@ -146,7 +147,7 @@ function BookingRuangan({ user }) {
     setErrorMsg('')
 
     try {
-      const res = await fetch(API + '/booking_ruangan')
+      const res = await api('/booking_ruangan') // ✨ UBAH: fetch -> api
       const json = await res.json()
       setBooking(json?.data || [])
     } catch (err) {
@@ -158,7 +159,7 @@ function BookingRuangan({ user }) {
 
   const muatRuangan = async () => {
     try {
-      const res = await fetch(API + '/ruangan')
+      const res = await api('/ruangan') // ✨ UBAH: fetch -> api
       const json = await res.json()
 
       // hanya ruangan yang ditandai "bisa dibooking" yang muncul di dropdown pengajuan
@@ -310,7 +311,7 @@ function BookingRuangan({ user }) {
     }
 
     try {
-      const res = await fetch(API + '/booking_ruangan', {
+      const res = await api('/booking_ruangan', { // ✨ UBAH: fetch -> api
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
@@ -352,8 +353,8 @@ function BookingRuangan({ user }) {
 
   const handleSetujui = async (id) => {
     try {
-      const res = await fetch(
-        API + '/booking_ruangan/' + id + '/setujui',
+      const res = await api( // ✨ UBAH: fetch -> api
+        '/booking_ruangan/' + id + '/setujui',
         { method: 'PUT' }
       )
 
@@ -381,7 +382,7 @@ function BookingRuangan({ user }) {
     if (alasan === null || alasan.trim() === '') return
 
     try {
-      await fetch(API + '/booking_ruangan/' + id + '/tolak', {
+      await api('/booking_ruangan/' + id + '/tolak', { // ✨ UBAH: fetch -> api
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ alasan_tolak: alasan }),
@@ -402,7 +403,7 @@ function BookingRuangan({ user }) {
     }
 
     try {
-      await fetch(API + '/booking_ruangan/' + id, {
+      await api('/booking_ruangan/' + id, { // ✨ UBAH: fetch -> api
         method: 'DELETE',
       })
       await muatData()
@@ -477,7 +478,7 @@ function BookingRuangan({ user }) {
             fontSize: '13px',
           }}
         >
-          ⚠️ {errorMsg}
+          ️ {errorMsg}
         </div>
       )}
 

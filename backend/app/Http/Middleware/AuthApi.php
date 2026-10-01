@@ -28,7 +28,7 @@ class AuthApi
             ], 401);
         }
 
-        // simpan user ke dalam request biar bisa dibaca middleware/controller lain
+        // ✅ HANYA PAKAI INI, JANGAN merge()!
         $request->attributes->set('user', $user);
 
         return $next($request);

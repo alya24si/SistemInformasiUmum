@@ -6,55 +6,60 @@
 /* Dibaca oleh middleware CekPermission.php                  */
 /* ========================================================= */
 
-// Hak dasar semua orang yang sudah login
-$dasar = [
-    'ruangan.view',
-    'booking.view',
-    'booking.create',
-    'kerusakan.view',
-    'kerusakan.create',
-    'perbaikan.view',
-];
-
 return [
+    // Superadmin: Akses penuh ke semua fitur tanpa batasan permission
     'superadmin' => ['*'],
 
-    'admin_keuangan' => array_merge($dasar, [
+    // Admin Keuangan: Mengelola program kerja, anggaran, dan iuran (Kang Cepot)
+    'admin_keuangan' => [
+        'ruangan.view', 'booking.view', 'booking.create', 'kerusakan.view', 'kerusakan.create', 'perbaikan.view',
         'program_kerja.view', 'program_kerja.manage', 'program_kerja.kegiatan_manage',
         'anggaran.view', 'anggaran.create', 'anggaran.update_pagu',
         'anggaran.input_realisasi', 'anggaran.delete', 'anggaran.riwayat_view',
         'iuran.view', 'iuran.import', 'iuran.create', 'iuran.update',
         'iuran.delete', 'iuran.kelola_bulanan',
-    ]),
+    ],
 
-    'admin_kepegawaian' => array_merge($dasar, [
+    // Admin Kepegawaian: Mengelola data pegawai, absensi, dan pelanggaran
+    'admin_kepegawaian' => [
+        'ruangan.view', 'booking.view', 'booking.create', 'kerusakan.view', 'kerusakan.create', 'perbaikan.view',
         'pegawai.view', 'pegawai.create', 'pegawai.import', 'pegawai.update', 'pegawai.delete',
         'absensi.view', 'absensi.create', 'absensi.import', 'absensi.update', 'absensi.delete',
         'pelanggaran.view', 'pelanggaran.import', 'pelanggaran.delete',
         'pelanggaran.update_jumlah', 'pelanggaran.tambah_pegawai',
-    ]),
+    ],
 
-    'admin_rumahtangga' => array_merge($dasar, [
-        'ruangan.manage', 'booking.manage', 'kerusakan.manage',
-        'perbaikan.create', 'perbaikan.manage',
-    ]),
+    // Admin Rumah Tangga: Mengelola fasilitas, booking, kerusakan, dan perbaikan
+    // ✨ DIBUAT EKSPLISIT TANPA array_merge UNTUK MENGHINDARI MASALAH CACHE/VARIABEL
+    'admin_rumahtangga' => [
+        'ruangan.view', 'ruangan.manage',
+        'booking.view', 'booking.create', 'booking.manage',
+        'kerusakan.view', 'kerusakan.create', 'kerusakan.manage',
+        'perbaikan.view', 'perbaikan.create', 'perbaikan.manage',
+    ],
 
-    // sementara disamakan dengan rumah tangga, kabari kalau seharusnya beda
-    'admin_umum' => array_merge($dasar, [
-        'ruangan.manage', 'booking.manage', 'kerusakan.manage',
-        'perbaikan.create', 'perbaikan.manage',
-    ]),
+    // Admin Umum: Sementara disamakan dengan rumah tangga
+    'admin_umum' => [
+        'ruangan.view', 'ruangan.manage',
+        'booking.view', 'booking.create', 'booking.manage',
+        'kerusakan.view', 'kerusakan.create', 'kerusakan.manage',
+        'perbaikan.view', 'perbaikan.create', 'perbaikan.manage',
+    ],
 
-        'pegawai' => array_merge($dasar, [
-        'pelanggaran.view',      // ✨ BARU: pegawai boleh lihat data pelanggaran
-        'pelanggaran.view_own',   // ✨ BARU: hanya data miliknya sendiri
-        'absensi.view_own',
-        'iuran.view_own',
-    ]),
+    // Pegawai: Hanya boleh melihat data miliknya sendiri
+    'pegawai' => [
+        'ruangan.view', 'booking.view', 'booking.create', 'kerusakan.view', 'kerusakan.create', 'perbaikan.view',
+        'pegawai.view',
+        'absensi.view', 'absensi.view_own',
+        'pelanggaran.view', 'pelanggaran.view_own',
+        'iuran.view', 'iuran.view_own',
+    ],
 
-        'guest' => array_merge($dasar, [
+    // Guest: Hanya boleh melihat data program kerja dan anggaran (read-only)
+    'guest' => [
+        'ruangan.view', 'booking.view', 'booking.create', 'kerusakan.view', 'kerusakan.create', 'perbaikan.view',
         'program_kerja.view',
         'anggaran.view',
-        'anggaran.riwayat_view',   // ← baris ini WAJIB ada
-    ]),
+        'anggaran.riwayat_view',
+    ],
 ];

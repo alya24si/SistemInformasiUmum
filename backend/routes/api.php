@@ -41,48 +41,54 @@ Route::middleware(['auth.api'])->group(function () {
 });
 
 // ===== Rumah Tangga =====
-// ===== API RUANGAN =====
-Route::get('/ruangan', [RuanganController::class, 'index']);
-Route::post('/ruangan', [RuanganController::class, 'store']);
-Route::put('/ruangan/{id}', [RuanganController::class, 'update']);
-Route::delete('/ruangan/{id}', [RuanganController::class, 'destroy']);
 
-// ===== API BOOKING RUANGAN =====
-Route::get('/booking_ruangan', [BookingRuanganController::class, 'index']);
-Route::get('/booking_ruangan/kalender', [BookingRuanganController::class, 'kalender']);
-Route::post('/booking_ruangan', [BookingRuanganController::class, 'store']);
-Route::put('/booking_ruangan/{id}/setujui', [BookingRuanganController::class, 'setujui']);
-Route::put('/booking_ruangan/{id}/tolak', [BookingRuanganController::class, 'tolak']);
-Route::delete('/booking_ruangan/{id}', [BookingRuanganController::class, 'destroy']);
+// ===== API RUANGAN - SECURED =====
+Route::middleware(['auth.api'])->group(function () {
+    Route::middleware('permission:ruangan.view')->get('/ruangan', [RuanganController::class, 'index']);
+    Route::middleware('permission:ruangan.manage')->post('/ruangan', [RuanganController::class, 'store']);
+    Route::middleware('permission:ruangan.manage')->put('/ruangan/{id}', [RuanganController::class, 'update']);
+    Route::middleware('permission:ruangan.manage')->delete('/ruangan/{id}', [RuanganController::class, 'destroy']);
+});
 
-// ===== API KERUSAKAN RUANGAN =====
-Route::get('/kerusakan_ruangan', [KerusakanRuanganController::class, 'index']);
-Route::post('/kerusakan_ruangan', [KerusakanRuanganController::class, 'store']);
-Route::put('/kerusakan_ruangan/{id}/proses', [KerusakanRuanganController::class, 'proses']);
-Route::put('/kerusakan_ruangan/{id}/selesai', [KerusakanRuanganController::class, 'selesai']);
-Route::delete('/kerusakan_ruangan/{id}', [KerusakanRuanganController::class, 'destroy']);
+// ===== API BOOKING RUANGAN - SECURED =====
+Route::middleware(['auth.api'])->group(function () {
+    Route::middleware('permission:booking.view')->get('/booking_ruangan', [BookingRuanganController::class, 'index']);
+    Route::middleware('permission:booking.view')->get('/booking_ruangan/kalender', [BookingRuanganController::class, 'kalender']);
+    Route::middleware('permission:booking.create')->post('/booking_ruangan', [BookingRuanganController::class, 'store']);
+    Route::middleware('permission:booking.manage')->put('/booking_ruangan/{id}/setujui', [BookingRuanganController::class, 'setujui']);
+    Route::middleware('permission:booking.manage')->put('/booking_ruangan/{id}/tolak', [BookingRuanganController::class, 'tolak']);
+    Route::middleware('permission:booking.manage')->delete('/booking_ruangan/{id}', [BookingRuanganController::class, 'destroy']);
+});
 
-// ===== API PERBAIKAN RUANGAN =====
-Route::get('/perbaikan_ruangan', [PerbaikanRuanganController::class, 'index']);
-Route::get('/perbaikan_ruangan/belum_diperbaiki', [PerbaikanRuanganController::class, 'kerusakanBelumDiperbaiki']);
-Route::post('/perbaikan_ruangan', [PerbaikanRuanganController::class, 'store']);
-Route::put('/perbaikan_ruangan/{id}/selesai', [PerbaikanRuanganController::class, 'selesai']);
-Route::delete('/perbaikan_ruangan/{id}', [PerbaikanRuanganController::class, 'destroy']);
+// ===== API KERUSAKAN RUANGAN & MOBIL - SECURED =====
+Route::middleware(['auth.api'])->group(function () {
+    Route::middleware('permission:kerusakan.view')->get('/kerusakan_ruangan', [KerusakanRuanganController::class, 'index']);
+    Route::middleware('permission:kerusakan.create')->post('/kerusakan_ruangan', [KerusakanRuanganController::class, 'store']);
+    Route::middleware('permission:kerusakan.manage')->put('/kerusakan_ruangan/{id}/proses', [KerusakanRuanganController::class, 'proses']);
+    Route::middleware('permission:kerusakan.manage')->put('/kerusakan_ruangan/{id}/selesai', [KerusakanRuanganController::class, 'selesai']);
+    Route::middleware('permission:kerusakan.manage')->delete('/kerusakan_ruangan/{id}', [KerusakanRuanganController::class, 'destroy']);
 
-// ===== API KERUSAKAN MOBIL =====
-Route::get('/kerusakan_mobil', [KerusakanMobilController::class, 'index']);
-Route::post('/kerusakan_mobil', [KerusakanMobilController::class, 'store']);
-Route::put('/kerusakan_mobil/{id}/proses', [KerusakanMobilController::class, 'proses']);
-Route::put('/kerusakan_mobil/{id}/selesai', [KerusakanMobilController::class, 'selesai']);
-Route::delete('/kerusakan_mobil/{id}', [KerusakanMobilController::class, 'destroy']);
+    Route::middleware('permission:kerusakan.view')->get('/kerusakan_mobil', [KerusakanMobilController::class, 'index']);
+    Route::middleware('permission:kerusakan.create')->post('/kerusakan_mobil', [KerusakanMobilController::class, 'store']);
+    Route::middleware('permission:kerusakan.manage')->put('/kerusakan_mobil/{id}/proses', [KerusakanMobilController::class, 'proses']);
+    Route::middleware('permission:kerusakan.manage')->put('/kerusakan_mobil/{id}/selesai', [KerusakanMobilController::class, 'selesai']);
+    Route::middleware('permission:kerusakan.manage')->delete('/kerusakan_mobil/{id}', [KerusakanMobilController::class, 'destroy']);
+});
 
-// ===== API PERBAIKAN MOBIL =====
-Route::get('/perbaikan_mobil', [PerbaikanMobilController::class, 'index']);
-Route::get('/perbaikan_mobil/belum_diperbaiki', [PerbaikanMobilController::class, 'kerusakanBelumDiperbaiki']);
-Route::post('/perbaikan_mobil', [PerbaikanMobilController::class, 'store']);
-Route::put('/perbaikan_mobil/{id}/selesai', [PerbaikanMobilController::class, 'selesai']);
-Route::delete('/perbaikan_mobil/{id}', [PerbaikanMobilController::class, 'destroy']);
+// ===== API PERBAIKAN RUANGAN & MOBIL - SECURED =====
+Route::middleware(['auth.api'])->group(function () {
+    Route::middleware('permission:perbaikan.view')->get('/perbaikan_ruangan', [PerbaikanRuanganController::class, 'index']);
+    Route::middleware('permission:perbaikan.view')->get('/perbaikan_ruangan/belum_diperbaiki', [PerbaikanRuanganController::class, 'kerusakanBelumDiperbaiki']);
+    Route::middleware('permission:perbaikan.create')->post('/perbaikan_ruangan', [PerbaikanRuanganController::class, 'store']);
+    Route::middleware('permission:perbaikan.manage')->put('/perbaikan_ruangan/{id}/selesai', [PerbaikanRuanganController::class, 'selesai']);
+    Route::middleware('permission:perbaikan.manage')->delete('/perbaikan_ruangan/{id}', [PerbaikanRuanganController::class, 'destroy']);
 
+    Route::middleware('permission:perbaikan.view')->get('/perbaikan_mobil', [PerbaikanMobilController::class, 'index']);
+    Route::middleware('permission:perbaikan.view')->get('/perbaikan_mobil/belum_diperbaiki', [PerbaikanMobilController::class, 'kerusakanBelumDiperbaiki']);
+    Route::middleware('permission:perbaikan.create')->post('/perbaikan_mobil', [PerbaikanMobilController::class, 'store']);
+    Route::middleware('permission:perbaikan.manage')->put('/perbaikan_mobil/{id}/selesai', [PerbaikanMobilController::class, 'selesai']);
+    Route::middleware('permission:perbaikan.manage')->delete('/perbaikan_mobil/{id}', [PerbaikanMobilController::class, 'destroy']);
+});
 
 // ===== Kepegawaian =====
 

@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { api } from '../api' // ✨ BARU: Import kurir pintar
 import {
   Wrench,
   Plus,
@@ -43,7 +44,7 @@ function KerusakanMobil({ user }) {
     setErrorMsg('')
 
     try {
-      const resLaporan = await fetch(API + '/kerusakan_mobil')
+      const resLaporan = await api('/kerusakan_mobil') // ✨ UBAH: fetch -> api
       const jsonLaporan = await resLaporan.json()
 
       setLaporan(jsonLaporan?.data || [])
@@ -94,7 +95,7 @@ function KerusakanMobil({ user }) {
     setSubmitting(true)
 
     try {
-      const res = await fetch(API + '/kerusakan_mobil', {
+      const res = await api('/kerusakan_mobil', { // ✨ UBAH: fetch -> api
         method: 'POST',
         body: payload,
       })
@@ -139,7 +140,7 @@ function KerusakanMobil({ user }) {
 
   const handleProses = async (id) => {
     try {
-      await fetch(API + '/kerusakan_mobil/' + id + '/proses', {
+      await api('/kerusakan_mobil/' + id + '/proses', { // ✨ UBAH: fetch -> api
         method: 'PUT',
       })
       await muatData()
@@ -150,7 +151,7 @@ function KerusakanMobil({ user }) {
 
   const handleSelesai = async (id) => {
     try {
-      await fetch(API + '/kerusakan_mobil/' + id + '/selesai', {
+      await api('/kerusakan_mobil/' + id + '/selesai', { // ✨ UBAH: fetch -> api
         method: 'PUT',
       })
       await muatData()
@@ -166,9 +167,7 @@ function KerusakanMobil({ user }) {
       )
     ) {
       try {
-        await fetch(API + '/kerusakan_mobil/' + id, {
-          method: 'DELETE',
-        })
+        await api('/kerusakan_mobil/' + id, { method: 'DELETE' }) // ✨ UBAH: fetch -> api
         await muatData()
       } catch (err) {
         alert('Gagal menghapus data.')

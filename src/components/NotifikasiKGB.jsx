@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { api } from '../api' // ✨ BARU: Import kurir pintar
 import { TrendingUp, X } from 'lucide-react'
 
 const API_URL = 'http://127.0.0.1:8000/api'
@@ -60,38 +61,38 @@ function NotifikasiKGB({ user }) {
   const [akanNaikDalam2Bulan, setAkanNaikDalam2Bulan] = useState([])
   const [tampilkan, setTampilkan] = useState(false)
 
-  useEffect(() => {
-    if (!isAdmin) return
+useEffect(() => {
+  //  TAMBAHKAN INI: Jangan fetch kalau user belum login
+  if (!user || !user.role || !isAdmin) return
 
-    // Udah pernah ditutup di sesi/tab ini -- gak usah fetch/tampil lagi.
-    if (sessionStorage.getItem(KUNCI_SESSION)) return
+  // Udah pernah ditutup di sesi/tab ini -- gak usah fetch/tampil lagi.
+  if (sessionStorage.getItem(KUNCI_SESSION)) return
 
-    fetch(`${API_URL}/pegawai`)
-      .then((res) => res.json())
-      .then((res) => {
-        const data = res.data || []
-        const sekarang = new Date()
+  api('/pegawai')
+    .then((res) => res.json())
+    .then((res) => {
+      const data = res.data || []
+      const sekarang = new Date()
 
-        const daftar = data
-          .map((pegawai) => ({ ...pegawai, kgb: hitungKGB(pegawai.tmt_pangkat) }))
-          .filter((pegawai) => {
-            if (!pegawai.kgb) return false
-            const batasNotif = kurangiBulan(pegawai.kgb.kgbBerikutnya, 2)
-            return sekarang >= batasNotif && sekarang <= pegawai.kgb.kgbBerikutnya
-          })
-          .sort((a, b) => a.kgb.kgbBerikutnya - b.kgb.kgbBerikutnya)
+      const daftar = data
+        .map((pegawai) => ({ ...pegawai, kgb: hitungKGB(pegawai.tmt_pangkat) }))
+        .filter((pegawai) => {
+          if (!pegawai.kgb) return false
+          const batasNotif = kurangiBulan(pegawai.kgb.kgbBerikutnya, 2)
+          return sekarang >= batasNotif && sekarang <= pegawai.kgb.kgbBerikutnya
+        })
+        .sort((a, b) => a.kgb.kgbBerikutnya - b.kgb.kgbBerikutnya)
 
-        if (daftar.length > 0) {
-          setAkanNaikDalam2Bulan(daftar)
-          setTampilkan(true)
-        }
-      })
-      .catch(() => {
-        // Gagal diam-diam -- popup notifikasi gak boleh sampai ganggu
-        // pemakaian aplikasi kalau API-nya lagi bermasalah.
-      })
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isAdmin])
+      if (daftar.length > 0) {
+        setAkanNaikDalam2Bulan(daftar)
+        setTampilkan(true)
+      }
+    })
+    .catch(() => {
+      // Gagal diam-diam
+    })
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+}, [isAdmin, user?.role, user?.nip]) // ✨ UBAH: gunakan property spesifik, bukan object user
 
   const tutupPopup = () => {
     sessionStorage.setItem(KUNCI_SESSION, '1')

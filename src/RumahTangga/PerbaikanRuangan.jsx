@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { api } from '../api' // ✨ BARU: Import kurir pintar
 import {
   Hammer,
   RefreshCw,
@@ -48,8 +49,8 @@ function PerbaikanRuangan({ user }) {
         resPerbaikan,
         resBelum,
       ] = await Promise.all([
-        fetch(API + '/perbaikan_ruangan'),
-        fetch(API + '/perbaikan_ruangan/belum_diperbaiki'),
+        api('/perbaikan_ruangan'), // ✨ UBAH: fetch -> api
+        api('/perbaikan_ruangan/belum_diperbaiki'), // ✨ UBAH: fetch -> api
       ])
 
       const jsonPerbaikan = await resPerbaikan.json()
@@ -123,7 +124,7 @@ function PerbaikanRuangan({ user }) {
     setSubmitting(true)
 
     try {
-      const res = await fetch(API + '/perbaikan_ruangan', {
+      const res = await api('/perbaikan_ruangan', { // ✨ UBAH: fetch -> api
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -181,12 +182,9 @@ function PerbaikanRuangan({ user }) {
     }
 
     try {
-      await fetch(
-        API + '/perbaikan_ruangan/' + id,
-        {
-          method: 'DELETE',
-        }
-      )
+      await api('/perbaikan_ruangan/' + id, { // ✨ UBAH: fetch -> api
+        method: 'DELETE',
+      })
 
       await muatData()
     } catch (err) {
@@ -206,15 +204,9 @@ function PerbaikanRuangan({ user }) {
     }
 
     try {
-      await fetch(
-        API +
-          '/perbaikan_ruangan/' +
-          id +
-          '/selesai',
-        {
-          method: 'PUT',
-        }
-      )
+      await api('/perbaikan_ruangan/' + id + '/selesai', { // ✨ UBAH: fetch -> api
+        method: 'PUT',
+      })
 
       await muatData()
     } catch (err) {

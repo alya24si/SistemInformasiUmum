@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { api } from '../api' // ✨ BARU: Import kurir pintar
 import {
   Wrench,
   Plus,
@@ -45,8 +46,8 @@ function KerusakanRuangan({ user }) {
 
     try {
       const [resLaporan, resRuangan] = await Promise.all([
-        fetch(API + '/kerusakan_ruangan'),
-        fetch(API + '/ruangan'),
+        api('/kerusakan_ruangan'), // ✨ UBAH: fetch -> api
+        api('/ruangan'), // ✨ UBAH: fetch -> api
       ])
 
       const jsonLaporan = await resLaporan.json()
@@ -101,7 +102,7 @@ function KerusakanRuangan({ user }) {
     setSubmitting(true)
 
     try {
-      const res = await fetch(API + '/kerusakan_ruangan', {
+      const res = await api('/kerusakan_ruangan', { // ✨ UBAH: fetch -> api
         method: 'POST',
         body: payload,
       })
@@ -146,7 +147,7 @@ function KerusakanRuangan({ user }) {
 
   const handleProses = async (id) => {
     try {
-      await fetch(API + '/kerusakan_ruangan/' + id + '/proses', {
+      await api('/kerusakan_ruangan/' + id + '/proses', { // ✨ UBAH: fetch -> api
         method: 'PUT',
       })
       await muatData()
@@ -157,7 +158,7 @@ function KerusakanRuangan({ user }) {
 
   const handleSelesai = async (id) => {
     try {
-      await fetch(API + '/kerusakan_ruangan/' + id + '/selesai', {
+      await api('/kerusakan_ruangan/' + id + '/selesai', { // ✨ UBAH: fetch -> api
         method: 'PUT',
       })
       await muatData()
@@ -173,9 +174,7 @@ function KerusakanRuangan({ user }) {
       )
     ) {
       try {
-        await fetch(API + '/kerusakan_ruangan/' + id, {
-          method: 'DELETE',
-        })
+        await api('/kerusakan_ruangan/' + id, { method: 'DELETE' }) // ✨ UBAH: fetch -> api
         await muatData()
       } catch (err) {
         alert('Gagal menghapus data.')

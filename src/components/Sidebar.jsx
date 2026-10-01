@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { NavLink, useLocation } from 'react-router-dom'
+import { api } from '../api' // ✨ BARU: Import kurir pintar
 import { ChevronDown, ChevronRight } from 'lucide-react'
 
 const API = 'http://localhost:8000/api'
@@ -258,45 +259,47 @@ function Sidebar({ user }) {
     userSelect: 'none',
   }
 
-  useEffect(() => {
-    if (!isAdminRT) return
-    let batal = false
-    const muatNotifikasi = async () => {
-      try {
-        const [resBooking, resKerusakanRuangan, resKerusakanMobil] =
-          await Promise.all([
-            fetch(API + '/booking_ruangan'),
-            fetch(API + '/kerusakan_ruangan'),
-            fetch(API + '/kerusakan_mobil'),
-          ])
-        const [jsonBooking, jsonKerusakanRuangan, jsonKerusakanMobil] =
-          await Promise.all([
-            resBooking.json(),
-            resKerusakanRuangan.json(),
-            resKerusakanMobil.json(),
-          ])
-        if (batal) return
-        const booking = jsonBooking?.data || []
-        const kerusakanRuangan = jsonKerusakanRuangan?.data || []
-        const kerusakanMobil = jsonKerusakanMobil?.data || []
-        setJumlahBookingMenunggu(
-          booking.filter((b) => b.status === 'Menunggu').length
-        )
-        setJumlahKerusakanRuanganMenunggu(
-          kerusakanRuangan.filter((k) => k.status === 'Menunggu').length
-        )
-        setJumlahKerusakanMobilMenunggu(
-          kerusakanMobil.filter((k) => k.status === 'Menunggu').length
-        )
-      } catch (err) {}
-    }
-    muatNotifikasi()
-    const interval = setInterval(muatNotifikasi, 30000)
-    return () => {
-      batal = true
-      clearInterval(interval)
-    }
-  }, [isAdminRT])
+useEffect(() => {
+  // ✨ TAMBAHKAN INI: Jangan fetch kalau user belum login
+  if (!user || !user.role || !isAdminRT) return
+  
+  let batal = false
+  const muatNotifikasi = async () => {
+    try {
+      const [resBooking, resKerusakanRuangan, resKerusakanMobil] =
+        await Promise.all([
+          api('/booking_ruangan'),
+          api('/kerusakan_ruangan'),
+          api('/kerusakan_mobil'),
+        ])
+      const [jsonBooking, jsonKerusakanRuangan, jsonKerusakanMobil] =
+        await Promise.all([
+          resBooking.json(),
+          resKerusakanRuangan.json(),
+          resKerusakanMobil.json(),
+        ])
+      if (batal) return
+      const booking = jsonBooking?.data || []
+      const kerusakanRuangan = jsonKerusakanRuangan?.data || []
+      const kerusakanMobil = jsonKerusakanMobil?.data || []
+      setJumlahBookingMenunggu(
+        booking.filter((b) => b.status === 'Menunggu').length
+      )
+      setJumlahKerusakanRuanganMenunggu(
+        kerusakanRuangan.filter((k) => k.status === 'Menunggu').length
+      )
+      setJumlahKerusakanMobilMenunggu(
+        kerusakanMobil.filter((k) => k.status === 'Menunggu').length
+      )
+    } catch (err) {}
+  }
+  muatNotifikasi()
+  const interval = setInterval(muatNotifikasi, 30000)
+  return () => {
+    batal = true
+    clearInterval(interval)
+  }
+}, [isAdminRT, user?.role, user?.nip]) // ✨ UBAH: gunakan property spesifik
 
   const aktif = ({ isActive }) => 'menu-item' + (isActive ? ' active' : '')
 

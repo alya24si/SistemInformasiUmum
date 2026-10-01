@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { api } from '../api' // ✨ BARU: Import kurir pintar
 import {
   Building2,
   Plus,
@@ -63,7 +64,7 @@ function DataRuangan({ user }) {
     setErrorMsg('')
 
     try {
-      const res = await fetch(API + '/ruangan')
+      const res = await api('/ruangan') // ✨ UBAH: fetch -> api
       const json = await res.json()
       setData(json?.data || [])
     } catch (err) {
@@ -163,14 +164,14 @@ function DataRuangan({ user }) {
 
     try {
       if (editId) {
-        await fetch(API + '/ruangan/' + editId, {
+        await api('/ruangan/' + editId, { // ✨ UBAH: fetch -> api
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(payload),
         })
         alert('Data ruangan berhasil diperbarui.')
       } else {
-        await fetch(API + '/ruangan', {
+        await api('/ruangan', { // ✨ UBAH: fetch -> api
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(payload),
@@ -205,9 +206,7 @@ function DataRuangan({ user }) {
       )
     ) {
       try {
-        await fetch(API + '/ruangan/' + id, {
-          method: 'DELETE',
-        })
+        await api('/ruangan/' + id, { method: 'DELETE' }) // ✨ UBAH: fetch -> api
         await muatData()
       } catch (err) {
         alert('Gagal menghapus data ruangan.')

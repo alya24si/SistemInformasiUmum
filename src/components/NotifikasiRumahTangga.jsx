@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { api } from '../api' // ✨ BARU: Import kurir pintar
 import { Bell, X } from 'lucide-react'
 
 const API = 'http://localhost:8000/api'
@@ -15,67 +16,68 @@ function NotifikasiRumahTangga({ user }) {
   const [terbuka, setTerbuka] = useState(false)
   const [daftar, setDaftar] = useState([])
 
-  useEffect(() => {
-    if (!isAdminRT) return
+useEffect(() => {
+  // ✨ TAMBAHKAN INI: Jangan fetch kalau user belum login
+  if (!user || !user.role || !isAdminRT) return
 
-    let batal = false
+  let batal = false
 
-    const muatNotifikasi = async () => {
-      try {
-        const [resBooking, resKerusakanRuangan, resKerusakanMobil] =
-          await Promise.all([
-            fetch(API + '/booking_ruangan'),
-            fetch(API + '/kerusakan_ruangan'),
-            fetch(API + '/kerusakan_mobil'),
-          ])
+  const muatNotifikasi = async () => {
+    try {
+      const [resBooking, resKerusakanRuangan, resKerusakanMobil] =
+        await Promise.all([
+          api('/booking_ruangan'),
+          api('/kerusakan_ruangan'),
+          api('/kerusakan_mobil'),
+        ])
 
-        const [jsonBooking, jsonKerusakanRuangan, jsonKerusakanMobil] =
-          await Promise.all([
-            resBooking.json(),
-            resKerusakanRuangan.json(),
-            resKerusakanMobil.json(),
-          ])
+      const [jsonBooking, jsonKerusakanRuangan, jsonKerusakanMobil] =
+        await Promise.all([
+          resBooking.json(),
+          resKerusakanRuangan.json(),
+          resKerusakanMobil.json(),
+        ])
 
-        if (batal) return
+      if (batal) return
 
-        const booking = (jsonBooking?.data || [])
-          .filter((b) => b.status === 'Menunggu')
-          .map((b) => ({
-            id: 'booking-' + b.id,
-            teks: `Booking "${b.kegiatan}" oleh ${b.pemesan} (${b.ruangan}) masih menunggu persetujuan.`,
-            tujuan: '/booking-ruangan',
-          }))
+      const booking = (jsonBooking?.data || [])
+        .filter((b) => b.status === 'Menunggu')
+        .map((b) => ({
+          id: 'booking-' + b.id,
+          teks: `Booking "${b.kegiatan}" oleh ${b.pemesan} (${b.ruangan}) masih menunggu persetujuan.`,
+          tujuan: '/booking-ruangan',
+        }))
 
-        const kerusakanRuangan = (jsonKerusakanRuangan?.data || [])
-          .filter((k) => k.status === 'Menunggu')
-          .map((k) => ({
-            id: 'kerusakan-ruangan-' + k.id,
-            teks: `Laporan kerusakan ruangan "${k.ruangan}": ${k.kerusakan}.`,
-            tujuan: '/kerusakan',
-          }))
+      const kerusakanRuangan = (jsonKerusakanRuangan?.data || [])
+        .filter((k) => k.status === 'Menunggu')
+        .map((k) => ({
+          id: 'kerusakan-ruangan-' + k.id,
+          teks: `Laporan kerusakan ruangan "${k.ruangan}": ${k.kerusakan}.`,
+          tujuan: '/kerusakan',
+        }))
 
-        const kerusakanMobil = (jsonKerusakanMobil?.data || [])
-          .filter((k) => k.status === 'Menunggu')
-          .map((k) => ({
-            id: 'kerusakan-mobil-' + k.id,
-            teks: `Laporan kerusakan mobil "${k.mobil}": ${k.kerusakan}.`,
-            tujuan: '/kerusakan',
-          }))
+      const kerusakanMobil = (jsonKerusakanMobil?.data || [])
+        .filter((k) => k.status === 'Menunggu')
+        .map((k) => ({
+          id: 'kerusakan-mobil-' + k.id,
+          teks: `Laporan kerusakan mobil "${k.mobil}": ${k.kerusakan}.`,
+          tujuan: '/kerusakan',
+        }))
 
-        setDaftar([...booking, ...kerusakanRuangan, ...kerusakanMobil])
-      } catch (err) {
-        // gagal diam-diam -- widget cuma gak nampilin apa-apa
-      }
+      setDaftar([...booking, ...kerusakanRuangan, ...kerusakanMobil])
+    } catch (err) {
+      // gagal diam-diam
     }
+  }
 
-    muatNotifikasi()
-    const interval = setInterval(muatNotifikasi, 30000)
+  muatNotifikasi()
+  const interval = setInterval(muatNotifikasi, 30000)
 
-    return () => {
-      batal = true
-      clearInterval(interval)
-    }
-  }, [isAdminRT])
+  return () => {
+    batal = true
+    clearInterval(interval)
+  }
+}, [isAdminRT, user?.role, user?.nip]) // ✨ UBAH: gunakan property spesifik, bukan object user
 
   if (!isAdminRT) return null
 

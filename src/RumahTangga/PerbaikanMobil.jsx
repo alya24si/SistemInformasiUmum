@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { api } from '../api' // ✨ BARU: Import kurir pintar
 import {
   Hammer,
   RefreshCw,
@@ -48,8 +49,8 @@ function PerbaikanMobil({ user }) {
         resPerbaikan,
         resBelum,
       ] = await Promise.all([
-        fetch(API + '/perbaikan_mobil'),
-        fetch(API + '/perbaikan_mobil/belum_diperbaiki'),
+        api('/perbaikan_mobil'), // ✨ UBAH: fetch -> api
+        api('/perbaikan_mobil/belum_diperbaiki'), // ✨ UBAH: fetch -> api
       ])
 
       const jsonPerbaikan = await resPerbaikan.json()
@@ -123,7 +124,7 @@ function PerbaikanMobil({ user }) {
     setSubmitting(true)
 
     try {
-      const res = await fetch(API + '/perbaikan_mobil', {
+      const res = await api('/perbaikan_mobil', { // ✨ UBAH: fetch -> api
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -181,12 +182,9 @@ function PerbaikanMobil({ user }) {
     }
 
     try {
-      await fetch(
-        API + '/perbaikan_mobil/' + id,
-        {
-          method: 'DELETE',
-        }
-      )
+      await api('/perbaikan_mobil/' + id, { // ✨ UBAH: fetch -> api
+        method: 'DELETE',
+      })
 
       await muatData()
     } catch (err) {
@@ -206,15 +204,9 @@ function PerbaikanMobil({ user }) {
     }
 
     try {
-      await fetch(
-        API +
-          '/perbaikan_mobil/' +
-          id +
-          '/selesai',
-        {
-          method: 'PUT',
-        }
-      )
+      await api('/perbaikan_mobil/' + id + '/selesai', { // ✨ UBAH: fetch -> api
+        method: 'PUT',
+      })
 
       await muatData()
     } catch (err) {

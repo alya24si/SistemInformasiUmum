@@ -21,55 +21,79 @@ class PelanggaranController extends Controller
         return response()->json(['success' => true, 'data' => $data]);
     }
 
-    public function import(Request $request)
+     public function import(Request $request)
     {
-        $rows = $request->input('rows', []);
+        $rows = $request->input('rows');
+        $processed = 0;
 
-        foreach ($rows as $r) {
-            $nip = trim($r['nip'] ?? '');
-            if (!$nip) continue;
+        foreach ($rows as $row) {
+            $nip = trim($row['nip']);
+            
+            // 1. Cek apakah pegawai ini sudah punya record pelanggaran
+            $existing = DB::table('pelanggaran')->where('nip', $nip)->first();
 
-            $ada = DB::table('pelanggaran')->where('nip', $nip)->first();
+            if ($existing) {
+                // ✅ JIKA SUDAH ADA: Tambahkan kolom detail, TAPI JANGAN sentuh 'total'
+                DB::table('pelanggaran')
+                    ->where('nip', $nip)
+                    ->update([
+                        'tk'   => $existing->tk + ($row['tk'] ?? 0),
+                        'tl1'  => $existing->tl1 + ($row['tl1'] ?? 0),
+                        'tl2'  => $existing->tl2 + ($row['tl2'] ?? 0),
+                        'tl3'  => $existing->tl3 + ($row['tl3'] ?? 0),
+                        'psw1' => $existing->psw1 + ($row['psw1'] ?? 0),
+                        'psw2' => $existing->psw2 + ($row['psw2'] ?? 0),
+                        'psw3' => $existing->psw3 + ($row['psw3'] ?? 0),
+                        'psw4' => $existing->psw4 + ($row['psw4'] ?? 0),
+                        // ❌ 'total' sengaja TIDAK di-update di sini!
+                    ]);
+                
+                $pelanggaran_id = $existing->id;
 
-            if ($ada) {
-                DB::table('pelanggaran')->where('id', $ada->id)->update([
-                    'nama'  => $r['nama'] ?: $ada->nama,
-                    'tk'    => ($r['tk'] ?? 0) ?: $ada->tk,
-                    'tl1'   => $ada->tl1 + $r['tl1'],
-                    'tl2'   => $ada->tl2 + $r['tl2'],
-                    'tl3'   => $ada->tl3 + $r['tl3'],
-                    'psw1'  => $ada->psw1 + $r['psw1'],
-                    'psw2'  => $ada->psw2 + $r['psw2'],
-                    'psw3'  => $ada->psw3 + $r['psw3'],
-                    'psw4'  => $ada->psw4 + $r['psw4'],
-                    'total' => $ada->total + $r['total'],
-                ]);
-                $pelanggaranId = $ada->id;
             } else {
-                $pelanggaranId = DB::table('pelanggaran')->insertGetId([
+                // ✅ JIKA BELUM ADA: Buat record baru, total = 0 (Admin atur manual)
+                $pelanggaran_id = DB::table('pelanggaran')->insertGetId([
                     'nip'   => $nip,
-                    'nama'  => $r['nama'] ?: $nip,
-                    'tk'    => $r['tk'] ?? 0,
-                    'tl1'   => $r['tl1'], 'tl2' => $r['tl2'], 'tl3' => $r['tl3'],
-                    'psw1'  => $r['psw1'], 'psw2' => $r['psw2'],
-                    'psw3'  => $r['psw3'], 'psw4' => $r['psw4'],
-                    'total' => $r['total'],
+                    'nama'  => $row['nama'],
+                    'tk'    => $row['tk'] ?? 0,
+                    'tl1'   => $row['tl1'] ?? 0,
+                    'tl2'   => $row['tl2'] ?? 0,
+                    'tl3'   => $row['tl3'] ?? 0,
+                    'psw1'  => $row['psw1'] ?? 0,
+                    'psw2'  => $row['psw2'] ?? 0,
+                    'psw3'  => $row['psw3'] ?? 0,
+                    'psw4'  => $row['psw4'] ?? 0,
+                    'total' => 0, // Admin yang menentukan nilai awalnya
+                    'created_at' => now(),
+                    'updated_at' => now(),
                 ]);
             }
 
+            // 2. Simpan ke riwayat (history) agar tercatat upload kali ini
             DB::table('pelanggaran_riwayat')->insert([
-                'pelanggaran_id' => $pelanggaranId,
-                'tanggal' => $r['tanggal'],
-                'tk'    => $r['tk'] ?? 0, 
-                'tl1' => $r['tl1'], 'tl2' => $r['tl2'], 'tl3' => $r['tl3'],
-                'psw1' => $r['psw1'], 'psw2' => $r['psw2'],
-                'psw3' => $r['psw3'], 'psw4' => $r['psw4'],
-                'total' => $r['total'],
-                'sumber' => $r['sumber'],
+                'pelanggaran_id' => $pelanggaran_id, // ✅ PAKAI ID, BUKAN NIP!
+                'tanggal'        => $row['tanggal'],
+                'sumber'         => $row['sumber'],
+                'tk'             => $row['tk'] ?? 0,
+                'tl1'            => $row['tl1'] ?? 0,
+                'tl2'            => $row['tl2'] ?? 0,
+                'tl3'            => $row['tl3'] ?? 0,
+                'psw1'           => $row['psw1'] ?? 0,
+                'psw2'           => $row['psw2'] ?? 0,
+                'psw3'           => $row['psw3'] ?? 0,
+                'psw4'           => $row['psw4'] ?? 0,
+                'total'          => $row['total'] ?? 0, // Simpan total dari excel ke riwayat
+                'created_at'     => now(),
+                'updated_at'     => now(),
             ]);
+
+            $processed++;
         }
 
-        return response()->json(['success' => true]);
+        return response()->json([
+            'success' => true,
+            'message' => "Berhasil memproses {$processed} data pelanggaran."
+        ]);
     }
 
     // ✨ BARU: Tambah pegawai baru (akun login di tabel users)
@@ -107,19 +131,44 @@ class PelanggaranController extends Controller
         ], 201);
     }
 
-    // ✨ BARU: Admin update "Jumlah Pelanggaran" manual
-public function updateJumlah(Request $request, $id)
-{
-    $request->validate([
-        'jumlah' => 'required|integer|min:0',
-    ]);
+     // ✨ BARU: Admin update "Jumlah Pelanggaran" manual
+    public function updateJumlah(Request $request, $id)
+    {
+        $request->validate([
+            'jumlah' => 'required|integer|min:0',
+        ]);
 
-    DB::table('pelanggaran')
-        ->where('id', $id)
-        ->update(['total' => $request->jumlah]);
+        // Ambil data lama untuk menghitung selisih penambahan
+        $pelanggaran = DB::table('pelanggaran')->where('id', $id)->first();
+        $selisih = $request->jumlah - $pelanggaran->total;
 
-    return response()->json(['success' => true]);
-}
+        // Update total utama di tabel pelanggaran
+        DB::table('pelanggaran')
+            ->where('id', $id)
+            ->update(['total' => $request->jumlah, 'updated_at' => now()]);
+
+        // ✅ PENTING: Jika admin MENAMBAH menit, catat di riwayat agar muncul di tampilan pegawai!
+        if ($selisih > 0) {
+            DB::table('pelanggaran_riwayat')->insert([
+                'pelanggaran_id' => $id,
+                'tanggal'        => now()->format('Y-m-d H:i:s'),
+                'sumber'         => 'Penyesuaian Manual Admin',
+                'tk'             => 0,
+                'tl1'            => 0,
+                'tl2'            => 0,
+                'tl3'            => 0,
+                'psw1'           => 0,
+                'psw2'           => 0,
+                'psw3'           => 0,
+                'psw4'           => 0,
+                'total'          => $selisih, // Simpan selisih penambahannya (misal: 30 atau 20)
+                'created_at'     => now(),
+                'updated_at'     => now(),
+            ]);
+        }
+
+        return response()->json(['success' => true]);
+    }
 
     public function destroy($id)
     {
