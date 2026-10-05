@@ -8,7 +8,7 @@ import {
   Search,
 } from 'lucide-react'
 
-const API = 'http://localhost:8000/api'
+const API = 'http://10.20.32.56:8000/api'
 
 const statusRuangan = (status) => {
   if (status === 'Tersedia') {

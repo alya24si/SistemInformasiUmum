@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import * as XLSX from 'xlsx'
 import { api } from '../api'
 
-const API = 'http://localhost:8000/api'
+const API = 'http://10.20.32.56:8000/api'
 
 const daftarBulan = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember']
 const tahunIni = new Date().getFullYear()

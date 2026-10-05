@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, Fragment } from 'react'
 import { api } from '../api' // ✨ BARU
 
-const API = 'http://localhost:8000/api'
+const API = 'http://10.20.32.56:8000/api'
 const daftarBidang = ['Umum', 'P2', 'KI', 'Pabean', 'Fasilitas']
 const daftarBulan = [
   'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',

@@ -1,6 +1,6 @@
 import { useState } from 'react'
 
-const API = 'http://localhost:8000/api'
+const API = 'http://10.20.32.56:8000/api'
 
 // Ikon mata terbuka
 const IconEye = () => (

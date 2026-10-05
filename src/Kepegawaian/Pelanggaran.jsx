@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import * as XLSX from 'xlsx'
 import { api } from '../api' // ✨ BARU: Import kurir pintar
 
-const API = 'http://localhost:8000/api'
+const API = 'http://10.20.32.56:8000/api'
 
 /* ========================================================= */
 /* ✨ KONVERSI WAKTU: input dalam MENIT                       */

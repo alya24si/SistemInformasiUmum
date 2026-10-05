@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { api } from '../api' // ✨ BARU: Import kurir pintar
 import { TrendingUp, X } from 'lucide-react'
 
-const API_URL = 'http://127.0.0.1:8000/api'
+const API_URL = 'http://http://10.20.32.56:8000/api'
 
 // Sama persis logikanya kayak di KenaikanGajiBerkala.jsx -- lihat file itu
 // untuk penjelasan lengkap kenapa dihitung begini (siklus 4 tahun dari TMT

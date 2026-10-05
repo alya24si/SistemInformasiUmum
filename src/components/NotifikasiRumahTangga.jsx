@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { api } from '../api' // ✨ BARU: Import kurir pintar
 import { Bell, X } from 'lucide-react'
 
-const API = 'http://localhost:8000/api'
+const API = 'http://10.20.32.56:8000/api'
 
 // 🔔 Notifikasi Rumah Tangga -- widget mengambang di pojok kanan bawah,
 // mirip notifikasi web pada umumnya. Isinya daftar booking & kerusakan

@@ -17,7 +17,7 @@ import {
   Trash2,
 } from 'lucide-react'
 
-const API_URL = 'http://127.0.0.1:8000/api'
+const API_URL = 'http://http://10.20.32.56:8000/api'
 
 // Kenaikan Gaji Berkala (KGB) terjadi tiap 4 tahun sekali, dihitung dari
 // TMT Pangkat. Begitu satu siklus 4 tahun lewat, TMT Pangkat yang

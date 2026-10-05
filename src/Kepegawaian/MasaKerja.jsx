@@ -20,7 +20,7 @@ import {
   Download,
 } from 'lucide-react'
 
-const API_URL = 'http://127.0.0.1:8000/api'
+const API_URL = 'http://http://10.20.32.56:8000/api'
 
 function MasaKerja({ user }) {
   const isAdmin = true
