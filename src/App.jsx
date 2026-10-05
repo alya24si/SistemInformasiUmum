@@ -41,6 +41,10 @@ function App() {
 
   const isAdminKeuangan = user.role === 'admin_keuangan' || isSuperAdmin
   const isAdminKepegawaian = user.role === 'admin_kepegawaian' || isSuperAdmin
+  // ✨ BARU: sebelumnya belum didefinisikan di sini (cuma ada di Sidebar.jsx).
+  // Dibutuhkan sekarang buat nyamain guard rute Keuangan & Kepegawaian di
+  // bawah dengan logic bolehKeuangan/bolehDataPegawai/dst di Sidebar.jsx.
+  const isAdminRT = user.role === 'admin_rumahtangga' || isSuperAdmin
 
   const halamanAwal = () => {
     if (isAdminKepegawaian && !isSuperAdmin) return '/data-absensi'
@@ -59,8 +63,11 @@ function App() {
           <Routes>
             <Route path="/" element={<Navigate to={halamanAwal()} />} />
 
-            <Route path="/program-kerja" element={isAdminKeuangan || isGuest ? <ProgramKerja user={user} /> : <Navigate to="/" />} />
-            <Route path="/anggaran" element={isAdminKeuangan || isGuest ? <Anggaran user={user} /> : <Navigate to="/" />} />
+            {/* ✨ UBAH: nambah isAdminKepegawaian & isAdminRT, nyamain sama
+                bolehKeuangan di Sidebar.jsx. Admin Keuangan & guest TIDAK
+                disentuh -- kondisi lama mereka tetap persis sama. */}
+            <Route path="/program-kerja" element={isAdminKeuangan || isGuest || isAdminKepegawaian || isAdminRT ? <ProgramKerja user={user} /> : <Navigate to="/" />} />
+            <Route path="/anggaran" element={isAdminKeuangan || isGuest || isAdminKepegawaian || isAdminRT ? <Anggaran user={user} /> : <Navigate to="/" />} />
 
             {/* 🏠 RUMAH TANGGA */}
             <Route path="/data-ruangan" element={<DataRuangan user={user} />} />
@@ -79,9 +86,11 @@ function App() {
             <Route path="/perbaikan-ruangan" element={<Navigate to="/perbaikan" replace />} />
             <Route path="/perbaikan-mobil" element={<Navigate to="/perbaikan" replace />} />
 
-            <Route path="/data-pegawai" element={isAdminKepegawaian ? <DataPegawai user={user} /> : <Navigate to="/" />} />
-            <Route path="/data-absensi" element={isAdminKepegawaian || isPegawaiBiasa ? <DataAbsensi user={user} /> : <Navigate to="/" />} />
-            <Route path="/pelanggaran" element={isAdminKepegawaian || isPegawaiBiasa ? <Pelanggaran user={user} /> : <Navigate to="/" />} />
+            {/* ✨ UBAH: nambah isAdminRT, nyamain sama bolehDataPegawai/
+                bolehDataAbsensi/bolehPelanggaran di Sidebar.jsx. */}
+            <Route path="/data-pegawai" element={isAdminKepegawaian || isAdminRT ? <DataPegawai user={user} /> : <Navigate to="/" />} />
+            <Route path="/data-absensi" element={isAdminKepegawaian || isPegawaiBiasa || isAdminRT ? <DataAbsensi user={user} /> : <Navigate to="/" />} />
+            <Route path="/pelanggaran" element={isAdminKepegawaian || isPegawaiBiasa || isAdminRT ? <Pelanggaran user={user} /> : <Navigate to="/" />} />
 
             {/* 🟢 KANG CEPOT — hanya Admin Keuangan & Superadmin */}
             <Route path="/kang-cepot" element={(isAdminKeuangan || isPegawaiBiasa) ? <KangCepot user={user} /> : <Navigate to="/" />} />

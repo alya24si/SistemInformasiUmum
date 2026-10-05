@@ -216,14 +216,13 @@ function Sidebar({ user }) {
   const isGuest = user.role === 'guest'
 
   const isAdminKeuangan = user.role === 'admin_keuangan' || isSuperAdmin
-  const isAdminKepegawaian = user.role === 'admin_kepegawaian' || isSuperAdmin
+  const isAdminKepegawaian = user.role === 'admin_kepegawaian' || isSuperAdmin 
   const isAdminRT = user.role === 'admin_rumahtangga' || isSuperAdmin
 
-  const bolehKeuangan = isAdminKeuangan || isGuest
-  const bolehDataPegawai = isAdminKepegawaian
-  const bolehPelanggaran = isAdminKepegawaian || isPegawaiBiasa
-  const bolehDataAbsensi = isAdminKepegawaian || isPegawaiBiasa
-
+const bolehKeuangan = isAdminKeuangan || isGuest || isAdminKepegawaian || isAdminRT
+  const bolehDataPegawai = isAdminKepegawaian || isAdminRT
+  const bolehPelanggaran = isAdminKepegawaian || isAdminRT || isPegawaiBiasa
+  const bolehDataAbsensi = isAdminKepegawaian || isAdminRT || isPegawaiBiasa
   const bolehKangCepot = isAdminKeuangan || isPegawaiBiasa
 
   const [jumlahBookingMenunggu, setJumlahBookingMenunggu] = useState(0)
@@ -249,9 +248,6 @@ function Sidebar({ user }) {
     return tabUrl === tabValue
   }
 
-  // ✨ FIX: dibuat fungsi supaya NavLink TIDAK menambah class "active" otomatis
-  // (NavLink cuma cek path, tidak cek ?tab=). Jadi cuma submenu yang ?tab= nya
-  // cocok yang menyala. Berlaku untuk Kerusakan, Perbaikan, dan Data Pegawai.
   const kelasSub = (aktifSub) => () => 'menu-item' + (aktifSub ? ' active' : '')
   const subIndentStyle = { paddingLeft: '34px', display: 'flex', alignItems: 'center' }
 
@@ -263,7 +259,7 @@ function Sidebar({ user }) {
   }
 
 useEffect(() => {
-  // ✨ TAMBAHKAN INI: Jangan fetch kalau user belum login
+  // 
   if (!user || !user.role || !isAdminRT) return
   
   let batal = false
