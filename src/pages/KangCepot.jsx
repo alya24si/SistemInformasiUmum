@@ -6,6 +6,7 @@ const API = 'http://localhost:8000/api'
 
 const daftarBulan = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember']
 const tahunIni = new Date().getFullYear()
+const ITEMS_PER_PAGE = 10
 
 const cariKolom = (row, ...kemungkinan) => {
   for (const key of Object.keys(row)) {
@@ -140,14 +141,6 @@ const IkonPlus = (p) => (
   </SvgIkon>
 )
 
-const IkonSave = (p) => (
-  <SvgIkon {...p}>
-    <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" />
-    <polyline points="17 21 17 13 7 13 7 21" />
-    <polyline points="7 3 7 8 15 8" />
-  </SvgIkon>
-)
-
 const IkonPencil = (p) => (
   <SvgIkon {...p}>
     <path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" />
@@ -175,6 +168,12 @@ const IkonMessage = (p) => (
   </SvgIkon>
 )
 
+const IkonPlay = (p) => (
+  <SvgIkon {...p}>
+    <polygon points="6 3 20 12 6 21 6 3" />
+  </SvgIkon>
+)
+
 const IkonTrash = (p) => (
   <SvgIkon {...p}>
     <path d="M3 6h18" />
@@ -198,6 +197,7 @@ function KangCepot({ user }) {
   const [kelola, setKelola] = useState(null)
   const [profil, setProfil] = useState(null)
   const [popupDitutup, setPopupDitutup] = useState(false)
+  const [currentPage, setCurrentPage] = useState(0)
 
   const muatData = async () => {
     const res = await api('/iuran')
@@ -606,6 +606,10 @@ function KangCepot({ user }) {
     filterStatus === 'semua' || d.status_bayar === filterStatus
   )
 
+  const totalPages = Math.max(1, Math.ceil(dataFiltered.length / ITEMS_PER_PAGE))
+  const halaman = Math.min(currentPage, totalPages - 1)
+  const dataPaginated = dataFiltered.slice(halaman * ITEMS_PER_PAGE, halaman * ITEMS_PER_PAGE + ITEMS_PER_PAGE)
+
   return (
     <div style={{ ...pageStyle, backgroundImage: 'linear-gradient(rgba(245,248,252,.88), rgba(245,248,252,.92)), url(/kang-cepot.png)', backgroundSize: 'cover', backgroundPosition: 'center', backgroundAttachment: 'fixed' }}>
       <div style={headerStyle}>
@@ -627,14 +631,14 @@ function KangCepot({ user }) {
               <h2 style={sectionTitle}><IkonUpload size={17} /> Upload Excel Iuran</h2>
               <p style={sectionSubtitle}>Kolom dibaca: NAMA | NIP | NO HP | DPP | BAPORS | DKM/PWK.</p>
             </div>
-            <button onClick={() => setShowForm(!showForm)} style={btnTambah}>
-              {showForm ? <><IkonX size={14} /> Tutup Form</> : <><IkonPlus size={14} /> Tambah Pegawai Baru</>}
+            <button type="button" className="btn" onClick={() => setShowForm(!showForm)} style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              {showForm ? 'Tutup' : <><IkonPlus size={14} /> Tambah Pegawai Baru</>}
             </button>
           </div>
         </div>
 
         {showForm && (
-          <form onSubmit={tambahPegawai} style={{ padding: '20px', backgroundColor: '#fef9e7', borderBottom: '1px solid #fde68a' }}>
+          <form onSubmit={tambahPegawai} style={{ padding: '20px', borderBottom: '1px solid #e2e8f0' }}>
             <div style={formGrid}>
               <div><label style={labelStyle}>Nama</label><input type="text" required value={formTambah.nama} onChange={(e) => setFormTambah({ ...formTambah, nama: e.target.value })} style={inputStyle} /></div>
               <div><label style={labelStyle}>NIP</label><input type="text" required value={formTambah.nip} onChange={(e) => setFormTambah({ ...formTambah, nip: e.target.value })} style={inputStyle} /></div>
@@ -648,7 +652,7 @@ function KangCepot({ user }) {
               </div>
             </div>
             <div style={{ display: 'flex', gap: '8px', marginTop: '16px' }}>
-              <button type="submit" style={btnSimpan}><IkonSave size={14} /> Simpan</button>
+              <button type="submit" className="btn">Simpan</button>
               <button type="button" onClick={() => setShowForm(false)} style={btnBatal}>Batal</button>
             </div>
           </form>
@@ -680,7 +684,7 @@ function KangCepot({ user }) {
             </div>
             <div style={{ marginTop: '16px', fontSize: '18px', fontWeight: 800, color: '#92400e' }}>TOTAL OTOMATIS: {formatTitik(totalEdit)}</div>
             <div style={{ display: 'flex', gap: '8px', marginTop: '16px' }}>
-              <button type="submit" style={btnSimpan}><IkonSave size={14} /> Simpan</button>
+              <button type="submit" className="btn">Simpan</button>
               <button type="button" onClick={() => setEditing(null)} style={btnBatal}>Batal</button>
             </div>
           </form>
@@ -697,7 +701,7 @@ function KangCepot({ user }) {
 
         <div style={{ padding: '16px 20px 0', display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap' }}>
           <span style={{ fontSize: '13px', fontWeight: 600, color: '#334155' }}><IkonSearch size={14} /> Filter Status:</span>
-          <select value={filterStatus} onChange={(e) => setFilterStatus(e.target.value)} style={{ ...inputStyle, width: 'auto' }}>
+          <select value={filterStatus} onChange={(e) => { setFilterStatus(e.target.value); setCurrentPage(0) }} style={{ ...inputStyle, width: 'auto' }}>
             <option value="semua">Semua</option>
             <option value="sudah">Sudah Bayar</option>
             <option value="belum">Belum Bayar</option>
@@ -706,33 +710,33 @@ function KangCepot({ user }) {
         </div>
 
         <div style={{ overflowX: 'auto', padding: '16px 20px 20px' }}>
-          <table style={tableStyle}>
+          <table className="table" style={{ minWidth: '1100px' }}>
             <thead>
               <tr>
-                <th style={thStyle}>No</th>
-                <th style={thStyle}>Nama</th>
-                <th style={thStyle}>NIP</th>
-                <th style={thStyle}>No HP / WA</th>
-                <th style={{ ...thStyle, textAlign: 'center' }}>DPP</th>
-                <th style={{ ...thStyle, textAlign: 'center' }}>Bapors</th>
-                <th style={{ ...thStyle, textAlign: 'center' }}>Keagamaan</th>
-                <th style={{ ...thStyle, textAlign: 'center' }}>Total</th>
-                <th style={thStyle}>Status</th>
-                <th style={thStyle}>Aksi</th>
+                <th>No</th>
+                <th>Nama</th>
+                <th>NIP</th>
+                <th>No HP / WA</th>
+                <th style={{ textAlign: 'center' }}>DPP</th>
+                <th style={{ textAlign: 'center' }}>Bapors</th>
+                <th style={{ textAlign: 'center' }}>Keagamaan</th>
+                <th style={{ textAlign: 'center' }}>Total</th>
+                <th>Status</th>
+                <th>Aksi</th>
               </tr>
             </thead>
             <tbody>
               {dataFiltered.length === 0 ? (
                 <tr><td colSpan="10" style={emptyStyle}><IkonUpload size={15} /> Tidak ada data. Upload Excel atau tambah pegawai manual.</td></tr>
               ) : (
-                dataFiltered.map((d, i) => {
+                dataPaginated.map((d, i) => {
                   const siapWa = d.total > 0 && d.no_hp
                   return (
                     <tr key={d.id}>
-                      <td style={tdStyle}>{i + 1}</td>
-                      <td style={tdStyle}><strong>{d.nama}</strong></td>
-                      <td style={tdStyle}>{d.nip}</td>
-                      <td style={tdStyle}>
+                      <td>{halaman * ITEMS_PER_PAGE + i + 1}</td>
+                      <td><strong>{d.nama}</strong></td>
+                      <td>{d.nip}</td>
+                      <td>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                           <span>{d.no_hp || '—'}</span>
                           <button onClick={() => kirimWa(d)} disabled={!siapWa}
@@ -741,21 +745,25 @@ function KangCepot({ user }) {
                           </button>
                         </div>
                       </td>
-                      <td style={{ ...tdStyle, textAlign: 'center' }}>{formatTitik(d.dpp)}</td>
-                      <td style={{ ...tdStyle, textAlign: 'center' }}>{formatTitik(d.bapors)}</td>
-                      <td style={{ ...tdStyle, textAlign: 'center' }}>{formatTitik(d.keagamaan)}</td>
-                      <td style={{ ...tdStyle, textAlign: 'center', fontWeight: 800, color: '#dc2626' }}>{formatTitik(d.total)}</td>
-                      <td style={tdStyle}>
+                      <td style={{ textAlign: 'center' }}>{formatTitik(d.dpp)}</td>
+                      <td style={{ textAlign: 'center' }}>{formatTitik(d.bapors)}</td>
+                      <td style={{ textAlign: 'center' }}>{formatTitik(d.keagamaan)}</td>
+                      <td style={{ textAlign: 'center', fontWeight: 800, color: '#dc2626' }}>{formatTitik(d.total)}</td>
+                      <td>
                         <span style={{ padding: '5px 10px', borderRadius: '20px', fontSize: '11px', fontWeight: 700, backgroundColor: d.status_bayar === 'sudah' ? '#dcfce7' : '#fee2e2', color: d.status_bayar === 'sudah' ? '#166534' : '#991b1b' }}>
                           {d.status_bayar === 'sudah' ? <><IkonCheck size={10} /> SUDAH</> : <><IkonX size={10} /> BELUM</>}
                         </span>
                       </td>
-                      <td style={tdStyle}>
-                        <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
-                          <button onClick={() => bukaKelola(d)} style={btnKelola}><IkonCalendar size={11} /> Kelola</button>
-                          <button onClick={() => mulaiEdit(d)} style={btnEdit}><IkonPencil size={11} /> Edit</button>
-                          <button onClick={() => hapus(d.id)} style={btnHapus}><IkonTrash size={12} /></button>
-                        </div>
+                      <td>
+                        <button className="btn" style={{ padding: '4px 8px', fontSize: '11px', marginRight: '4px' }} onClick={() => bukaKelola(d)}>
+                          <IkonPlay size={11} /> Kelola
+                        </button>
+                        <button className="btn" style={{ padding: '4px 8px', fontSize: '11px', marginRight: '4px' }} onClick={() => mulaiEdit(d)}>
+                          <IkonPencil size={11} /> Edit
+                        </button>
+                        <button className="btn-danger" onClick={() => hapus(d.id)}>
+                          <IkonTrash size={12} />
+                        </button>
                       </td>
                     </tr>
                   )
@@ -763,6 +771,12 @@ function KangCepot({ user }) {
               )}
             </tbody>
           </table>
+
+          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px', marginTop: '16px', alignItems: 'center' }}>
+            <button onClick={() => setCurrentPage(Math.max(0, halaman - 1))} disabled={halaman === 0} className="btn" style={{ padding: '6px 10px', borderRadius: '6px', border: '1px solid #cbd5e1', backgroundColor: '#fff', cursor: halaman === 0 ? 'not-allowed' : 'pointer', opacity: halaman === 0 ? 0.5 : 1, fontSize: '11px', fontWeight: 600 }}>Back</button>
+            <span style={{ fontSize: '11px', fontWeight: '500', color: '#64748b' }}>{halaman + 1} / {totalPages}</span>
+            <button onClick={() => setCurrentPage(Math.min(totalPages - 1, halaman + 1))} disabled={halaman + 1 >= totalPages} className="btn" style={{ padding: '6px 10px', borderRadius: '6px', border: '1px solid #cbd5e1', backgroundColor: '#fff', cursor: halaman + 1 >= totalPages ? 'not-allowed' : 'pointer', opacity: halaman + 1 >= totalPages ? 0.5 : 1, fontSize: '11px', fontWeight: 600 }}>Next</button>
+          </div>
         </div>
       </div>
 
@@ -845,16 +859,8 @@ const filterGrid = { display: 'grid', gridTemplateColumns: '1fr', gap: '15px', p
 const formGrid = { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '15px' }
 const labelStyle = { display: 'block', marginBottom: '7px', color: '#334155', fontSize: '13px', fontWeight: 600 }
 const inputStyle = { width: '100%', boxSizing: 'border-box', padding: '10px 12px', border: '1px solid #cbd5e1', borderRadius: '8px', backgroundColor: '#fff', color: '#334155', fontSize: '13px' }
-const tableStyle = { width: '100%', borderCollapse: 'collapse', minWidth: '1100px' }
-const thStyle = { padding: '13px 15px', textAlign: 'left', backgroundColor: '#f8fafc', color: '#64748b', fontSize: '11px', textTransform: 'uppercase' }
-const tdStyle = { padding: '15px', color: '#64748b', fontSize: '13px', borderBottom: '1px solid #edf2f7' }
 const emptyStyle = { padding: '50px', textAlign: 'center', color: '#94a3b8' }
-const btnTambah = { padding: '10px 16px', borderRadius: '8px', border: 'none', backgroundColor: '#16a34a', color: '#fff', fontSize: '13px', fontWeight: 700, cursor: 'pointer', whiteSpace: 'nowrap' }
-const btnSimpan = { padding: '10px 18px', borderRadius: '8px', border: 'none', backgroundColor: '#2563eb', color: '#fff', fontSize: '13px', fontWeight: 700, cursor: 'pointer' }
 const btnBatal = { padding: '10px 18px', borderRadius: '8px', border: '1px solid #cbd5e1', backgroundColor: '#fff', color: '#334155', fontSize: '13px', fontWeight: 600, cursor: 'pointer' }
-const btnEdit = { padding: '6px 10px', borderRadius: '8px', border: '1px solid #bfdbfe', backgroundColor: '#eff6ff', color: '#1d4ed8', fontSize: '12px', fontWeight: 700, cursor: 'pointer' }
-const btnHapus = { padding: '6px 10px', borderRadius: '8px', border: '1px solid #f5c2c2', backgroundColor: '#fdecec', color: '#b91c1c', fontSize: '12px', fontWeight: 700, cursor: 'pointer' }
-const btnKelola = { padding: '6px 10px', borderRadius: '8px', border: '1px solid #fde68a', backgroundColor: '#fef3c7', color: '#92400e', fontSize: '12px', fontWeight: 700, cursor: 'pointer' }
 const infoStyle = { backgroundColor: '#dcfce7', color: '#166534', padding: '10px 12px', borderRadius: '8px', fontSize: '13px', fontWeight: 600 }
 const statBox = { backgroundColor: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '10px', padding: '14px', textAlign: 'center' }
 const statLabel = { fontSize: '11px', color: '#64748b', fontWeight: 700, textTransform: 'uppercase', marginBottom: '6px' }

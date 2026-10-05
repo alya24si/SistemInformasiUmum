@@ -249,7 +249,10 @@ function Sidebar({ user }) {
     return tabUrl === tabValue
   }
 
-  const kelasSub = (aktifSub) => 'menu-item' + (aktifSub ? ' active' : '')
+  // ✨ FIX: dibuat fungsi supaya NavLink TIDAK menambah class "active" otomatis
+  // (NavLink cuma cek path, tidak cek ?tab=). Jadi cuma submenu yang ?tab= nya
+  // cocok yang menyala. Berlaku untuk Kerusakan, Perbaikan, dan Data Pegawai.
+  const kelasSub = (aktifSub) => () => 'menu-item' + (aktifSub ? ' active' : '')
   const subIndentStyle = { paddingLeft: '34px', display: 'flex', alignItems: 'center' }
 
   const groupHeaderStyle = {

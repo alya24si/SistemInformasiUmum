@@ -129,6 +129,36 @@ class PegawaiController extends Controller
         DB::table('pegawai')->where('id', $id)->delete();
         return response()->json(['success' => true]);
     }
+
+    // 5. Kosongkan TMT Pangkat saja (dipakai halaman Kenaikan Gaji Berkala)
+    public function hapusTmtPangkat($id)
+    {
+        $row = DB::table('pegawai')->where('id', $id)->first();
+
+        if (! $row) {
+            return response()->json(['success' => false, 'message' => 'Data tidak ditemukan'], 404);
+        }
+
+        DB::table('pegawai')->where('id', $id)->update(['tmt_pangkat' => null]);
+
+        return response()->json(['success' => true]);
+    }
+
+    // 6. Kosongkan tanggal masuk saja (dipakai halaman Masa Kerja --
+    //    field lain, termasuk tmt_pangkat, sengaja TIDAK ikut terhapus)
+    public function hapusMasaKerja($id)
+    {
+        $row = DB::table('pegawai')->where('id', $id)->first();
+
+        if (! $row) {
+            return response()->json(['success' => false, 'message' => 'Data tidak ditemukan'], 404);
+        }
+
+        DB::table('pegawai')->where('id', $id)->update(['tanggal_masuk' => null]);
+
+        return response()->json(['success' => true]);
+    }
+
     public function import(Request $request)
     {
         $request->validate([

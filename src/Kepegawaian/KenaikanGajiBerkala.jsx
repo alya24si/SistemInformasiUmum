@@ -14,6 +14,7 @@ import {
   Clock,
   CheckCircle2,
   XCircle,
+  Trash2,
 } from 'lucide-react'
 
 const API_URL = 'http://127.0.0.1:8000/api'
@@ -636,12 +637,6 @@ function KenaikanGajiBerkala({ user }) {
             <Upload size={18} /> Import Data Pegawai (TMT Pangkat)
           </h3>
 
-          <p style={{ margin: '5px 0 14px', color: '#64748b', fontSize: '13px' }}>
-            Kolom NIP dipakai buat mencocokkan pegawai yang sudah ada --
-            data lain di file (nama, jabatan, dll) selain kolom TMT Pangkat
-            gak wajib diisi.
-          </p>
-
           <div className="form-row">
             <input
               type="file"
@@ -1094,7 +1089,7 @@ function KenaikanGajiBerkala({ user }) {
                                 cursor: 'pointer',
                               }}
                             >
-                              <X size={14} color="#dc2626" />
+                              <Trash2 size={14} color="#dc2626" />
                             </button>
                           </div>
                         </td>

@@ -858,6 +858,8 @@ function DataRuangan({ user }) {
             >
 
               <button
+                type="button"
+                className="btn"
                 onClick={() =>
                   setCurrentPage(
                     (prev) =>
@@ -906,6 +908,8 @@ function DataRuangan({ user }) {
               </span>
 
               <button
+                type="button"
+                className="btn"
                 onClick={() =>
                   setCurrentPage((prev) =>
                     Math.min(prev + 1, totalPages - 1)
