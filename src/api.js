@@ -1,4 +1,4 @@
-const API = 'http://localhost:8000/api'
+const API = 'http://10.20.32.56:8000/api'
 
 /**
  * Pengganti fetch() yang otomatis mengirim token login.
