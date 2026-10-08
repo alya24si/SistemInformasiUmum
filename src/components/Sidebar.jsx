@@ -219,10 +219,10 @@ function Sidebar({ user }) {
   const isAdminKepegawaian = user.role === 'admin_kepegawaian' || isSuperAdmin 
   const isAdminRT = user.role === 'admin_rumahtangga' || isSuperAdmin
 
-const bolehKeuangan = isAdminKeuangan || isGuest || isAdminKepegawaian || isAdminRT
-  const bolehDataPegawai = isAdminKepegawaian || isAdminRT
-  const bolehPelanggaran = isAdminKepegawaian || isAdminRT || isPegawaiBiasa
-  const bolehDataAbsensi = isAdminKepegawaian || isAdminRT || isPegawaiBiasa
+  const bolehKeuangan = isAdminKeuangan || isGuest
+  const bolehDataPegawai = isAdminKepegawaian
+  const bolehPelanggaran = isAdminKepegawaian || isPegawaiBiasa
+  const bolehDataAbsensi = isAdminKepegawaian  || isPegawaiBiasa
   const bolehKangCepot = isAdminKeuangan || isPegawaiBiasa
 
   const [jumlahBookingMenunggu, setJumlahBookingMenunggu] = useState(0)
