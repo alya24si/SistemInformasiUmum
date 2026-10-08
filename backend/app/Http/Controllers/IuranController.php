@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
 
 class IuranController extends Controller
 {
@@ -54,6 +55,19 @@ class IuranController extends Controller
                     'status_bayar' => 'belum',
                 ]);
             }
+
+            // ✨ Otomatis buat akun guest jika NIP belum ada di tabel users
+            $cekUser = DB::table('users')->where('nip', $nip)->first();
+            if (!$cekUser) {
+                DB::table('users')->insert([
+                    'name' => $r['nama'] ?: $nip,
+                    'username' => $nip,
+                    'password' => Hash::make($nip),
+                    'role' => 'guest',
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ]);
+            }
         }
         return response()->json(['success' => true]);
     }
@@ -97,7 +111,6 @@ class IuranController extends Controller
         return response()->json(['success' => true]);
     }
 
-    // ✨ Ambil status 12 bulan untuk popup Kelola
     public function bulanan($id)
     {
         $data = DB::table('iuran_bulanan')
@@ -107,8 +120,6 @@ class IuranController extends Controller
         return response()->json(['success' => true, 'data' => $data]);
     }
 
-    
-    // ✨ Toggle status bulan (sudah/belum) + AUTO update status utama
     public function updateBulan(Request $request, $id)
     {
         $request->validate([
@@ -135,7 +146,6 @@ class IuranController extends Controller
             ]);
         }
 
-        // ✨ AUTO SYNC: 12 bulan sudah bayar => "sudah", selain itu => "belum"
         $jumlahSudah = DB::table('iuran_bulanan')
             ->where('iuran_id', $id)
             ->where('tahun', $tahun)
@@ -149,7 +159,6 @@ class IuranController extends Controller
         return response()->json(['success' => true]);
     }
 
-    // ✨ Cek tagihan untuk halaman Pelanggaran pegawai (aktif tiap tanggal 4+)
     public function tagihan($nip)
     {
         if ((int) now()->format('j') < 4) {
@@ -162,7 +171,6 @@ class IuranController extends Controller
         }
 
         $daftarBulan = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
-
         $tahun = (int) now()->format('Y');
         $bulanBerlalu = array_slice($daftarBulan, 0, (int) now()->format('n'));
 
@@ -187,27 +195,26 @@ class IuranController extends Controller
         ]);
     }
 
-    // ✨ Data iuran + status 12 bulan milik pegawai (untuk halaman KANG CEPOT pegawai)
-public function profil($nip)
-{
-    $iuran = DB::table('iuran')->where('nip', $nip)->first();
-    if (!$iuran) {
-        return response()->json(['success' => false, 'message' => 'Data iuran tidak ditemukan'], 404);
+    public function profil($nip)
+    {
+        $iuran = DB::table('iuran')->where('nip', $nip)->first();
+        if (!$iuran) {
+            return response()->json(['success' => false, 'message' => 'Data iuran tidak ditemukan'], 404);
+        }
+
+        $tahun = (int) now()->format('Y');
+        $bulanan = DB::table('iuran_bulanan')
+            ->where('iuran_id', $iuran->id)
+            ->where('tahun', $tahun)
+            ->get();
+
+        return response()->json([
+            'success' => true,
+            'data' => $iuran,
+            'bulanan' => $bulanan,
+            'tahun' => $tahun,
+        ]);
     }
-
-    $tahun = (int) now()->format('Y');
-    $bulanan = DB::table('iuran_bulanan')
-        ->where('iuran_id', $iuran->id)
-        ->where('tahun', $tahun)
-        ->get();
-
-    return response()->json([
-        'success' => true,
-        'data' => $iuran,
-        'bulanan' => $bulanan,
-        'tahun' => $tahun,
-    ]);
-}
 
     public function destroy($id)
     {
