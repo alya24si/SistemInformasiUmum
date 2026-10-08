@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, Fragment } from 'react'
-import { api } from '../api' // ✨ BARU
+import { api } from '../api'
 
 const API = 'http://10.20.32.56:8000/api'
 const daftarBidang = ['Umum', 'P2', 'KI', 'Pabean', 'Fasilitas']
@@ -19,7 +19,6 @@ const formatTitik = (angka) => {
   return n.replace(/\B(?=(\d{3})+(?!\d))/g, '.')
 }
 
-// persen terserap per kegiatan = realisasi ÷ target
 const persenKegiatan = (k) =>
   k.target_anggaran > 0
     ? Math.min(100, Math.round((k.realisasi / k.target_anggaran) * 100))
@@ -161,6 +160,30 @@ function ProgramKerja({ user }) {
   const isAdmin =
     user.role === 'admin_keuangan' ||
     user.role === 'superadmin'
+
+  // ✨ BARU: Proteksi akses berdasarkan role (Mencegah akses via URL langsung)
+  const allowedRoles = ['admin_keuangan', 'superadmin', 'guest']
+  if (!user || !allowedRoles.includes(user.role)) {
+    return (
+      <div style={{ 
+        padding: '60px 20px', 
+        textAlign: 'center', 
+        color: '#64748b',
+        minHeight: '60vh',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center'
+      }}>
+        <div style={{ fontSize: '64px', marginBottom: '24px' }}>🔒</div>
+        <h2 style={{ color: '#1e293b', marginBottom: '12px', fontSize: '24px' }}>Akses Ditolak</h2>
+        <p style={{ fontSize: '16px', marginBottom: '8px' }}>Anda tidak memiliki izin untuk mengakses halaman Program Kerja.</p>
+        <p style={{ fontSize: '14px', color: '#94a3b8', maxWidth: '400px' }}>
+          Halaman ini hanya dapat diakses oleh <strong>Admin Keuangan</strong>, <strong>Superadmin</strong>, dan <strong>Guest Bidang</strong>.
+        </p>
+      </div>
+    )
+  }
 
   const [programs, setPrograms] = useState([])
   const [selectedId, setSelectedId] = useState(null)
@@ -409,7 +432,6 @@ function ProgramKerja({ user }) {
     }
   }
 
-  // ✨ RINGKASAN: Target vs Terlaksana vs Selisih (Rupiah)
   const SectionRingkasan = () => {
     const totalTarget = programsFiltered.reduce((a, p) => a + hitungTarget(p), 0)
     const totalSudah = programsFiltered.reduce((a, p) => a + hitungRealisasi(p), 0)
