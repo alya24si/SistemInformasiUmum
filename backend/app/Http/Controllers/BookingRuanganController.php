@@ -113,8 +113,7 @@ class BookingRuanganController extends Controller
         return response()->json(['success' => true]);
     }
 
-    // 5. HAPUS / BATALKAN booking
-        // 5. HAPUS / BATALKAN booking (Dengan Cek RBAC & Kepemilikan)
+         // 5. HAPUS / BATALKAN booking (Dengan Cek RBAC & Kepemilikan + Fix Auth)
     public function destroy(Request $request, $id)
     {
         // 1. Cari data booking berdasarkan ID
@@ -127,26 +126,41 @@ class BookingRuanganController extends Controller
             ], 404);
         }
 
-        // 2. Ambil data user yang sedang login (dari middleware auth.api)
-        $user = $request->user();
+        // 2. Ambil data user (SAMA PERSIS seperti di middleware CekPermission & AuthApi)
+        $user = $request->attributes->get('user');
+        
+        // Fallback jika ada sistem lain yang inject via request body
+        if (!$user && $request->has('authenticated_user')) {
+            $user = (object) $request->input('authenticated_user');
+        }
+
+        if (!$user) {
+            return response()->json([
+                'success' => false, 
+                'message' => 'Sesi tidak valid. Silakan login ulang.'
+            ], 401);
+        }
+
         $isAdmin = in_array($user->role, ['admin_rumahtangga', 'superadmin']);
 
         // 3. CEK KEAMANAN: Jika BUKAN admin, dia HANYA boleh membatalkan jika:
-        //    a. Dia adalah pemesan (item.pemesan === user.nama)
-        //    b. Statusnya masih 'Menunggu' (tidak bisa membatalkan yang sudah disetujui/ditolak)
         if (!$isAdmin) {
-            if ($booking->pemesan !== $user->nama) {
+            // Gunakan trim() untuk mengabaikan spasi yang tidak sengaja terbawa
+            $namaPemesanDB = trim($booking->pemesan);
+            $namaUserLogin = trim($user->nama);
+
+            if ($namaPemesanDB !== $namaUserLogin) {
                 return response()->json([
                     'success' => false, 
-                    'message' => 'Anda tidak memiliki izin untuk membatalkan booking milik orang lain.'
-                ], 403); // 403 Forbidden
+                    'message' => 'Anda tidak memiliki izin untuk membatalkan booking milik orang lain. (Nama tidak cocok: DB="' . $namaPemesanDB . '" vs Login="' . $namaUserLogin . '")'
+                ], 403);
             }
 
             if ($booking->status !== 'Menunggu') {
                 return response()->json([
                     'success' => false, 
                     'message' => 'Booking yang sudah disetujui atau ditolak tidak dapat dibatalkan.'
-                ], 400); // 400 Bad Request
+                ], 400);
             }
         }
 
