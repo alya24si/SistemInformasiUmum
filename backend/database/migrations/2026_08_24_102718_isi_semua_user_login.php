@@ -26,7 +26,6 @@ return new class extends Migration
         $this->tambah(['username' => 'superadmin', 'password' => Hash::make('Super@2026'), 'nama' => 'Super Admin', 'role' => 'superadmin', 'bidang' => '', 'nip' => null]);
         $this->tambah(['username' => 'keuangan', 'password' => Hash::make('Keuangan#2026'), 'nama' => 'Admin Keuangan', 'role' => 'admin_keuangan', 'bidang' => '', 'nip' => null]);
         $this->tambah(['username' => 'kepegawaian', 'password' => Hash::make('Pegawai@2026'), 'nama' => 'Admin Kepegawaian', 'role' => 'admin_kepegawaian', 'bidang' => '', 'nip' => null]);
-        $this->tambah(['username' => 'umum', 'password' => Hash::make('Umum#2026'), 'nama' => 'Admin Umum', 'role' => 'admin_umum', 'bidang' => '', 'nip' => null]);
         $this->tambah(['username' => 'rumahtangga', 'password' => Hash::make('Rumah@2026'), 'nama' => 'Admin Rumah Tangga', 'role' => 'admin_rumahtangga', 'bidang' => '', 'nip' => null]);
 
         // ============ 2. GUEST PER BIDANG (password berbeda-beda) ============
