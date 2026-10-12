@@ -55,9 +55,13 @@ Route::middleware(['auth.api'])->group(function () {
     Route::middleware('permission:booking.view')->get('/booking_ruangan', [BookingRuanganController::class, 'index']);
     Route::middleware('permission:booking.view')->get('/booking_ruangan/kalender', [BookingRuanganController::class, 'kalender']);
     Route::middleware('permission:booking.create')->post('/booking_ruangan', [BookingRuanganController::class, 'store']);
+    
+    // Admin only (Setujui & Tolak tetap pakai permission)
     Route::middleware('permission:booking.manage')->put('/booking_ruangan/{id}/setujui', [BookingRuanganController::class, 'setujui']);
     Route::middleware('permission:booking.manage')->put('/booking_ruangan/{id}/tolak', [BookingRuanganController::class, 'tolak']);
-    Route::middleware('permission:booking.manage')->delete('/booking_ruangan/{id}', [BookingRuanganController::class, 'destroy']);
+    
+    // ✨ TAMBAHKAN INI KEMBALI (Tanpa middleware permission, karena keamanan sudah diatur di Controller)
+    Route::delete('/booking_ruangan/{id}', [BookingRuanganController::class, 'destroy']);
 });
 
 // ===== API KERUSAKAN RUANGAN & MOBIL - SECURED =====
