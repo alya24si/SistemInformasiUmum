@@ -18,12 +18,36 @@ class DatabaseSeeder extends Seeder
             ['tahun' => 2026, 'bidang' => 'Fasilitas', 'tipe' => 'utama', 'kode_akun' => '4787.CDE.002', 'deskripsi' => 'Pemeliharaan Gedung dan Bangunan', 'unit' => 12, 'satuan' => 'Kegiatan', 'harga_satuan' => 1500000, 'pagu' => 18000000, 'realisasi' => 7200000],
         ]);
 
-        // 2. ISI TABEL PROGRAM KERJA (Sesuai data dummy di ProgramKerja.jsx)
+        // 2. ISI TABEL PROGRAM KERJA (✨ KOLOM TRIWULAN SUDAH DIHAPUS, SESUAI STRUKTUR TERBARU)
         DB::table('program_kerja')->insert([
-            ['tahun' => 2026, 'bidang' => 'P2', 'program' => 'Sosialisasi dan Penyuluhan (Eksternal)', 'target' => '4 Kegiatan', 'realisasi_tw1' => 100, 'realisasi_tw2' => 100, 'realisasi_tw3' => 0, 'realisasi_tw4' => 0],
-            ['tahun' => 2026, 'bidang' => 'Umum', 'program' => 'Penilaian Kinerja Pegawai', 'target' => '4 Triwulan', 'realisasi_tw1' => 100, 'realisasi_tw2' => 100, 'realisasi_tw3' => 100, 'realisasi_tw4' => 100],
-            ['tahun' => 2026, 'bidang' => 'Fasilitas', 'program' => 'Penataan Arsip & Ruang Rapat', 'target' => '8 Kegiatan', 'realisasi_tw1' => 0, 'realisasi_tw2' => 0, 'realisasi_tw3' => 0, 'realisasi_tw4' => 0],
-            ['tahun' => 2026, 'bidang' => 'KI', 'program' => 'Pemeriksaan Kepabeanan dan Cukai', 'target' => '5 Laporan', 'realisasi_tw1' => 100, 'realisasi_tw2' => 0, 'realisasi_tw3' => 0, 'realisasi_tw4' => 0],
+            [
+                'tahun' => 2026, 
+                'bidang' => 'P2', 
+                'program' => 'Sosialisasi dan Penyuluhan (Eksternal)', 
+                'deskripsi' => 'Program penyuluhan dan sosialisasi kepada masyarakat eksternal.', 
+                'target' => '4 Kegiatan'
+            ],
+            [
+                'tahun' => 2026, 
+                'bidang' => 'Umum', 
+                'program' => 'Penilaian Kinerja Pegawai', 
+                'deskripsi' => 'Evaluasi dan penilaian kinerja pegawai secara berkala.', 
+                'target' => '4 Triwulan'
+            ],
+            [
+                'tahun' => 2026, 
+                'bidang' => 'Fasilitas', 
+                'program' => 'Penataan Arsip & Ruang Rapat', 
+                'deskripsi' => 'Optimalisasi penggunaan ruang rapat dan penataan arsip kantor.', 
+                'target' => '8 Kegiatan'
+            ],
+            [
+                'tahun' => 2026, 
+                'bidang' => 'KI', 
+                'program' => 'Pemeriksaan Kepabeanan dan Cukai', 
+                'deskripsi' => 'Pelaksanaan pemeriksaan dokumen dan fisik barang.', 
+                'target' => '5 Laporan'
+            ],
         ]);
     }
 }
