@@ -207,7 +207,8 @@ class PegawaiController extends Controller
                 'no_hp'      => $baris['no_hp'] ?? '-',
             ];
 
-            if (array_key_exists('tanggal_masuk', $baris)) {
+            // Jangan timpa tanggal lama dengan kosong kalau kolom tanggal tidak terbaca di file.
+            if (array_key_exists('tanggal_masuk', $baris) && $baris['tanggal_masuk'] !== null) {
                 $payload['tanggal_masuk'] = $this->normalisasiTanggal($baris['tanggal_masuk']);
             } elseif (!$sudahAda) {
                 $payload['tanggal_masuk'] = null;

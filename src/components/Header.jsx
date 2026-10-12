@@ -29,8 +29,8 @@ function Header({ user, onLogout }) {
   return (
     <header className="header">
       <div className="header-left">
-        <h1>Melayani Umum</h1>
-        <p>Kementerian Keuangan RI — Direktorat Jenderal Bea dan Cukai</p>
+        <h1>Media Layanan Umum</h1>
+        <p>Kantor Wilayah DJBC Riau</p>
       </div>
       <div className="header-right">
         <div className="header-date">📅 {today}</div>

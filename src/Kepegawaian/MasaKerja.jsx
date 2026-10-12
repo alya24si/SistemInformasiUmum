@@ -398,7 +398,7 @@ function MasaKerja({ user }) {
             tanggal_masuk:
               String(
                 cari(
-                  ['tanggalmasuk', 'tglmasuk', 'tmtmasuk', 'tmt'],
+                  ['tanggalmasuk', 'tglmasuk', 'tmtmasuk', 'tmt', 'tmtpenugasan'],
                   ['tanggalmasuk', 'tglmasuk']
                 ) ?? ''
               ).trim() || null,
@@ -465,7 +465,8 @@ function MasaKerja({ user }) {
       Jabatan: pegawai.jabatan || '',
       'Eselon IV': pegawai.bagian || '',
       'Eselon III': pegawai.eselon_iii || '',
-      'TMT Penugasan': formatTanggalMasuk(pegawai.tanggal_masuk),
+      // Ditulis format YYYY-MM-DD (bukan "07 Okt 2026") supaya bisa dibaca lagi saat import.
+      'TMT Penugasan': pegawai.tanggal_masuk || '',
       'Masa Kerja': formatMasaKerja(pegawai.tanggal_masuk),
       'No HP': pegawai.no_hp || '',
     }))
