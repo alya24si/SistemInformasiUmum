@@ -279,6 +279,19 @@ const warnaProgress = (persen) => {
 }
 
 function Anggaran({ user }) {
+  // ✨ BARU: Proteksi akses berdasarkan role (Mencegah akses via URL langsung)
+  const allowedRoles = ['admin_keuangan', 'superadmin'];
+  if (!user || !allowedRoles.includes(user.role)) {
+    return (
+      <div style={{ padding: '60px 20px', textAlign: 'center', color: '#64748b', minHeight: '60vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+        <div style={{ fontSize: '64px', marginBottom: '24px' }}>🔒</div>
+        <h2 style={{ color: '#1e293b', marginBottom: '12px', fontSize: '24px' }}>Akses Ditolak</h2>
+        <p style={{ fontSize: '16px', marginBottom: '8px' }}>Anda tidak memiliki izin untuk mengakses halaman Anggaran.</p>
+        <p style={{ fontSize: '14px', color: '#94a3b8', maxWidth: '400px' }}>Halaman ini hanya dapat diakses oleh <strong>Admin Keuangan</strong> dan <strong>Superadmin</strong>.</p>
+      </div>
+    );
+  }
+
   const isAdmin =
     user.role === 'admin_keuangan' ||
     user.role === 'superadmin'
