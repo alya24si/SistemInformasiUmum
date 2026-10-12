@@ -35,7 +35,7 @@ Route::middleware(['auth.api'])->group(function () {
     Route::middleware('permission:program_kerja.manage')->delete('/program_kerja/{id}', [ProgramKerjaController::class, 'destroy']);
 
     // Kegiatan program per bulan
-    Route::middleware('permission:program_kerja.kegiatan_manage')->post('/kegiatan_program', [ProgramKerjaController::class, 'storeKegiatan']);
+    Route::middleware('permission:program_kerja.kegiatan_manage')->post('/program_kerja', [ProgramKerjaController::class, 'storeKegiatan']);
     Route::middleware('permission:program_kerja.kegiatan_manage')->put('/kegiatan_program/{id}', [ProgramKerjaController::class, 'updateKegiatan']);
     Route::middleware('permission:program_kerja.kegiatan_manage')->delete('/kegiatan_program/{id}', [ProgramKerjaController::class, 'destroyKegiatan']);
 });
