@@ -114,10 +114,49 @@ class BookingRuanganController extends Controller
     }
 
     // 5. HAPUS / BATALKAN booking
-    public function destroy($id)
+        // 5. HAPUS / BATALKAN booking (Dengan Cek RBAC & Kepemilikan)
+    public function destroy(Request $request, $id)
     {
+        // 1. Cari data booking berdasarkan ID
+        $booking = DB::table('booking_ruangan')->where('id', $id)->first();
+
+        if (!$booking) {
+            return response()->json([
+                'success' => false, 
+                'message' => 'Data booking tidak ditemukan'
+            ], 404);
+        }
+
+        // 2. Ambil data user yang sedang login (dari middleware auth.api)
+        $user = $request->user();
+        $isAdmin = in_array($user->role, ['admin_rumahtangga', 'superadmin']);
+
+        // 3. CEK KEAMANAN: Jika BUKAN admin, dia HANYA boleh membatalkan jika:
+        //    a. Dia adalah pemesan (item.pemesan === user.nama)
+        //    b. Statusnya masih 'Menunggu' (tidak bisa membatalkan yang sudah disetujui/ditolak)
+        if (!$isAdmin) {
+            if ($booking->pemesan !== $user->nama) {
+                return response()->json([
+                    'success' => false, 
+                    'message' => 'Anda tidak memiliki izin untuk membatalkan booking milik orang lain.'
+                ], 403); // 403 Forbidden
+            }
+
+            if ($booking->status !== 'Menunggu') {
+                return response()->json([
+                    'success' => false, 
+                    'message' => 'Booking yang sudah disetujui atau ditolak tidak dapat dibatalkan.'
+                ], 400); // 400 Bad Request
+            }
+        }
+
+        // 4. Jika lolos semua pengecekan, hapus data
         DB::table('booking_ruangan')->where('id', $id)->delete();
-        return response()->json(['success' => true]);
+
+        return response()->json([
+            'success' => true, 
+            'message' => 'Booking berhasil dibatalkan.'
+        ]);
     }
 
     // 6. KALENDER: daftar booking yang sudah Disetujui (bisa difilter per tanggal)
