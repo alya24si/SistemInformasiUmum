@@ -280,7 +280,7 @@ const warnaProgress = (persen) => {
 
 function Anggaran({ user }) {
   // ✨ BARU: Proteksi akses berdasarkan role (Mencegah akses via URL langsung)
-  const allowedRoles = ['admin_keuangan', 'superadmin'];
+  const allowedRoles = ['admin_keuangan', 'superadmin' , 'guest'];
   if (!user || !allowedRoles.includes(user.role)) {
     return (
       <div style={{ padding: '60px 20px', textAlign: 'center', color: '#64748b', minHeight: '60vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>

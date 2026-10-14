@@ -458,40 +458,105 @@ function KangCepot({ user }) {
     return <div style={pageStyle}><IkonLock size={16} /> Halaman ini hanya dapat diakses oleh Admin Keuangan, Superadmin, dan Pegawai.</div>
   }
 
-  const handleFile = async (e) => {
+    const handleFile = async (e) => {
     const file = e.target.files[0]
     if (!file) return
+    
+    console.log("=== MULAI PROSES UPLOAD ===")
     const reader = new FileReader()
     reader.onload = async (ev) => {
-      const wb = XLSX.read(ev.target.result, { type: 'array' })
-      const ws = wb.Sheets[wb.SheetNames[0]]
-      const rows = XLSX.utils.sheet_to_json(ws)
+      try {
+        // raw: false memaksa XLSX membaca sebagai string (mencegah NIP jadi 1.99E+17)
+        const wb = XLSX.read(ev.target.result, { type: 'array', raw: false })
+        const ws = wb.Sheets[wb.SheetNames[0]]
+        
+        const rawData = XLSX.utils.sheet_to_json(ws, { header: 1, raw: false })
+        let headerRowIndex = 0
+        
+        for (let i = 0; i < Math.min(rawData.length, 20); i++) {
+          const rowString = JSON.stringify(rawData[i] || []).toLowerCase()
+          if (rowString.includes('nip') && rowString.includes('nama')) {
+            headerRowIndex = i
+            console.log("✅ Header ditemukan di baris ke:", i + 1)
+            break
+          }
+        }
 
-      const hasil = []
-      rows.forEach((r) => {
-        const nip = String(cariKolom(r, 'NIP', 'nip')).trim()
-        if (!nip) return
-        const dpp = angka(cariKolom(r, 'DPP'))
-        const bapors = angka(cariKolom(r, 'BAPORS', 'BAPOR'))
-        const dkm = angka(cariKolom(r, 'DKM'))
-        const pwk = angka(cariKolom(r, 'PWK'))
-        hasil.push({
-          nip,
-          nama: String(cariKolom(r, 'NAMA', 'Nama', 'nama') || '').trim(),
-          no_hp: String(cariKolom(r, 'NO HP', 'NOHP', 'NO_HP', 'WA', 'TELEPON') || '').trim(),
-          dpp, bapors, keagamaan: dkm > 0 ? dkm : pwk,
-        })
-      })
+        const rows = XLSX.utils.sheet_to_json(ws, { range: headerRowIndex, raw: false })
+        console.log("Total baris data yang dibaca:", rows.length)
+        console.log("Contoh baris pertama:", rows[0])
 
-      if (hasil.length > 0) {
-        await api('/iuran/import', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ rows: hasil }),
+        const hasil = []
+        let skipCount = 0
+
+        rows.forEach((r, index) => {
+          let nip = ''
+          for (const key of Object.keys(r)) {
+            const k = key.toLowerCase().replace(/\s+/g, '')
+            if (k === 'nip') {
+              // Ambil hanya digit angkanya, abaikan spasi atau karakter tersembunyi
+              nip = String(r[key]).replace(/[^\d]/g, '') 
+              break
+            }
+          }
+
+          // Jika NIP kosong atau kurang dari 5 digit, lewati (ini menyaring baris 'JUMLAH', 'gol', dll)
+          if (!nip || nip.length < 5) {
+            skipCount++
+            if (skipCount <= 3) {
+              console.log(`⚠️ Baris ${index + 1} dilewati. Isi kolom NIP: "${r[Object.keys(r).find(k => k.toLowerCase().includes('nip'))] || 'KOSONG'}"`)
+            }
+            return
+          }
+
+          let nama = '', no_hp = '', dpp = 0, bapors = 0, dkm = 0, pwk = 0
+          
+          for (const key of Object.keys(r)) {
+            const k = key.toLowerCase().replace(/\s+/g, '')
+            if (k === 'nama') nama = String(r[key]).trim()
+            if (k === 'nohp' || k === 'no_hp' || k === 'notelepon' || k === 'wa') no_hp = String(r[key]).trim()
+            if (k === 'dpp') dpp = Number(String(r[key]).replace(/[^\d]/g, '')) || 0
+            if (k === 'bapors' || k === 'bapor') bapors = Number(String(r[key]).replace(/[^\d]/g, '')) || 0
+            if (k === 'dkm') dkm = Number(String(r[key]).replace(/[^\d]/g, '')) || 0
+            if (k === 'pwk') pwk = Number(String(r[key]).replace(/[^\d]/g, '')) || 0
+          }
+
+          hasil.push({
+            nip,
+            nama,
+            no_hp,
+            dpp,
+            bapors,
+            keagamaan: dkm > 0 ? dkm : pwk,
+          })
         })
-        muatData()
+
+        console.log("🎉 Data valid yang siap dikirim:", hasil.length)
+        console.log("🗑️ Data yang dilewati (bukan NIP valid):", skipCount)
+
+        if (hasil.length > 0) {
+          const res = await api('/iuran/import', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ rows: hasil }),
+          })
+          
+          const json = await res.json()
+
+          // Cek apakah backend benar-benar berhasil menyimpan
+          if (res.ok && json.success) {
+            muatData()
+            setUploadInfo(`✅ Berhasil! ${json.count || hasil.length} data pegawai disimpan ke database.`)
+          } else {
+            setUploadInfo(`❌ Gagal: ${json.message || 'Terjadi error di server'}`)
+          }
+        } else {
+          setUploadInfo('❌ Gagal: Tidak ada data valid. Buka Console (F12) untuk lihat detail.')
+        }
+      } catch (err) {
+        console.error("❌ Error saat memproses Excel:", err)
+        setUploadInfo('❌ Terjadi kesalahan sistem. Cek Console (F12).')
       }
-      setUploadInfo(`✅ ${hasil.length} baris diproses. Data lama dipertahankan, data sama di-update.`)
     }
     reader.readAsArrayBuffer(file)
     e.target.value = ''

@@ -14,62 +14,50 @@ class IuranController extends Controller
         return response()->json(['success' => true, 'data' => $data]);
     }
 
-    public function import(Request $request)
+       public function import(Request $request)
     {
-        foreach ($request->input('rows', []) as $r) {
-            $nip = trim($r['nip'] ?? '');
-            if (!$nip) continue;
+        $rows = $request->input('rows', []);
+        $count = 0;
 
-            $dpp    = (int) ($r['dpp'] ?? 0);
-            $bapors = (int) ($r['bapors'] ?? 0);
-
-            $keagamaan = (int) ($r['keagamaan'] ?? 0);
-            if ($keagamaan === 0) {
-                $dkm = (int) ($r['dkm'] ?? 0);
-                $pwk = (int) ($r['pwk'] ?? 0);
-                $keagamaan = $dkm > 0 ? $dkm : $pwk;
+        foreach ($rows as $r) {
+            // 1. Bersihkan NIP (hanya ambil angka, hapus spasi/karakter aneh)
+            $nip = preg_replace('/[^0-9]/', '', $r['nip'] ?? '');
+            
+            // 2. Skip baris sampah (JUMLAH, gol 2, dll) jika NIP kurang dari 5 digit
+            if (strlen($nip) < 5) {
+                continue;
             }
 
+            // 3. Hitung total
+            $dpp = (int) ($r['dpp'] ?? 0);
+            $bapors = (int) ($r['bapors'] ?? 0);
+            $keagamaan = (int) ($r['keagamaan'] ?? 0);
             $total = $dpp + $bapors + $keagamaan;
 
-            $ada = DB::table('iuran')->where('nip', $nip)->first();
-
-            if ($ada) {
-                DB::table('iuran')->where('id', $ada->id)->update([
-                    'nama' => $r['nama'] ?: $ada->nama,
-                    'no_hp' => $r['no_hp'] ?: $ada->no_hp,
-                    'dpp' => $dpp,
-                    'bapors' => $bapors,
-                    'keagamaan' => $keagamaan,
-                    'total' => $total,
-                ]);
-            } else {
-                DB::table('iuran')->insert([
-                    'nip' => $nip,
-                    'nama' => $r['nama'] ?: $nip,
+            // 4. Simpan atau Update dengan aman (updateOrInsert)
+            DB::table('iuran')->updateOrInsert(
+                ['nip' => $nip], // Cari berdasarkan NIP
+                [
+                    'nama' => $r['nama'] ?? $nip,
                     'no_hp' => $r['no_hp'] ?? '',
                     'dpp' => $dpp,
                     'bapors' => $bapors,
                     'keagamaan' => $keagamaan,
                     'total' => $total,
                     'status_bayar' => 'belum',
-                ]);
-            }
-
-            // ✨ Otomatis buat akun guest jika NIP belum ada di tabel users
-            $cekUser = DB::table('users')->where('nip', $nip)->first();
-            if (!$cekUser) {
-                DB::table('users')->insert([
-                    'name' => $r['nama'] ?: $nip,
-                    'username' => $nip,
-                    'password' => Hash::make($nip),
-                    'role' => 'guest',
-                    'created_at' => now(),
                     'updated_at' => now(),
-                ]);
-            }
+                ]
+            );
+            
+            $count++;
         }
-        return response()->json(['success' => true]);
+
+        // 5. Kembalikan jumlah data yang benar-benar berhasil diproses
+        return response()->json([
+            'success' => true, 
+            'count' => $count,
+            'message' => "Berhasil memproses {$count} data pegawai."
+        ]);
     }
 
     public function store(Request $request)
