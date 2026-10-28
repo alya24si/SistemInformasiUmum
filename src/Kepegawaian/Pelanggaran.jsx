@@ -134,43 +134,172 @@ function Pelanggaran({ user }) {
     reader.onload = async (ev) => {
       const wb = XLSX.read(ev.target.result, { type: 'array' })
       const ws = wb.Sheets[wb.SheetNames[0]]
-      const rows = XLSX.utils.sheet_to_json(ws)
-
+      
+      const rows = XLSX.utils.sheet_to_json(ws, { 
+        header: 1,
+        skip_empty_rows: false 
+      })
+      
+      console.log('📊 Total rows:', rows.length)
+      
+      // ✨ Cari 2 baris header: baris utama (NAMA, NIP) dan baris sub-header (TL 1, PSW 1, dll)
+      let headerRow1 = -1 // Baris dengan NAMA, NIP
+      let headerRow2 = -1 // Baris dengan TL 1, PSW 1, dll
+      
+      for (let rowIdx = 0; rowIdx < Math.min(rows.length, 15); rowIdx++) {
+        const row = rows[rowIdx] || []
+        const rowStr = row.join(' ').toUpperCase()
+        
+        if (rowStr.includes('NIP') && rowStr.includes('NAMA') && headerRow1 === -1) {
+          headerRow1 = rowIdx
+          console.log('✅ Header Row 1 (NAMA/NIP) found at row:', rowIdx + 1)
+        }
+        
+        // Cari baris yang mengandung TL 1 atau PSW 1
+        if ((rowStr.includes('TL 1') || rowStr.includes('PSW 1')) && headerRow2 === -1) {
+          headerRow2 = rowIdx
+          console.log('✅ Header Row 2 (TL/PSW) found at row:', rowIdx + 1)
+        }
+      }
+      
+      if (headerRow1 === -1) {
+        alert('❌ Format Excel tidak dikenali.')
+        return
+      }
+      
+      // ✨ Gabungkan kedua baris header untuk mapping
+      const headers1 = rows[headerRow1] || []
+      const headers2 = headerRow2 >= 0 ? (rows[headerRow2] || []) : []
+      
+      console.log('📋 Headers Row 1:', headers1.map((h, idx) => `${idx}: "${h}"`))
+      if (headerRow2 >= 0) {
+        console.log(' Headers Row 2:', headers2.map((h, idx) => `${idx}: "${h}"`))
+      }
+      
+      // ✨ Mapping kolom: prioritas dari header row 2 (TL 1, PSW 1), fallback ke row 1
+      const colIndex = {}
+      
+      // Dari header row 1
+      headers1.forEach((h, idx) => {
+        const header = String(h || '').trim().toUpperCase()
+        if (header === 'NIP') colIndex.NIP = idx
+        else if (header === 'NAMA') colIndex.NAMA = idx
+        else if (header === 'TK') colIndex.TK = idx
+      })
+      
+      // Dari header row 2 (override jika ada)
+      if (headerRow2 >= 0) {
+        headers2.forEach((h, idx) => {
+          const header = String(h || '').trim().toUpperCase()
+          if (header === 'TL 1' || header === 'TL1') colIndex.TL1 = idx
+          else if (header === 'TL 2' || header === 'TL2') colIndex.TL2 = idx
+          else if (header === 'TL 3' || header === 'TL3') colIndex.TL3 = idx
+          else if (header === 'PSW 1' || header === 'PSW1') colIndex.PSW1 = idx
+          else if (header === 'PSW 2' || header === 'PSW2') colIndex.PSW2 = idx
+          else if (header === 'PSW 3' || header === 'PSW3') colIndex.PSW3 = idx
+          else if (header === 'PSW 4' || header === 'PSW4') colIndex.PSW4 = idx
+        })
+      }
+      
+      console.log('📊 Final Column mapping:', colIndex)
+      
+      // ✨ DEBUG: Tampilkan isi row 9 (ACHMAD WIBOWO) dengan semua kolom
+      const debugRowIdx = headerRow1 + 2 // Row setelah header
+      if (rows[debugRowIdx]) {
+        console.log('🔍 DEBUG Row', debugRowIdx + 1, ':', rows[debugRowIdx])
+        rows[debugRowIdx].forEach((cell, idx) => {
+          const h1 = headers1[idx] || '-'
+          const h2 = headers2[idx] || '-'
+          console.log(`  [${idx}] Row1="${h1}" | Row2="${h2}" | Value="${cell}"`)
+        })
+      }
+      
       let masuk = 0
       let diskip = 0
+      let skipped = 0
       const waktu = new Date().toLocaleString('id-ID')
       const hasil = []
 
-      rows.forEach((r) => {
-        const nip = String(cariKolom(r, 'NIP', 'nip')).trim()
-        const nama = String(cariKolom(r, 'NAMA', 'Nama', 'nama') || '').trim()
-        const tk = Number(cariKolom(r, 'TK', 'tk')) || 0
-        const tl1 = Number(cariKolom(r, 'TL1', 'TL 1')) || 0
-        const tl2 = Number(cariKolom(r, 'TL2', 'TL 2')) || 0
-        const tl3 = Number(cariKolom(r, 'TL3', 'TL 3')) || 0
-        const psw1 = Number(cariKolom(r, 'PSW1', 'PSW 1')) || 0
-        const psw2 = Number(cariKolom(r, 'PSW2', 'PSW 2')) || 0
-        const psw3 = Number(cariKolom(r, 'PSW3', 'PSW 3')) || 0
-        const psw4 = Number(cariKolom(r, 'PSW4', 'PSW 4')) || 0
+      // Mulai dari row setelah header utama
+      const startRow = Math.max(headerRow1, headerRow2) + 1
+      
+      for (let rowIdx = startRow; rowIdx < rows.length; rowIdx++) {
+        const row = rows[rowIdx] || []
+        
+        if (row.length === 0 || row.every(cell => !cell || String(cell).trim() === '')) {
+          skipped++
+          continue
+        }
+        
+        const rowText = row.join(' ').toUpperCase()
+        if (rowText.includes('TUGAS BELAJAR') || 
+            rowText.includes('KETERTIBAN') || 
+            rowText.includes('PERIODE') ||
+            rowText.includes('JUMLAH HARI') ||
+            rowText.includes('DITANDATANG')) {
+          skipped++
+          continue
+        }
+        
+        const nip = colIndex.NIP >= 0 ? String(row[colIndex.NIP] || '').trim() : ''
+        
+        if (!nip || !/^\d+$/.test(nip)) {
+          skipped++
+          continue
+        }
+        
+        const getValue = (col) => {
+          if (col < 0 || col >= row.length) return 0
+          const val = row[col]
+          return Number(val) || 0
+        }
+        
+        const nama = colIndex.NAMA >= 0 ? String(row[colIndex.NAMA] || '').trim() : ''
+        
+        // ✨ HANYA kolom TK, TL1-3, PSW1-4
+        const tk = getValue(colIndex.TK)
+        const tl1 = getValue(colIndex.TL1)
+        const tl2 = getValue(colIndex.TL2)
+        const tl3 = getValue(colIndex.TL3)
+        const psw1 = getValue(colIndex.PSW1)
+        const psw2 = getValue(colIndex.PSW2)
+        const psw3 = getValue(colIndex.PSW3)
+        const psw4 = getValue(colIndex.PSW4)
+        
         const total = tk + tl1 + tl2 + tl3 + psw1 + psw2 + psw3 + psw4
 
-        if (!nip) return
+        // ✨ JIKA TOTAL 0, SKIP (Tidak dimasukkan ke database)
         if (total === 0) {
           diskip++
-          return
+          continue
         }
 
         masuk++
         hasil.push({
-          nip, nama: nama || nip, tk,
-          tl1, tl2, tl3, psw1, psw2, psw3, psw4, total,
+          nip, 
+          nama: nama || `Pegawai ${nip}`,
+          tk,
+          tl1, tl2, tl3, 
+          psw1, psw2, psw3, psw4, 
+          total,
           tanggal: waktu,
           sumber: `Upload ${file.name}`,
         })
-      })
+        
+        if (masuk <= 3) {
+          console.log(`✅ Row ${rowIdx + 1} imported:`, { 
+            nip, nama, total, tk, tl1, tl2, tl3, psw1, psw2, psw3, psw4 
+          })
+        }
+      }
+
+      console.log('📥 Summary:')
+      console.log('  - Masuk:', masuk)
+      console.log('  - Diskip (total=0):', diskip)
+      console.log('  - Skipped:', skipped)
 
       if (hasil.length > 0) {
-        await api('/pelanggaran/import', { // ✨ UBAH: fetch -> api
+        await api('/pelanggaran/import', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ rows: hasil }),
@@ -264,12 +393,18 @@ function Pelanggaran({ user }) {
         : { backgroundColor: '#fef3c7', color: '#92400e', label: 'Pantauan' }
   }
 
-  const totalMenitSemua = dataPelanggaran.reduce((a, b) => a + b.total, 0)
-  const jumlahWarning1 = dataPelanggaran.filter((d) => {
+  // ========================================================================
+  // ✨ PERBAIKAN KHUSUS: Filter data agar yang total === 0 TIDAK ditampilkan
+  // ========================================================================
+  const dataFiltered = dataPelanggaran.filter(d => d.total > 0)
+
+  // Gunakan dataFiltered untuk semua perhitungan summary dan pagination
+  const totalMenitSemua = dataFiltered.reduce((a, b) => a + b.total, 0)
+  const jumlahWarning1 = dataFiltered.filter((d) => {
     const h = menitKeHari(d.total)
     return h >= BATAS_WARNING1 && h < BATAS_WARNING2
   }).length
-  const jumlahWarning2 = dataPelanggaran.filter((d) => menitKeHari(d.total) >= BATAS_WARNING2).length
+  const jumlahWarning2 = dataFiltered.filter((d) => menitKeHari(d.total) >= BATAS_WARNING2).length
 
   return (
     <div style={pageStyle}>
@@ -378,7 +513,8 @@ function Pelanggaran({ user }) {
       )}
 
       <div style={summaryGrid}>
-        {isAdmin && <SummaryCard title="Pegawai Terdeteksi" value={dataPelanggaran.length} />}
+        {/* ✨ UBAH: Gunakan dataFiltered.length agar yang total=0 tidak dihitung */}
+        {isAdmin && <SummaryCard title="Pegawai Terdeteksi" value={dataFiltered.length} />}
         <SummaryCard
           title={isAdmin ? 'Total Hari Kerja Terlambat' : 'Hari Kerja Terlambat Anda'}
           value={`${bulatkan2(menitKeHari(isAdmin ? totalMenitSemua : (catatanku ? catatanku.total : 0)))} hari`}
@@ -426,7 +562,9 @@ function Pelanggaran({ user }) {
                     const ITEMS_PER_PAGE = 10
                     const startIndex = currentPagePelanggaran * ITEMS_PER_PAGE
                     const endIndex = startIndex + ITEMS_PER_PAGE
-                    const dataPaginated = dataPelanggaran.slice(startIndex, endIndex)
+                    
+                    // ✨ UBAH: Slice dari dataFiltered, bukan dataPelanggaran
+                    const dataPaginated = dataFiltered.slice(startIndex, endIndex)
 
                     if (dataPaginated.length === 0) {
                       return (
@@ -547,12 +685,13 @@ function Pelanggaran({ user }) {
                   Back
                 </button>
                 <span style={{ fontSize: '11px', fontWeight: '500', color: '#64748b' }}>
-                  {currentPagePelanggaran + 1} / {Math.max(1, Math.ceil(dataPelanggaran.length / 10))}
+                  {/* ✨ UBAH: Hitung pagination dari dataFiltered */}
+                  {currentPagePelanggaran + 1} / {Math.max(1, Math.ceil(dataFiltered.length / 10))}
                 </span>
                 <button
-                  onClick={() => setCurrentPagePelanggaran(prev => (prev + 1 < Math.ceil(dataPelanggaran.length / 10) ? prev + 1 : prev))}
-                  disabled={currentPagePelanggaran + 1 >= Math.ceil(dataPelanggaran.length / 10)}
-                  style={{ padding: '6px 10px', borderRadius: '6px', border: '1px solid #cbd5e1', backgroundColor: '#fff', cursor: currentPagePelanggaran + 1 >= Math.ceil(dataPelanggaran.length / 10) ? 'not-allowed' : 'pointer', opacity: currentPagePelanggaran + 1 >= Math.ceil(dataPelanggaran.length / 10) ? 0.5 : 1, fontSize: '11px', fontWeight: 600 }}
+                  onClick={() => setCurrentPagePelanggaran(prev => (prev + 1 < Math.ceil(dataFiltered.length / 10) ? prev + 1 : prev))}
+                  disabled={currentPagePelanggaran + 1 >= Math.ceil(dataFiltered.length / 10)}
+                  style={{ padding: '6px 10px', borderRadius: '6px', border: '1px solid #cbd5e1', backgroundColor: '#fff', cursor: currentPagePelanggaran + 1 >= Math.ceil(dataFiltered.length / 10) ? 'not-allowed' : 'pointer', opacity: currentPagePelanggaran + 1 >= Math.ceil(dataFiltered.length / 10) ? 0.5 : 1, fontSize: '11px', fontWeight: 600 }}
                 >
                   Next
                 </button>
