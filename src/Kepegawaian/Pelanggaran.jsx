@@ -397,7 +397,9 @@ if (headerRow2 >= 0) {
    // ========================================================================
   // ✨ PERBAIKAN: Hanya tampilkan data yang memiliki nilai pelanggaran (total > 0)
   // ========================================================================
-  const dataTampil = dataPelanggaran.filter(d => d.total > 0); 
+const dataTampil = dataPelanggaran.filter(
+  (d) => d.tk + d.tl1 + d.tl2 + d.tl3 + d.psw1 + d.psw2 + d.psw3 + d.psw4 > 0
+)
 
   // Gunakan dataTampil untuk semua perhitungan summary dan pagination
   const totalMenitSemua = dataTampil.reduce((a, b) => a + b.total, 0)
