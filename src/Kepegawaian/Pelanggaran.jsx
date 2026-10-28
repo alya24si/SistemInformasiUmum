@@ -188,34 +188,39 @@ function Pelanggaran({ user }) {
       })
       
       // Dari header row 2 (override jika ada)
-      if (headerRow2 >= 0) {
-        headers2.forEach((h, idx) => {
-          const header = String(h || '').trim().toUpperCase()
-          if (header === 'TL 1' || header === 'TL1') colIndex.TL1 = idx
-          else if (header === 'TL 2' || header === 'TL2') colIndex.TL2 = idx
-          else if (header === 'TL 3' || header === 'TL3') colIndex.TL3 = idx
-          else if (header === 'PSW 1' || header === 'PSW1') colIndex.PSW1 = idx
-          else if (header === 'PSW 2' || header === 'PSW2') colIndex.PSW2 = idx
-          else if (header === 'PSW 3' || header === 'PSW3') colIndex.PSW3 = idx
-          else if (header === 'PSW 4' || header === 'PSW4') colIndex.PSW4 = idx
-        })
-      }
+      // ✨ SOLUSI PASTI: Mapping berdasarkan posisi kolom di Excel
+// Berdasarkan struktur Excel kamu:
+// Kolom 12 = TL 1, 13 = TL 2, 14 = TL 3
+// Kolom 15 = PSW 1, 16 = PSW 2, 17 = PSW 3, 18 = PSW 4
+if (headerRow2 >= 0) {
+  headers2.forEach((h, idx) => {
+    const header = String(h || '').trim().toUpperCase()
+    
+    // Coba cocokkan dengan nama header dulu
+    if (header.includes('TL') && header.includes('1')) colIndex.TL1 = idx
+    else if (header.includes('TL') && header.includes('2')) colIndex.TL2 = idx
+    else if (header.includes('TL') && header.includes('3')) colIndex.TL3 = idx
+    else if (header.includes('PSW') && header.includes('1')) colIndex.PSW1 = idx
+    else if (header.includes('PSW') && header.includes('2')) colIndex.PSW2 = idx
+    else if (header.includes('PSW') && header.includes('3')) colIndex.PSW3 = idx
+    else if (header.includes('PSW') && header.includes('4')) colIndex.PSW4 = idx
+  })
+  
+  // ✨ FALLBACK: Jika mapping gagal, gunakan posisi kolom yang sudah diketahui
+  if (colIndex.TL1 === undefined) colIndex.TL1 = 12
+  if (colIndex.TL2 === undefined) colIndex.TL2 = 13
+  if (colIndex.TL3 === undefined) colIndex.TL3 = 14
+  if (colIndex.PSW1 === undefined) colIndex.PSW1 = 15
+  if (colIndex.PSW2 === undefined) colIndex.PSW2 = 16
+  if (colIndex.PSW3 === undefined) colIndex.PSW3 = 17
+  if (colIndex.PSW4 === undefined) colIndex.PSW4 = 18
+  
+  console.log('✅ Final mapping:', colIndex)
+}
       
       console.log('📊 Final Column mapping:', colIndex)
       
-      // ✨ DEBUG: Tampilkan isi row 9 (ACHMAD WIBOWO) dengan semua kolom
-      const debugRowIdx = headerRow1 + 2 // Row setelah header
-      if (rows[debugRowIdx]) {
-        console.log('🔍 DEBUG Row', debugRowIdx + 1, ':', rows[debugRowIdx])
-        rows[debugRowIdx].forEach((cell, idx) => {
-          const h1 = headers1[idx] || '-'
-          const h2 = headers2[idx] || '-'
-          console.log(`  [${idx}] Row1="${h1}" | Row2="${h2}" | Value="${cell}"`)
-        })
-      }
-      
       let masuk = 0
-      let diskip = 0
       let skipped = 0
       const waktu = new Date().toLocaleString('id-ID')
       const hasil = []
@@ -266,37 +271,33 @@ function Pelanggaran({ user }) {
         const psw3 = getValue(colIndex.PSW3)
         const psw4 = getValue(colIndex.PSW4)
         
-        const total = tk + tl1 + tl2 + tl3 + psw1 + psw2 + psw3 + psw4
+                const total = tk + tl1 + tl2 + tl3 + psw1 + psw2 + psw3 + psw4
 
-        // ✨ JIKA TOTAL 0, SKIP (Tidak dimasukkan ke database)
-        if (total === 0) {
-          diskip++
-          continue
-        }
-
-        masuk++
-        hasil.push({
-          nip, 
-          nama: nama || `Pegawai ${nip}`,
-          tk,
-          tl1, tl2, tl3, 
-          psw1, psw2, psw3, psw4, 
-          total,
-          tanggal: waktu,
-          sumber: `Upload ${file.name}`,
-        })
-        
-        if (masuk <= 3) {
-          console.log(`✅ Row ${rowIdx + 1} imported:`, { 
-            nip, nama, total, tk, tl1, tl2, tl3, psw1, psw2, psw3, psw4 
+        // ✨ HANYA masukkan ke database jika ada nilai di TK/TL/PSW (total > 0)
+        if (total > 0) {
+          masuk++
+          hasil.push({
+            nip, 
+            nama: nama || `Pegawai ${nip}`,
+            tk,
+            tl1, tl2, tl3, 
+            psw1, psw2, psw3, psw4, 
+            total,
+            tanggal: waktu,
+            sumber: `Upload ${file.name}`,
           })
+          
+          if (masuk <= 3) {
+            console.log(`✅ Row ${rowIdx + 1} imported:`, { 
+              nip, nama, total, tk, tl1, tl2, tl3, psw1, psw2, psw3, psw4 
+            })
+          }
         }
       }
 
       console.log('📥 Summary:')
       console.log('  - Masuk:', masuk)
-      console.log('  - Diskip (total=0):', diskip)
-      console.log('  - Skipped:', skipped)
+      console.log('  - Skipped (Header/Tugas Belajar):', skipped)
 
       if (hasil.length > 0) {
         await api('/pelanggaran/import', {
@@ -307,7 +308,7 @@ function Pelanggaran({ user }) {
         muatData()
       }
 
-      setUploadInfo(`✅ ${masuk} pelanggar diproses, ${diskip} pegawai bersih dilewati.`)
+      setUploadInfo(`✅ ${masuk} data diproses dan siap diedit totalnya oleh Admin.`)
     }
     reader.readAsArrayBuffer(file)
     e.target.value = ''
@@ -393,18 +394,18 @@ function Pelanggaran({ user }) {
         : { backgroundColor: '#fef3c7', color: '#92400e', label: 'Pantauan' }
   }
 
+   // ========================================================================
+  // ✨ PERBAIKAN: Hanya tampilkan data yang memiliki nilai pelanggaran (total > 0)
   // ========================================================================
-  // ✨ PERBAIKAN KHUSUS: Filter data agar yang total === 0 TIDAK ditampilkan
-  // ========================================================================
-  const dataFiltered = dataPelanggaran.filter(d => d.total > 0)
+  const dataTampil = dataPelanggaran.filter(d => d.total > 0); 
 
-  // Gunakan dataFiltered untuk semua perhitungan summary dan pagination
-  const totalMenitSemua = dataFiltered.reduce((a, b) => a + b.total, 0)
-  const jumlahWarning1 = dataFiltered.filter((d) => {
+  // Gunakan dataTampil untuk semua perhitungan summary dan pagination
+  const totalMenitSemua = dataTampil.reduce((a, b) => a + b.total, 0)
+  const jumlahWarning1 = dataTampil.filter((d) => {
     const h = menitKeHari(d.total)
     return h >= BATAS_WARNING1 && h < BATAS_WARNING2
   }).length
-  const jumlahWarning2 = dataFiltered.filter((d) => menitKeHari(d.total) >= BATAS_WARNING2).length
+  const jumlahWarning2 = dataTampil.filter((d) => menitKeHari(d.total) >= BATAS_WARNING2).length
 
   return (
     <div style={pageStyle}>
@@ -513,8 +514,8 @@ function Pelanggaran({ user }) {
       )}
 
       <div style={summaryGrid}>
-        {/* ✨ UBAH: Gunakan dataFiltered.length agar yang total=0 tidak dihitung */}
-        {isAdmin && <SummaryCard title="Pegawai Terdeteksi" value={dataFiltered.length} />}
+        {/* ✨ UBAH: Gunakan dataTampil.length agar Admin tahu berapa banyak data yang perlu dicek/diedit */}
+        {isAdmin && <SummaryCard title="Data Perlu Dicek/Diedit" value={dataTampil.length} />}
         <SummaryCard
           title={isAdmin ? 'Total Hari Kerja Terlambat' : 'Hari Kerja Terlambat Anda'}
           value={`${bulatkan2(menitKeHari(isAdmin ? totalMenitSemua : (catatanku ? catatanku.total : 0)))} hari`}
@@ -563,8 +564,8 @@ function Pelanggaran({ user }) {
                     const startIndex = currentPagePelanggaran * ITEMS_PER_PAGE
                     const endIndex = startIndex + ITEMS_PER_PAGE
                     
-                    // ✨ UBAH: Slice dari dataFiltered, bukan dataPelanggaran
-                    const dataPaginated = dataFiltered.slice(startIndex, endIndex)
+                    // ✨ UBAH: Slice dari dataTampil, agar data dengan total=0 tetap muncul untuk diedit
+                    const dataPaginated = dataTampil.slice(startIndex, endIndex)
 
                     if (dataPaginated.length === 0) {
                       return (
@@ -685,13 +686,13 @@ function Pelanggaran({ user }) {
                   Back
                 </button>
                 <span style={{ fontSize: '11px', fontWeight: '500', color: '#64748b' }}>
-                  {/* ✨ UBAH: Hitung pagination dari dataFiltered */}
-                  {currentPagePelanggaran + 1} / {Math.max(1, Math.ceil(dataFiltered.length / 10))}
+                  {/* ✨ UBAH: Hitung pagination dari dataTampil */}
+                  {currentPagePelanggaran + 1} / {Math.max(1, Math.ceil(dataTampil.length / 10))}
                 </span>
                 <button
-                  onClick={() => setCurrentPagePelanggaran(prev => (prev + 1 < Math.ceil(dataFiltered.length / 10) ? prev + 1 : prev))}
-                  disabled={currentPagePelanggaran + 1 >= Math.ceil(dataFiltered.length / 10)}
-                  style={{ padding: '6px 10px', borderRadius: '6px', border: '1px solid #cbd5e1', backgroundColor: '#fff', cursor: currentPagePelanggaran + 1 >= Math.ceil(dataFiltered.length / 10) ? 'not-allowed' : 'pointer', opacity: currentPagePelanggaran + 1 >= Math.ceil(dataFiltered.length / 10) ? 0.5 : 1, fontSize: '11px', fontWeight: 600 }}
+                  onClick={() => setCurrentPagePelanggaran(prev => (prev + 1 < Math.ceil(dataTampil.length / 10) ? prev + 1 : prev))}
+                  disabled={currentPagePelanggaran + 1 >= Math.ceil(dataTampil.length / 10)}
+                  style={{ padding: '6px 10px', borderRadius: '6px', border: '1px solid #cbd5e1', backgroundColor: '#fff', cursor: currentPagePelanggaran + 1 >= Math.ceil(dataTampil.length / 10) ? 'not-allowed' : 'pointer', opacity: currentPagePelanggaran + 1 >= Math.ceil(dataTampil.length / 10) ? 0.5 : 1, fontSize: '11px', fontWeight: 600 }}
                 >
                   Next
                 </button>
