@@ -21,14 +21,14 @@ class PelanggaranController extends Controller
         return response()->json(['success' => true, 'data' => $data]);
     }
 
-          public function import(Request $request)
+    public function import(Request $request)
     {
         $rows = $request->input('rows');
         $processed = 0;
 
         foreach ($rows as $row) {
             $nip = trim($row['nip']);
-            
+
             // 🔥 PAKSA HITUNG TOTAL DI BACKEND (Supaya tidak bisa 0 jika ada nilainya)
             $tk = (int)($row['tk'] ?? 0);
             $tl1 = (int)($row['tl1'] ?? 0);
@@ -38,7 +38,7 @@ class PelanggaranController extends Controller
             $psw2 = (int)($row['psw2'] ?? 0);
             $psw3 = (int)($row['psw3'] ?? 0);
             $psw4 = (int)($row['psw4'] ?? 0);
-            
+
             $total_paksa = $tk + $tl1 + $tl2 + $tl3 + $psw1 + $psw2 + $psw3 + $psw4;
 
             $existing = DB::table('pelanggaran')->where('nip', $nip)->first();
@@ -55,7 +55,7 @@ class PelanggaranController extends Controller
                         'psw2'       => $existing->psw2 + $psw2,
                         'psw3'       => $existing->psw3 + $psw3,
                         'psw4'       => $existing->psw4 + $psw4,
-                        'total'      => 0,
+                        // 'total' sengaja tidak diubah → nilai hasil input admin tetap aman
                         'updated_at' => now(),
                     ]);
                 $pelanggaran_id = $existing->id;
@@ -138,7 +138,7 @@ class PelanggaranController extends Controller
         ], 201);
     }
 
-     // ✨ BARU: Admin update "Jumlah Pelanggaran" manual
+    // ✨ BARU: Admin update "Jumlah Pelanggaran" manual
     public function updateJumlah(Request $request, $id)
     {
         $request->validate([
