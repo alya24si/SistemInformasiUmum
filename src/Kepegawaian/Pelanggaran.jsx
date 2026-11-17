@@ -664,8 +664,8 @@ const dataTampil = dataPelanggaran.filter(
                                   <option value="25">+ 25 menit</option>
                                   <option value="30">+ 30 menit</option>
                                   <option value="45">+ 45 menit</option>
-                                  <option value="60">+ 60 menit (1 jam)</option>
-                                  <option value="90">+ 90 menit (1.5 jam)</option>
+                                  <option value="61">+ 61 menit</option>
+                                  <option value="91">+ 91 menit</option>
                                   <option value="120">+ 120 menit (2 jam)</option>
                                 </select>
                               </td>
